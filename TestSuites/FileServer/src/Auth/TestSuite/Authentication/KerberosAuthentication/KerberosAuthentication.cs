@@ -10,6 +10,7 @@ using Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic;
 using Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Spng;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -100,14 +101,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             if (servicePrincipalName == null)
             {
                 servicePrincipalName = Smb2Utility.GetCifsServicePrincipalName(TestConfig.SutComputerName);
+                if (servicePrincipalName == null)
+                {
+                    BaseTestSite.Log.Add(LogEntryKind.Debug, "The FQDN is not fetched by reverse DNS lookup, use SutComputerName directly.");
+                    servicePrincipalName = "cifs/" + TestConfig.SutComputerName;
+                }
             }
 
             switch (TestConfig.DefaultSecurityPackage)
             {
-                case TestTools.StackSdk.Security.Sspi.SecurityPackageType.Negotiate:
+                case SecurityPackageType.Negotiate:
                     GssToken = KerberosConstValue.GSSToken.GSSSPNG;
                     break;
-                case TestTools.StackSdk.Security.Sspi.SecurityPackageType.Kerberos:
+                case SecurityPackageType.Kerberos:
                     GssToken = KerberosConstValue.GSSToken.GSSAPI;
                     break;
                 default:
@@ -132,7 +138,6 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             {
                 smb2Client2.Disconnect();
             }
-
             base.TestCleanup();
         }
         #endregion
@@ -143,7 +148,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.KerberosAuthentication)]
         [TestCategory(TestCategories.NonSmb)]
         [Description("This test case is designed to test whether server can handle Kerberos Authentication using GSSAPI correctly.")]
-        public void BVT_KerbAuth_AccessFile_Success()
+        public void BVT_KerbAuth_Success()
         {
             LoadConfig();
             Smb2KerberosAuthentication(CaseVariant.NONE);
@@ -469,12 +474,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                 BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_REPEAT, krbError.ErrorCode,
                     "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_REPEAT);
             }
+            smb2Client2.Disconnect();
             #endregion
 
             string path = Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.BasicFileShare);
-            AccessFile(smb2Client, path);
+            TreeConnect(smb2Client, path);
 
             smb2Client.LogOff();
+            smb2Client.Disconnect();
         }
 
         [TestMethod]
@@ -500,7 +507,26 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             LoadConfig();
             Smb2KerberosAuthentication(CaseVariant.NEGOTIATE_ADD_MECHLISTMIC | CaseVariant.NEGOTIATE_WRONG_CHECKSUM_IN_MECHLISTMIC);
         }
+        [TestMethod]
+        [TestCategory(TestCategories.Auth)]
+        [TestCategory(TestCategories.KerberosAuthentication)]
+        [TestCategory(TestCategories.NonSmb)]
+        [Description("This test case is designed to test whether DC and File Server can handle users name with special characters.")]
+        public void KerbAuth_UserName_With_Special_Characters()
+        {
+            LoadConfig();
 
+            string[] userNames = TestConfig.SpecialUserNames.Split(';');
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Test different user names with some special characters for the Kerberos Authentication.");
+
+            foreach (string username in userNames)
+            {
+                BaseTestSite.Log.Add(LogEntryKind.TestStep, "Test user :" + username);
+
+                Smb2KerberosAuthentication(CaseVariant.NONE, TestConfig.DomainName, username);
+            }
+        }
         private void LoadConfig()
         {
             if (string.IsNullOrEmpty(TestConfig.KeytabFile) &&
@@ -520,7 +546,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             }
         }
 
-        private void Smb2KerberosAuthentication(CaseVariant variant)
+        private void Smb2KerberosAuthentication(CaseVariant variant, string domain = null, string username = null, string password = null)
         {
             #region Prerequisites check
             if (variant.HasFlag(CaseVariant.NEGOTIATE_ADD_MECHLISTMIC))
@@ -530,10 +556,24 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             #endregion
 
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Initialize Kerberos Functional Client");
+
+            if (domain == null)
+            {
+                domain = TestConfig.DomainName;
+            }
+            if (username == null)
+            {
+                username = TestConfig.UserName;
+            }
+            if (password == null)
+            {
+                password = TestConfig.UserPassword;
+            }
+
             KerberosFunctionalClient kerberosClient = new KerberosFunctionalClient(
-                TestConfig.DomainName,
-                TestConfig.UserName,
-                TestConfig.UserPassword,
+                domain,
+                username,
+                password,
                 KerberosAccountType.User,
                 KDCIP,
                 KDCPort,
@@ -548,10 +588,10 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             Ticket serviceTicket = kerberosClient.Context.Ticket.Ticket;
 
             Realm crealm = serviceTicket.realm;
-            BaseTestSite.Assert.AreEqual(TestConfig.DomainName.ToLower(),
+            BaseTestSite.Assert.AreEqual(domain.ToLower(),
                 encTicketPart.crealm.Value.ToLower(),
                 "Realm name in service ticket encrypted part should match as expected, case insensitive");
-            BaseTestSite.Assert.AreEqual(TestConfig.UserName.ToLower(),
+            BaseTestSite.Assert.AreEqual(username.ToLower(),
                 KerberosUtility.PrincipalName2String(encTicketPart.cname).ToLower(),
                 "User name in service ticket encrypted part should match as expected, case insensitive.");
 
@@ -608,7 +648,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             {
                 BaseTestSite.Log.Add(LogEntryKind.TestStep, "Change the SNAME in the Ticket to an unknown service name");
                 serviceTicket.sname = new PrincipalName(new KerbInt32((long)PrincipalType.NT_SRV_INST),
-                    KerberosUtility.String2SeqKerbString("UnknownService", TestConfig.DomainName));
+                    KerberosUtility.String2SeqKerbString("UnknownService", domain));
             }
             if (variant.HasFlag(CaseVariant.TICKET_WRONG_KVNO))
             {
@@ -627,7 +667,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             {
                 BaseTestSite.Log.Add(LogEntryKind.TestStep, "Use wrong cname in the Authenticator");
                 cname = new PrincipalName(new KerbInt32((long)PrincipalType.NT_PRINCIPAL),
-                    KerberosUtility.String2SeqKerbString(TestConfig.NonAdminUserName, TestConfig.DomainName));
+                    KerberosUtility.String2SeqKerbString(TestConfig.NonAdminUserName, domain));
             }
             else
             {
@@ -756,6 +796,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                     BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_BADMATCH, krbError.ErrorCode,
                         "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_BADMATCH);
                 }
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.AUTHENTICATOR_WRONG_ENC_KEY) || variant.HasFlag(CaseVariant.TICKET_WRONG_ENC_KEY))
@@ -773,6 +814,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                     BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_MODIFIED, krbError.ErrorCode,
                         "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_MODIFIED);
                 }
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.AUTHENTICATOR_EXCEED_TIME_SKEW))
@@ -793,6 +835,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                     BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_SKEW, krbError.ErrorCode,
                         "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_SKEW);
                 }
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.TICKET_WRONG_KVNO) ||
@@ -819,6 +862,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                     BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_TKT_NYV, krbError.ErrorCode,
                         "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_TKT_NYV);
                 }
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.TICKET_EXPIRED))
@@ -837,12 +881,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                     BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KRB_AP_ERR_TKT_EXPIRED, krbError.ErrorCode,
                         "SMB Server should return {0}", KRB_ERROR_CODE.KRB_AP_ERR_TKT_EXPIRED);
                 }
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.AUTHDATA_UNKNOWN_TYPE_IN_TKT))
             {
                 BaseTestSite.Assert.AreNotEqual(Smb2Status.STATUS_SUCCESS, status,
                     "Session Setup should fail because of the unknown AutherizationData in the ticket");
+                smb2Client.Disconnect();
                 return;
             }
             if (variant.HasFlag(CaseVariant.AUTHDATA_UNKNOWN_TYPE_IN_AUTHENTICATOR))
@@ -862,6 +908,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
                 {
                     BaseTestSite.Assert.AreNotEqual(Smb2Status.STATUS_SUCCESS, status,
                         "Session Setup should fail because of the mechListMIC with invalid checksum in the negTokenInit.");
+                    smb2Client.Disconnect();
                     return;
                 }
                 else
@@ -891,10 +938,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             smb2Client.SetSessionSigningAndEncryption(true, false, apRep.ApEncPart.subkey.keyvalue.ByteArrayValue);
 
             string path = Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.BasicFileShare);
-            AccessFile(smb2Client, path);
+            TreeConnect(smb2Client, path);
             #endregion
 
             smb2Client.LogOff();
+            smb2Client.Disconnect();
         }
 
         private EncTicketPart RetrieveAndDecryptServiceTicket(KerberosFunctionalClient kerberosClient, out EncryptionKey serviceKey)
@@ -1005,21 +1053,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             return status;
         }
 
-        private void AccessFile(Smb2FunctionalClientForKerbAuth smb2Client, string path)
+        private void TreeConnect(Smb2FunctionalClientForKerbAuth smb2Client, string path)
         {
-            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Try accessing files.");
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Try tree connect.");
             uint treeId;
 
             smb2Client.TreeConnect(path, out treeId);
-            Smb2CreateContextResponse[] serverCreateContexts;
-            FILEID fileId;
-            smb2Client.Create(
-                treeId,
-                GetTestFileName(path),
-                CreateOptions_Values.FILE_NON_DIRECTORY_FILE,
-                out fileId,
-                out serverCreateContexts);
-            smb2Client.Close(treeId, fileId);
+
             smb2Client.TreeDisconnect(treeId);
         }
 

@@ -1,24 +1,23 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Configure-DC02.ps1
-## Purpose:        Configure the Trust Realm KDC computer for Kerberos Server test suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Configure-DC02.ps1
+# Purpose:        Configure the Trust Realm KDC computer for Kerberos Server test suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -159,8 +158,7 @@ Function Complete-Configure
 #------------------------------------------------------------------------------------------
 # Function: Config-DC02
 # Configure the environment DC02:
-# Triggered by remote trusted domain: <AP02>
-#  * Change AP02 computer password
+#------------------------------------------------------------------------------------------
 Function Config-DC02()
 {
     Write-ConfigLog "Begin to config DC02 computer"
@@ -299,6 +297,15 @@ Function Config-DC02()
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v EnableCbacAndArmor /t REG_DWORD /d 1 /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v Supportedencryptiontypes /t REG_DWORD /d 0x7fffffff /f
+
+	#-----------------------------------------------------------------------------------------------
+	# Create Tasks for Update SupportedEncryptionTypes
+	#-----------------------------------------------------------------------------------------------
+	$Rc4Task = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x00000004 /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN SetSupportedEncryptionTypesAsRc4 /TR $Rc4Task /IT /F
+
+	$RestoreTask = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x7fffffff /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN RestoreSupportedEncryptionTypes /TR $RestoreTask /IT /F
 
 	#-----------------------------------------------------------------------------------------------
 	# Change User Account

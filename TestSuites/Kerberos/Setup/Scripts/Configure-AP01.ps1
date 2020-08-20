@@ -1,25 +1,24 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Configure-AP01.ps1
-## Purpose:        Configure the Local Realm Application Server computer for Kerberos
-##                 Server test suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Configure-AP01.ps1
+# Purpose:        Configure the Local Realm Application Server computer for Kerberos
+#                 Server test suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -236,7 +235,7 @@ Function Config-AP01()
 	#-----------------------------------------------------------------------------------------------
 	
 	# Enable compound identity for file server 
-    # This command will be run every 30 minutes to make sure the configuration does not expire
+    # This command will be run every 2 minutes to make sure the configuration does not expire
 
     $FileServerName= $KrbParams.Parameters.LocalRealm.FileShare.NetBiosName 
 
@@ -247,7 +246,8 @@ Function Config-AP01()
     $Task = "PowerShell $Command"
 
     # Create task
-    cmd /c schtasks /Create /RL HIGHEST /RU Administrators /SC minute /MO 30 /ST 00:00 /TN $TaskName /TR $Task /IT /F
+    cmd /c schtasks /Create /RL HIGHEST /RU Administrators /SC onstart /TN $TaskName /TR $Task /IT /F
+	cmd /c schtasks /Change /RI 2 /TN $TaskName /RU Administrators
     Sleep 10
     
     # Run task

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Data;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Rsvd;
 using System.Net;
@@ -262,6 +262,7 @@ namespace Microsoft.Protocols.TestManager.Detector
             propertiesDic.Add("Common.SutComputerName", new List<string>() { detectionInfo.targetSUT });
             propertiesDic.Add("Common.SutIPAddress", new List<string>() { detectionInfo.networkInfo.SUTIpList[0].ToString() });
             propertiesDic.Add("Common.DomainName", new List<string>() { detectionInfo.domainName });
+            propertiesDic.Add("Common.DCServerComputerName", new List<string>() { string.Empty });
             propertiesDic.Add("Common.AdminUserName", new List<string>() { detectionInfo.userName });
             propertiesDic.Add("Common.NonAdminUserName", detectionInfo.nonadminUserAccounts);
             propertiesDic.Add("Common.GuestUserName", new List<string>() { detectionInfo.guestUserAccount });
@@ -328,6 +329,8 @@ namespace Microsoft.Protocols.TestManager.Detector
 
             propertiesDic.Add("Common.SupportedCompressionAlgorithms", new List<string>() { String.Join(";", detectionInfo.smb2Info.SupportedCompressionAlgorithms.Select(compressionAlgorithm => compressionAlgorithm.ToString())) });
 
+            propertiesDic.Add("Common.IsChainedCompressionSupported", new List<string>() { detectionInfo.smb2Info.IsChainedCompressionSupported.ToString().ToLower() });
+
             #endregion
 
             #region DFSC
@@ -337,7 +340,6 @@ namespace Microsoft.Protocols.TestManager.Detector
                 propertiesDic.Add("DFSC.DomainNetBIOSName", new List<string>() { string.Empty });
                 propertiesDic.Add("DFSC.DomainFQDNName", new List<string>() { string.Empty });
                 propertiesDic.Add("DFSC.DomainNamespace", new List<string>() { string.Empty });
-                propertiesDic.Add("DFSC.DCServerComputerName", new List<string>() { string.Empty });
             }
 
             #endregion
@@ -436,7 +438,8 @@ namespace Microsoft.Protocols.TestManager.Detector
                                  "ServerFailoverTestSuite.deployment.ptfconfig",
                                  "MS-DFSC_ServerTestSuite.deployment.ptfconfig",
                                  "MS-RSVD_ServerTestSuite.deployment.ptfconfig",
-                                 "MS-FSA_ServerTestSuite.deployment.ptfconfig"};
+                                 "MS-FSA_ServerTestSuite.deployment.ptfconfig",
+                                 "MS-FSAModel_ServerTestSuite.deployment.ptfconfig"};
             foreach (string cfgFile in cfgFiles)
             {
                 foreach (string property in DetectorUtil.GetPropertiesByFile(cfgFile))
@@ -758,6 +761,7 @@ namespace Microsoft.Protocols.TestManager.Detector
             if (!isFsaSelected)
             {
                 hiddenPropertiesList.AddRange(DetectorUtil.GetPropertiesByFile("MS-FSA_ServerTestSuite.deployment.ptfconfig"));
+                hiddenPropertiesList.AddRange(DetectorUtil.GetPropertiesByFile("MS-FSAModel_ServerTestSuite.deployment.ptfconfig"));
             }
 
             if (!isAuthSelected)

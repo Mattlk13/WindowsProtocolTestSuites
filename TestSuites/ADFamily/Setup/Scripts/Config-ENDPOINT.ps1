@@ -1,24 +1,23 @@
-###########################################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-###########################################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Config-ENDPOINT.ps1
-## Purpose:        Configure Endpoint Server (Test Driver) in Local Domain for Active Directory Family Test Suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Config-ENDPOINT.ps1
+# Purpose:        Configure Endpoint Server (Test Driver) in Local Domain for Active Directory Family Test Suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -314,7 +313,7 @@ Function Config-Phase3()
 
     # Get OS Version
     Write-ConfigLog "Getting Operating System Version..." -ForegroundColor Yellow
-    $OsVersion = .\Get-OsVersion.ps1 -log
+    $OsVersion = .\Get-OSVersionForADTests.ps1 -log
 }
 
 #------------------------------------------------------------------------------------------
@@ -502,16 +501,30 @@ Function Config-Phase4()
             $ParentPath = $PtfFile.DirectoryName.Replace("\Source\Server\TestCode\TestSuite","")
             $TDXmlPath = "$ParentPath\Data\Common-TD-XML\MS-ADA1\*,$ParentPath\Data\Common-TD-XML\MS-ADA2\*,$ParentPath\Data\Win8-TD-XML\MS-ADA2\*,$ParentPath\Data\Common-TD-XML\MS-ADA3\*,$ParentPath\Data\Common-TD-XML\MS-ADSC\*,$ParentPath\Data\Win8-TD-XML\MS-ADSC\*"
             $LdsTDXmlPath = "$ParentPath\Data\Common-TD-XML\MS-ADLS\*,$ParentPath\Data\Win8-TD-XML\MS-ADLS\* "
-            $OpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\DS\*"
-            $LdsOpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\LDS\*"
+            
+            if ($PdcOsVersion -eq "Winv1803") {
+                $OpenXmlPath2016 = "$ParentPath\Data\Winv1803-TD-XML\DS\*"
+                $LdsOpenXmlPath2016 = "$ParentPath\Data\Winv1803-TD-XML\LDS\*"
+            }
+            else {
+                $OpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\DS\*"
+                $LdsOpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\LDS\*"
+            }
         }
         else
         {
             $ParentPath = $PtfFile.DirectoryName.Replace("\Bin","")
             $TDXmlPath = "$ParentPath\Data\Common-TD-XML\MS-ADA1\*,$ParentPath\Data\Common-TD-XML\MS-ADA2\*,$ParentPath\Data\Win8-TD-XML\MS-ADA2\*,$ParentPath\Data\Common-TD-XML\MS-ADA3\*,$ParentPath\Data\Common-TD-XML\MS-ADSC\*,$ParentPath\Data\Win8-TD-XML\MS-ADSC\*"
             $LdsTDXmlPath = "$ParentPath\Data\Common-TD-XML\MS-ADLS\*,$ParentPath\Data\Win8-TD-XML\MS-ADLS\* "
-            $OpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\DS\*"
-            $LdsOpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\LDS\*"
+            
+            if ($PdcOsVersion -eq "Winv1803") {
+                $OpenXmlPath2016 = "$ParentPath\Data\Winv1803-TD-XML\DS\*"
+                $LdsOpenXmlPath2016 = "$ParentPath\Data\Winv1803-TD-XML\LDS\*"
+            }
+            else {
+                $OpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\DS\*"
+                $LdsOpenXmlPath2016 = "$ParentPath\Data\Win2016-TD-XML\LDS\*"
+            }
         }
         if($DomainFuncLvl -ge "6")
         {

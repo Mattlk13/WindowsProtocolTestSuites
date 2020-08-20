@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 
+using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Drsr
 {
@@ -1926,12 +1926,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Drsr
             }
             else
             {
-                SecurityIdentifier securityIdentifier = new SecurityIdentifier(sid);
-                dsName.SidLen = (uint)securityIdentifier.BinaryLength;
+                _SID securityIdentifier = DtypUtility.ToSid(sid);
+                dsName.SidLen = (uint)DtypUtility.SidLength(securityIdentifier);
 
                 if (dsName.SidLen != 0)
                 {
-                    securityIdentifier.GetBinaryForm(dsName.Sid.Data, 0);
+                    byte[] binSid = TypeMarshal.ToBytes(securityIdentifier);
+                    binSid.CopyTo(dsName.Sid.Data, 0);
                 }
             }
 

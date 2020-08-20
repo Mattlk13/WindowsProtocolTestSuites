@@ -2812,14 +2812,129 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public CompressionAlgorithm CompressionAlgorithm;
 
         /// <summary>
-        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// This field MUST be set to one of the Compression_Transform_Header_Flags.
         /// </summary>
-        public ushort Reserved;
+        public Compression_Transform_Header_Flags Flags;
 
         /// <summary>
         /// The offset, in bytes, from the end of this structure to the start of compressed data segment.
         /// </summary>
         public uint Offset;
+    }
+
+    /// <summary>
+    /// Definition of Flags field in Compression_Transform_Header.
+    /// </summary>
+    [Flags]
+    public enum Compression_Transform_Header_Flags : UInt16
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_NONE = 0x0000,
+
+        /// <summary>
+        /// The Compressed message is chained with multiple compressed payloads.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_CHAINED = 0x0001,
+    }
+
+    /// <summary>
+    /// The SMB2_COMPRESSION_PAYLOAD_HEADER is used by the client or server when sending chained compressed payloads.
+    /// This optional structure is only valid for the SMB 3.1.1 dialect.
+    /// </summary>
+    public struct SMB2_COMPRESSION_PAYLOAD_HEADER
+    {
+        /// <summary>
+        /// This field MUST contain one of the algorithms used to compress the payload.
+        /// </summary>
+        public CompressionAlgorithm CompressionAlgorithm;
+
+        /// <summary>
+        /// This field MUST be set to one of SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.
+        /// </summary>
+        public SMB2_COMPRESSION_PAYLOAD_HEADER_Flags Flags;
+
+        /// <summary>
+        /// The length, in bytes, of the compressed payload.
+        /// </summary>
+        public UInt32 Length;
+
+        /// <summary>
+        /// This optional field is present only when AlgorithmId is LZNT1, LZ77, or LZ77+Huffman. The size, in bytes, of the uncompressed payload.
+        /// </summary>
+        [MarshalingCondition(nameof(IsOriginalPayloadSizePresent))]
+        public UInt32 OriginalPayloadSize;
+
+        public static SMB2_COMPRESSION_PAYLOAD_HEADER Create(CompressionAlgorithm compressionAlgorithm, UInt32 length, UInt32 originalPayloadSize, ref bool isFirst)
+        {
+            var result = new SMB2_COMPRESSION_PAYLOAD_HEADER();
+
+            result.CompressionAlgorithm = compressionAlgorithm;
+
+            result.Flags = isFirst ? SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.SMB2_COMPRESSION_FLAG_CHAINED : SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.SMB2_COMPRESSION_FLAG_NONE;
+
+            isFirst = false;
+
+            result.Length = length;
+
+            result.OriginalPayloadSize = originalPayloadSize;
+
+            return result;
+        }
+
+        public static bool IsOriginalPayloadSizePresent(MarshalingType marshalingType, object value)
+        {
+            var compressionAlgorithm = ((SMB2_COMPRESSION_PAYLOAD_HEADER)value).CompressionAlgorithm;
+
+            bool result = Smb2Consts.AllCompressionAlgorithms.Contains(compressionAlgorithm);
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Definition of Flags field in SMB2_COMPRESSION_PAYLOAD_HEADER.
+    /// </summary>
+    [Flags]
+    public enum SMB2_COMPRESSION_PAYLOAD_HEADER_Flags : UInt16
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_NONE = 0x0000,
+
+        /// <summary>
+        /// The Compressed message is chained with multiple compressed payloads.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_CHAINED = 0x0001,
+    }
+
+    /// <summary>
+    /// The SMB2_COMPRESSION_PATTERN_PAYLOAD_V1 is used by the client or server when sending compressed pattern payload.
+    /// This optional structure is only valid for the SMB 3.1.1 dialect.
+    /// </summary>
+    public struct SMB2_COMPRESSION_PATTERN_PAYLOAD_V1
+    {
+        /// <summary>
+        /// This field contains the repeated byte.
+        /// </summary>
+        public byte Pattern;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// </summary>
+        public byte Reserved1;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// </summary>
+        public UInt16 Reserved2;
+
+        /// <summary>
+        /// The number of pattern repetitions in the payload.
+        /// </summary>
+        public UInt32 Repetitions;
     }
 
     /// <summary>
@@ -4833,9 +4948,31 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         LZ77Huffman = 0x0003,
 
         /// <summary>
+        /// Pattern Scanning algorithm
+        /// </summary>
+        Pattern_V1 = 0x0004,
+
+        /// <summary>
         /// Not a real compression algorithm value, SHOULD be unsupported
         /// </summary>
         Unsupported = 0x00FF,
+    }
+
+    /// <summary>
+    /// Possible values of Flags in SMB2_COMPRESSION_CAPABILITIES.
+    /// </summary>
+    [Flags]
+    public enum SMB2_COMPRESSION_CAPABILITIES_Flags : UInt32
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE = 0x00000000,
+
+        /// <summary>
+        /// Chained compression is supported on this connection.
+        /// </summary>
+        SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED = 0x00000001,
     }
 
     /// <summary>
@@ -4860,10 +4997,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public ushort Padding;
 
         /// <summary>
-        /// This field MUST NOT be used and MUST be reserved.
-        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// This field MUST be set to one of the values defined by SMB2_COMPRESSION_CAPABILITIES_Flags.
         /// </summary>
-        public uint Reserved;
+        public SMB2_COMPRESSION_CAPABILITIES_Flags Flags;
 
         /// <summary>
         /// An array of 16-bit integer IDs specifying the supported compression algorithms.
@@ -4874,7 +5010,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         public int GetDataLength()
         {
-            int dataLength = Marshal.SizeOf(CompressionAlgorithmCount) + Marshal.SizeOf(Padding) + Marshal.SizeOf(Reserved);
+            int dataLength = Marshal.SizeOf(CompressionAlgorithmCount) + Marshal.SizeOf(Padding) + sizeof(SMB2_COMPRESSION_CAPABILITIES_Flags);
             if (CompressionAlgorithms != null)
             {
                 dataLength += CompressionAlgorithms.Length * sizeof(CompressionAlgorithm);
@@ -4895,7 +5031,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public SMB2_NEGOTIATE_CONTEXT_Header Header;
 
         /// <summary>
-        /// A null-terminated Unicode string containing the server name and specified by the client application.
+        /// A Unicode string containing the server name and specified by the client application.
         /// </summary>
         public char[] NetName;
 
@@ -4945,7 +5081,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// </summary>
         /// <returns>The data length of this context.</returns>
         public ushort GetDataLength()
-        {            
+        {
             return (ushort)NetName.Length;
         }
     }

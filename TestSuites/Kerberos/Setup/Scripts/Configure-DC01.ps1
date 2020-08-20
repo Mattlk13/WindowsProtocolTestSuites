@@ -1,24 +1,23 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Configure-DC01.ps1
-## Purpose:        Configure the Local Realm KDC computer for Kerberos Server test suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Configure-DC01.ps1
+# Purpose:        Configure the Local Realm KDC computer for Kerberos Server test suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -169,8 +168,6 @@ Function Complete-Configure
 #------------------------------------------------------------------------------------------
 # Function: Config-DC01
 # Configure the environment DC01:
-# Triggered by remote trusted domain: <AP01>
-#  * Change AP01 computer password
 #------------------------------------------------------------------------------------------
 Function Config-DC01()
 {
@@ -462,17 +459,6 @@ Function Config-DC01()
 	New-ADUser -Name $user -AccountPassword $pwd -CannotChangePassword $true -DisplayName $user -Enabled $true -KerberosEncryptionType DES -PasswordNeverExpires $true -SamAccountName $user -UserPrincipalName $user@$domainName
 	Set-ADAccountControl $user -UseDESKeyOnly $true
 
-
-
-
-
-
-
-
-
-
-
-
 	$osVersion = Get-OSVersionNumber.ps1
 	$os2012R2 = "6.3"
 	if([double]$osVersion -ge [double]$os2012R2)
@@ -624,13 +610,13 @@ Function Config-DC01()
 	$password = $KrbParams.Parameters.LocalRealm.Administrator.Password
 	$computerName = $user
 
-	# Get variables of the file
-	#.\Get-IADSearchRoot.ps1
-	$root = Get-IADSearchRoot.ps1 -ServerName $serverName -objectDN $objectDN -Username $userName -Password $password
-	#. Get-IADComputer.ps1
-	$computer = Get-IADComputer -Name $computerName -SearchRoot $root
-	#. Set-IADComputer.ps1
-	$null = $computer|Set-IADComputer -PreAuthenticationNotRequired
+	#. Set PRE_AUTHENTICATION_NOT_REQUIRED = 0x2000000 		
+    $resolve = "(|(cn=$computerName)(displayName=$computerName)(name=$computerName))"
+    $filter = "(&(objectCategory=Computer)$resolve)"
+    $searcher = New-Object System.DirectoryServices.DirectorySearcher $filter
+    $computer = $searcher.FindOne().GetDirectoryEntry()
+    $computer.userAccountControl[0] = $Computer.userAccountControl[0] -bor 0x2000000
+    $computer.CommitChanges()
 
 	$userNetBiosName = $KrbParams.Parameters.LocalRealm.LocalResource01.NetBiosName
 	$userFQDN = $KrbParams.Parameters.LocalRealm.LocalResource01.FQDN
@@ -792,6 +778,21 @@ Function Config-DC01()
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v EnableCbacAndArmor /t REG_DWORD /d 1 /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v Supportedencryptiontypes /t REG_DWORD /d 0x7fffffff /f
+	
+	#-----------------------------------------------------------------------------------------------
+	# Create Tasks for Update SupportedEncryptionTypes
+	#-----------------------------------------------------------------------------------------------
+	$Rc4Task = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x00000004 /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN SetSupportedEncryptionTypesAsRc4 /TR $Rc4Task /IT /F
+
+	$RestoreTask = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x7fffffff /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN RestoreSupportedEncryptionTypes /TR $RestoreTask /IT /F
+
+	$ClearTrustRealmEncTypeTask = "ksetup /DelEncTypeAttr $KrbParams.Parameters.TrustRealm.RealmName"
+	schtasks /Create /SC ONCE /ST 00:00 /TN ClearTrustRealmEncType /TR $ClearTrustRealmEncTypeTask /IT /F
+
+	$SetTrustRealmEncTypeAsAesTask = "ksetup.exe /SetEncTypeAttr $KrbParams.Parameters.TrustRealm.RealmName AES256-CTS-HMAC-SHA1-96, AES128-CTS-HMAC-SHA1-96"
+	schtasks /Create /SC ONCE /ST 00:00 /TN SetTrustRealmEncTypeAsAes /TR $SetTrustRealmEncTypeAsAesTask /IT /F
 
 	#-----------------------------------------------------------------------------------------------
 	# Change User Account

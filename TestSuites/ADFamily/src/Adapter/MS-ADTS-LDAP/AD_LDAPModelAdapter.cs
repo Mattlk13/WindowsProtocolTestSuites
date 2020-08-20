@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using System.DirectoryServices.Protocols;
 using System.DirectoryServices;
@@ -17,7 +16,7 @@ using System.Security.AccessControl;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts.Asn1CodecV3;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Transport;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -114,8 +113,8 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
         public bool isWindows;
 
         // attributes read from rootDSE on currently connected and binded server
-        Dictionary<string, string> rootDSEAttributesForDs;
-        Dictionary<string, string> rootDSEAttributesForLds;
+        IDictionary<string, string> rootDSEAttributesForDs;
+        IDictionary<string, string> rootDSEAttributesForLds;
         public string rootDomainNC;
         public string defaultNC;
         public string configurationNC;
@@ -445,7 +444,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                 int.Parse(currentPort),
                 userName,
                 password,
-                currentWorkingDC.Domain.NetbiosName,
+                currentWorkingDC.Domain.FQDN,
                 authenticationType,
                 isWindows);
             Site.Assert.IsTrue(result.ToLower().Contains("success"),
@@ -567,7 +566,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
         [SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         public void AddOperation(
-            Sequence<string> attribnVals,
+            IList<string> attribnVals,
             RightsOnParentObjects accessRights,
             NCRight NCRights,
             ServerVersion dcLevel,
@@ -2746,7 +2745,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
         [SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         public void ModifyOperation(
-            Map<string, Sequence<string>> attribVal,
+            IDictionary<string, IList<string>> attribVal,
             RightsOnAttributes rights,
             string control,
             ADImplementations service,
@@ -2778,7 +2777,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
             Site.Log.Add(LogEntryKind.Debug, "Construct the target host name from input: ");
 
-            foreach (Sequence<string> attribnVals in attribVal.Values)
+            foreach (List<string> attribnVals in attribVal.Values)
             {
                 foreach (string item in attribnVals)
                 {
@@ -4120,7 +4119,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
         [SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         public void ModifyRecycleBin(
-            Map<string, Sequence<string>> attribVal,
+            IDictionary<string, IList<string>> attribVal,
             RightsOnAttributes rights,
             string control,
             ADImplementations service,
@@ -4202,6 +4201,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                     {
                         case ServerVersion.NonWin:
                         case ServerVersion.Win2016:
+                        case ServerVersion.Winv1803:
                             partitionsEntry.Properties["msDS-Behavior-Version"].Value = 7;
                             break;
                         case ServerVersion.Win2012R2:
@@ -4487,7 +4487,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         foreach (AdtsSearchResultEntryPacket entrypacket in searchResponse)
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, "msDS-EnabledFeature");
-                            if (searchAttrVals.Exists(x => x.Contains(recycleBinPartialDN + ',' + configurationNC)))
+                            if (searchAttrVals.Any(x => x.Contains(recycleBinPartialDN + ',' + configurationNC)))
                             {
                                 isForestScope = true;
                             }
@@ -4512,7 +4512,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         foreach (AdtsSearchResultEntryPacket entrypacket in searchResponse)
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, "msDS-EnabledFeature");
-                            if (searchAttrVals.Exists(x => x.Contains(recycleBinPartialDN + ',' + configurationNC)))
+                            if (searchAttrVals.Any(x => x.Contains(recycleBinPartialDN + ',' + configurationNC)))
                             {
                                 isServerScope = true;
                             }
@@ -4818,6 +4818,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             {
                 case ServerVersion.NonWin:
                 case ServerVersion.Win2016:
+                case ServerVersion.Winv1803:
                     partitionsEntry.Properties["msDS-Behavior-Version"].Value = 7;
                     break;
                 case ServerVersion.Win2012R2:
@@ -5109,7 +5110,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
         [SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         public void ModifyDNOperation(
-            Sequence<string> oldDN_newDN_deleteOldRDN,
+            IList<string> oldDN_newDN_deleteOldRDN,
             RightsOnObjects rightsOnOldObject, //rightsOnObject
             RightsOnParentObjects rightsOnNewObjectParent, //accessRights
             RightOnOldParentObject rightsOnOldObjectParent, //ParentRights
@@ -5947,7 +5948,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             string baseObjectDN,
             string filter,
             Microsoft.Protocols.TestSuites.ActiveDirectory.Common.SearchScope scope,
-            Sequence<string> attributesToBeReturned,
+            IList<string> attributesToBeReturned,
             string control,
             ADImplementations service)
         {
@@ -7912,7 +7913,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         #region MS-AD_LDAP_R210, 1019
 
                         string expectedValue = string.Empty;
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.configurationNamingContext, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.configurationNamingContext, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.configurationNamingContext);
                             Site.CaptureRequirementIfIsNotNull(
@@ -7932,7 +7933,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R211, 1020
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.currentTime, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.currentTime, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.currentTime);
                             Site.CaptureRequirementIfIsNotNull(
@@ -7971,7 +7972,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R212, 1021
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.defaultNamingContext, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.defaultNamingContext, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.defaultNamingContext);
                             Site.CaptureRequirementIfIsNotNull(
@@ -7990,7 +7991,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R214, 1022
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dNSHostName, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dNSHostName, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dNSHostName);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8009,7 +8010,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R215, 1023
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dsSchemaAttrCount, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dsSchemaAttrCount, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dsSchemaAttrCount);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8028,7 +8029,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R216, 1024
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dsSchemaClassCount, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dsSchemaClassCount, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dsSchemaClassCount);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8047,7 +8048,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R217, 1025
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dsSchemaPrefixCount, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dsSchemaPrefixCount, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dsSchemaPrefixCount);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8066,7 +8067,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R218, 1026
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dsServiceName, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dsServiceName, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dsServiceName);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8085,7 +8086,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R219, 1027
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.highestCommittedUSN, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.highestCommittedUSN, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.highestCommittedUSN);
                             Site.CaptureRequirement(
@@ -8101,7 +8102,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R220, 221, 1028
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.isGlobalCatalogReady, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.isGlobalCatalogReady, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             if (currentService.Equals(ADImplementations.AD_DS))
                             {
@@ -8129,7 +8130,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R223, 224, 1030
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.isSynchronized, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.isSynchronized, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.isSynchronized);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8154,7 +8155,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R226, 227, 1031
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.ldapServiceName, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.ldapServiceName, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             if (currentService.Equals(ADImplementations.AD_DS))
                             {
@@ -8182,7 +8183,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R228, 1033
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.namingContexts, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.namingContexts, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.namingContexts);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8202,7 +8203,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R230, 1034
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.netlogon, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.netlogon, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             if (currentService.Equals(ADImplementations.AD_DS))
                             {
@@ -8224,7 +8225,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R232, 1037
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.rootDomainNamingContext, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.rootDomainNamingContext, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             if (currentService.Equals(ADImplementations.AD_DS))
                             {
@@ -8246,7 +8247,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R233, 1039
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.schemaNamingContext, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.schemaNamingContext, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.schemaNamingContext);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8265,7 +8266,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R234, 1040
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.serverName, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.serverName, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.serverName);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8284,7 +8285,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R235, 1041
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.subschemaSubentry, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.subschemaSubentry, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.subschemaSubentry);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8304,7 +8305,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R236, 1042
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedCapabilities, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedCapabilities, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedCapabilities);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8320,7 +8321,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region SupportedCapabilites
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2003,
@@ -8333,7 +8334,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 Microsoft Active Directory and is running as AD DS or AD LDS.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_LDAP_INTEG_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_LDAP_INTEG_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2003,
@@ -8346,7 +8347,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 subsequent binds on a signed or sealed connection.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V51_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V51_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2003,
@@ -8358,7 +8359,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 operating system version of Active Directory and is running as AD DS or AD LDS.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_ADAM_DIGEST_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_ADAM_DIGEST_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2008,
@@ -8371,7 +8372,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 that the DC accepts DIGEST-MD5 binds.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_ADAM_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_ADAM_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2008,
@@ -8384,7 +8385,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 Microsoft Active Directory as AD/LDS.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_PARTIAL_SECRETS_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_PARTIAL_SECRETS_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2008,
@@ -8397,7 +8398,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 capability indicates that the DC is a RODC.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V60_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V60_OID)))
                             {
                                 Site.CaptureRequirementIfIsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2008,
@@ -8409,7 +8410,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 at least the Windows Server 2008 operating system version of Microsoft Active Directory and is running as AD DS or AD LDS.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V61_R2_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V61_R2_OID)))
                             {
                                 Site.Assert.IsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2008R2,
@@ -8420,7 +8421,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 at least the Windows Server 2008 R2 operating system version of Active Directory and is running as AD DS or AD LDS.");
                             }
 
-                            if (searchAttrVals.Exists(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_W8_OID)))
+                            if (searchAttrVals.Any(x => x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_W8_OID)))
                             {
                                 Site.Assert.IsTrue(
                                     currentWorkingDC.OSVersion >= ServerVersion.Win2012,
@@ -8432,7 +8433,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                             }
 
                             // if there exists on ldap capability that is not listed in [MS-ADTS]
-                            if (searchAttrVals.Exists(x => !(x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_OID)
+                            if (searchAttrVals.Any(x => !(x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_OID)
                                 || x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_LDAP_INTEG_OID)
                                 || x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_V51_OID)
                                 || x.Equals(LdapCapability.LDAP_CAP_ACTIVE_DIRECTORY_ADAM_DIGEST_OID)
@@ -8452,7 +8453,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R237,1043
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedControl, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedControl, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedControl);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8471,7 +8472,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R238, 1044
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedLDAPPolicies, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedLDAPPolicies, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedLDAPPolicies);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8491,7 +8492,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R239, 1045, 1098
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedLDAPVersion, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedLDAPVersion, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedLDAPVersion);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8517,7 +8518,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                         #region MS-AD_LDAP_R240, 1046
 
-                        if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedSASLMechanisms, StringComparison.InvariantCultureIgnoreCase)))
+                        if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedSASLMechanisms, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedSASLMechanisms);
                             Site.CaptureRequirementIfIsNotNull(
@@ -8539,7 +8540,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         {
                             #region MS-AD_LDAP_R1047
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.domainControllerFunctionality, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.domainControllerFunctionality, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.domainControllerFunctionality);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8561,7 +8562,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R1049
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.domainFunctionality, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.domainFunctionality, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 if (service.Equals(ADImplementations.AD_DS))
                                 {
@@ -8585,7 +8586,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R1051
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.forestFunctionality, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.forestFunctionality, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.forestFunctionality);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8606,7 +8607,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R243, 1053
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_ReplAllInboundNeighbors, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_ReplAllInboundNeighbors, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 // requires 2 DCs setup
                                 // Connection also need to be taken care here to which dc you need to connect
@@ -8633,7 +8634,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R244, 1055
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_ReplAllOutboundNeighbors, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_ReplAllOutboundNeighbors, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 // requires 2 DCs setup
                                 // Connection also need to be taken care here to which dc you need to connect
@@ -8660,7 +8661,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R245,1063
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_ReplQueueStatistics, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_ReplQueueStatistics, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.msDS_ReplQueueStatistics);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8677,7 +8678,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R246, 247, 1112, 1113, 1114, 1065
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_TopQuotaUsage, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_TopQuotaUsage, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.msDS_TopQuotaUsage);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8727,7 +8728,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R249, 1067
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedConfigurableSettings, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedConfigurableSettings, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedConfigurableSettings);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8747,7 +8748,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R250, 1069
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.supportedExtension, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.supportedExtension, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.supportedExtension);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8764,33 +8765,33 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                                 #region SupportedExtension
 
-                                if (searchAttrVals.Exists(x => x.Equals(ExtendedOperation.LDAP_SERVER_FAST_BIND_OID)))
+                                if (searchAttrVals.Any(x => x.Equals(ExtendedOperation.LDAP_SERVER_FAST_BIND_OID)))
                                 {
                                     Site.CaptureRequirement(
                                         1402,
                                         @"The LDAP_SERVER_FAST_BIND_OID LDAP extended operation is supported by Windows Server 2003 and later.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Equals(ExtendedOperation.LDAP_SERVER_START_TLS_OID)))
+                                if (searchAttrVals.Any(x => x.Equals(ExtendedOperation.LDAP_SERVER_START_TLS_OID)))
                                 {
                                     Site.CaptureRequirement(
                                         1403,
                                         @"The LDAP_SERVER_START_TLS_OID  LDAP extended operation is supported by Windows Server 2003 and later.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Equals(ExtendedOperation.LDAP_TTL_REFRESH_OID)))
+                                if (searchAttrVals.Any(x => x.Equals(ExtendedOperation.LDAP_TTL_REFRESH_OID)))
                                 {
                                     Site.CaptureRequirement(
                                         1404,
                                         @"The LDAP_TTL_REFRESH_OID LDAP extended operation is supported by Windows Server 2003 and later.");
                                 }
                                 if (currentWorkingDC.OSVersion >= ServerVersion.Win2008
-                                    && searchAttrVals.Exists(x => x.Equals(ExtendedOperation.LDAP_SERVER_WHO_AM_I_OID)))
+                                    && searchAttrVals.Any(x => x.Equals(ExtendedOperation.LDAP_SERVER_WHO_AM_I_OID)))
                                 {
                                     Site.CaptureRequirement(
                                         1405,
                                         @"The LDAP_SERVER_WHO_AM_I_OID LDAP extended operation is supported by Windows Server 2003 and later.");
                                 }
                                 if (currentWorkingDC.OSVersion >= ServerVersion.Win2012
-                                    && searchAttrVals.Exists(x => x.Equals(ExtendedOperation.LDAP_SERVER_BATCH_REQUEST_OID)))
+                                    && searchAttrVals.Any(x => x.Equals(ExtendedOperation.LDAP_SERVER_BATCH_REQUEST_OID)))
                                 {
                                     Site.Log.Add(
                                         LogEntryKind.Checkpoint,
@@ -8798,7 +8799,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                 }
 
                                 // if there exists an extendedopertion that is not listed in [MS-ADTS]
-                                if (searchAttrVals.Exists(x => !(x.Equals(ExtendedOperation.LDAP_SERVER_FAST_BIND_OID)
+                                if (searchAttrVals.Any(x => !(x.Equals(ExtendedOperation.LDAP_SERVER_FAST_BIND_OID)
                                     || x.Equals(ExtendedOperation.LDAP_SERVER_START_TLS_OID)
                                     || x.Equals(ExtendedOperation.LDAP_TTL_REFRESH_OID)
                                     || x.Equals(ExtendedOperation.LDAP_SERVER_WHO_AM_I_OID)
@@ -8814,7 +8815,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R251, 1071
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.validFSMOs, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.validFSMOs, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.validFSMOs);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8837,7 +8838,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         {
                             #region MS-AD_LDAP_R252, 1073, 1120
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.dsaVersionString, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.dsaVersionString, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 // Assumption: The user is a member of domain and enterprise admin
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.dsaVersionString);
@@ -8863,7 +8864,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R254, 1075
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_PortLDAP, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_PortLDAP, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.msDS_PortLDAP);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8882,7 +8883,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R255, 256, 1077
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_PortSSL, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_PortSSL, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.msDS_PortSSL);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8906,7 +8907,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R257, 258, 1079
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.msDS_PrincipalName, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.msDS_PrincipalName, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.msDS_PrincipalName);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8939,7 +8940,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R261, 1123-1128, 1081
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.serviceAccountInfo, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.serviceAccountInfo, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.serviceAccountInfo);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -8947,7 +8948,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     1081,
                                     @"serviceAccountInfo rootDSE attribute is supported by Windows 2008 and later.");
 
-                                if (searchAttrVals.Exists(x => x.Contains("replAuthenticationMode")))
+                                if (searchAttrVals.Any(x => x.Contains("replAuthenticationMode")))
                                 {
                                     Site.CaptureRequirement(
                                         1123,
@@ -8955,7 +8956,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     the value is the value of the msDS-ReplAuthenticationMode attribute on the root of the config NC, or 1 
                                     if that attribute is not set.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Contains("accountType")))
+                                if (searchAttrVals.Any(x => x.Contains("accountType")))
                                 {
                                     Site.CaptureRequirement(
                                         1124,
@@ -8963,7 +8964,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     if the service account is a domain account, the value is domain. Otherwise if the service account is a local 
                                     account, and the value is local.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Contains("systemAccount")))
+                                if (searchAttrVals.Any(x => x.Contains("systemAccount")))
                                 {
                                     Site.CaptureRequirement(
                                         1125,
@@ -8971,7 +8972,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     if the service account is a system account (meaning it has one of the SIDs SID S-1-5-20 and S-1-5-18) the value
                                     is true; otherwise the value is false.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Contains("domainType")))
+                                if (searchAttrVals.Any(x => x.Contains("domainType")))
                                 {
                                     Site.CaptureRequirement(
                                         1126,
@@ -8979,7 +8980,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     if the DC is running on a computer that is part of an Active Directory domain (always the case for an AD DS DC), 
                                     the value is domainWithKerb.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Contains("machineDomainName")))
+                                if (searchAttrVals.Any(x => x.Contains("machineDomainName")))
                                 {
                                     Site.CaptureRequirement(
                                         1128,
@@ -8987,7 +8988,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                                     is if domainType is domainWithKerb or domainNoKerb the value is the NetBIOS name of the domain. 
                                     Otherwise the value is the NetBIOS name of the computer.");
                                 }
-                                if (searchAttrVals.Exists(x => x.Contains("serviceAccountName")))
+                                if (searchAttrVals.Any(x => x.Contains("serviceAccountName")))
                                 {
                                     Site.CaptureRequirement(
                                         1127,
@@ -9006,7 +9007,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R262, 264, 1129, 1083
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.spnRegistrationResult, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.spnRegistrationResult, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.spnRegistrationResult);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -9038,7 +9039,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R265, 1085
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.tokenGroups, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.tokenGroups, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.tokenGroups);
                                 Site.CaptureRequirementIfIsNotNull(
@@ -9058,7 +9059,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
 
                             #region MS-AD_LDAP_R266, 1087
 
-                            if (attrsToReturn.Exists(x => x.Equals(RootDSEAttribute.usnAtRifm, StringComparison.InvariantCultureIgnoreCase)))
+                            if (attrsToReturn.Any(x => x.Equals(RootDSEAttribute.usnAtRifm, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 // require RODC setup
                                 searchAttrVals = adLdapClient.GetAttributeValuesInString(entrypacket, RootDSEAttribute.usnAtRifm);
@@ -9244,10 +9245,10 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                 #region Set isDefunct to false for new added test schema
 
                 ModifyOperation(
-                    new Microsoft.Modeling.Map<System.String, Microsoft.Modeling.Sequence<System.String>>()
-                    .Add("isDefunct: FALSE", new Microsoft.Modeling.Sequence<System.String>()
-                    .Add("distinguishedName: CN=TestClass1,CN=Schema,CN=Configuration,DC=adts88")
-                    .Add("isDefunct: TRUE")),
+                    new Dictionary<System.String, IList<System.String>>()
+                    {{ "isDefunct: FALSE", new List<System.String>(){
+                    "distinguishedName: CN=TestClass1,CN=Schema,CN=Configuration,DC=adts88",
+                    "isDefunct: TRUE" } } },
                     Microsoft.Protocols.TestSuites.ActiveDirectory.Common.RightsOnAttributes.RIGHT_DS_WRITE_PROPERTYwithSE_ENABLE_DELEGATION_PRIVILEGE,
                     null,
                     Microsoft.Protocols.TestSuites.ActiveDirectory.Common.ADImplementations.AD_DS,
@@ -9255,10 +9256,10 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                     false,
                     out errorStatus);
                 ModifyOperation(
-                    new Microsoft.Modeling.Map<System.String, Microsoft.Modeling.Sequence<System.String>>()
-                    .Add("isDefunct: FALSE", new Microsoft.Modeling.Sequence<System.String>()
-                    .Add("distinguishedName: CN=TempClass,CN=Schema,CN=Configuration,DC=adts88")
-                    .Add("isDefunct: TRUE")),
+                    new Dictionary<System.String, IList<System.String>>()
+                    {{ "isDefunct: FALSE", new List<System.String>() {
+                    "distinguishedName: CN=TempClass,CN=Schema,CN=Configuration,DC=adts88",
+                    "isDefunct: TRUE" } } },
                     Microsoft.Protocols.TestSuites.ActiveDirectory.Common.RightsOnAttributes.RIGHT_DS_WRITE_PROPERTYwithSE_ENABLE_DELEGATION_PRIVILEGE,
                     null,
                     Microsoft.Protocols.TestSuites.ActiveDirectory.Common.ADImplementations.AD_DS,
@@ -9299,7 +9300,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                         int.Parse(currentPort),
                         childAdminName,
                         childAdminPwd,
-                        currentWorkingDC.Domain.NetbiosName,
+                        currentWorkingDC.Domain.FQDN,
                         AuthType.Basic | AuthType.Kerberos);
                 }
                 adLdapClient.DeleteObject("CN=CrossDomainUser1,CN=Users," + currentWorkingDC.Domain.DomainNC, null);
@@ -9326,7 +9327,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
                     int.Parse(currentPort),
                     testUserName,
                     testUserPwd,
-                    currentWorkingDC.Domain.NetbiosName,
+                    currentWorkingDC.Domain.FQDN,
                     AuthType.Basic | AuthType.Kerberos);
             }
             adLdapClient.DeleteObject("CN=CrossDomainUser1,CN=Users," + rootDomainNC, null);

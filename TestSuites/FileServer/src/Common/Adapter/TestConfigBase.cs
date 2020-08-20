@@ -4,7 +4,7 @@
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -306,6 +306,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             }
         }
 
+        public string DCServerName
+        {
+            get
+            {
+                return GetProperty("DCServerComputerName");
+            }
+        }
+
         public string UserName
         {
             get
@@ -391,6 +399,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         public List<EncryptionAlgorithm> SupportedEncryptionAlgorithmList;
 
         public List<CompressionAlgorithm> SupportedCompressionAlgorithmList;
+
+        public bool IsChainedCompressionSupported
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("IsChainedCompressionSupported"));
+            }
+        }
 
         #endregion
 
@@ -669,7 +685,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             // Windows 10 v1809 operating system and prior, Windows Server v1809 operating system and prior, and Windows Server 2019 and prior do not support compression.
             if (IsWindowsPlatform)
             {
-                return Platform >= Platform.WindowsServerV1903; 
+                return Platform >= Platform.WindowsServerV1903;
             }
 
             return true;
@@ -729,10 +745,6 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
                 if (response.NegotiateContext_ENCRYPTION != null)
                 {
                     Site.Assert.AreEqual<int>(1, response.NegotiateContext_ENCRYPTION.Value.CipherCount, "The response's SMB2_ENCRYPTION_CAPABILITIES.CipherCount MUST be set to 1");
-                }
-                if (response.NegotiateContext_COMPRESSION != null)
-                {
-                    Site.Assert.AreEqual<int>(1, response.NegotiateContext_COMPRESSION.Value.CompressionAlgorithmCount, "The response's SMB2_COMPRESSION_CAPABILITIES.CompressionAlgorithmCount MUST be set to 1");
                 }
             }
             else if (request is SmbNegotiateRequestPacket)
@@ -795,5 +807,15 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         /// Windows Server v1903 
         /// </summary>
         WindowsServerV1903 = 0x1000000C,
+
+        /// <summary>
+        /// Windows Server v1909
+        /// </summary>
+        WindowsServerV1909 = 0x1000000D,
+
+        /// <summary>
+        /// Windows Server v2004
+        /// </summary>
+        WindowsServerV2004 = 0x1000000E,
     }
 }

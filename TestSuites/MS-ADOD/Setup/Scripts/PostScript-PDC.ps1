@@ -1,16 +1,14 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#############################################################################
-##
-## Microsoft Windows PowerShell Sripting
-## File:           PostScript-PDC.ps1
-## Purpose:        Configure PDC for MS-ADOD test suite
-## Requirements:   Windows PowerShell 2.0
-## Supported OS:   Windows Server 2012 or later versions
-##
+##############################################################################
+#
+# Microsoft Windows PowerShell Sripting
+# File:           PostScript-PDC.ps1
+# Purpose:        Configure PDC for MS-ADOD test suite
+# Requirements:   Windows PowerShell 2.0
+# Supported OS:   Windows Server 2012 or later versions
+#
 ##############################################################################
 
 Param
@@ -164,7 +162,7 @@ Function Phase1
     Write-Host "Promoting this computer to DC" -ForegroundColor Yellow
     .\PromoteDomainController.ps1 -DomainName $PDCSetting.domain -AdminPwd $content.lab.core.password
 
-    if($Content.lab.core.environment -ne "Azure"){
+    if($Content.lab.core.regressiontype -ne "Azure"){
         Write-Host "Enable WinRM" -ForegroundColor Yellow
         if (Test-WSMan -ComputerName $PDCSetting.ip)
         {

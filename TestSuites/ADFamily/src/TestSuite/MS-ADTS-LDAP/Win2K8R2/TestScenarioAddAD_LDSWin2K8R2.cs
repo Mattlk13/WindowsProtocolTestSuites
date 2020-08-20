@@ -74,24 +74,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S12\'");
             ConstrOnAddOpErrs temp0;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: SPUser1"",""objectClass: top;securityPrincipal;person;organizationalPerson;user"",""distinguishedName: CN=SPUser1,CN=Schema,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: SPUser1",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: top;securityPrincipal;person;organizationalPerson;user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=SPUser1,CN=Schema,CN=Configuration,CN={368E6FB2-DBCB-41A1-B" +
-                                                                    "65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp0);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: SPUser1", "objectClass: top;securityPrincipal;person;organizationalPerson;user", "distinguishedName: CN=SPUser1,CN=Schema,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp0);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -125,29 +108,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S24\'");
             ConstrOnAddOpErrs temp1;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser7"",""objectClass: user"",""distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser7",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp1);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser7", "objectClass: user", "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp1);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -166,104 +127,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S29\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -271,24 +134,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S34\'");
             ConstrOnAddOpErrs temp2;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser10"",""objectClass: user"",""distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser10",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB" +
-                                                                    "2-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp2);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser10", "objectClass: user", "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp2);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -307,108 +153,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S39\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -451,23 +195,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S17\'");
             ConstrOnAddOpErrs temp4;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: SPUser"",""objectClass: top;securityPrincipal;person;organizationalPerson;user"",""distinguishedName: CN=SPUser,CN=ApplicationNamingContext,DC=adts88""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: SPUser",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: top;securityPrincipal;person;organizationalPerson;user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=SPUser,CN=ApplicationNamingContext,DC=adts88",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp4);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: SPUser", "objectClass: top;securityPrincipal;person;organizationalPerson;user", "distinguishedName: CN=SPUser,CN=ApplicationNamingContext,DC=adts88" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp4);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -488,111 +216,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
-            this.Manager.Checkpoint("MS-AD_LDAP_R615");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Checkpoint("MS-AD_LDAP_R615");
             this.Manager.Comment("reaching state \'S23\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -600,29 +224,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S28\'");
             ConstrOnAddOpErrs temp5;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser7"",""objectClass: user"",""distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser7",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp5);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser7", "objectClass: user", "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp5);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -641,129 +243,14 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Comment("reaching state \'S33\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
             TestManagerHelpers.AssertAreEqual<ConstrOnAddOpErrs>(this.Manager, ConstrOnAddOpErrs.success, temp5, "errorStatus of AddOperation, state S33");
             this.Manager.Comment("reaching state \'S38\'");
             ConstrOnAddOpErrs temp6;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser10"",""objectClass: user"",""distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser10",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB" +
-                                                                    "2-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp6);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser10", "objectClass: user", "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp6);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -782,109 +269,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Comment("reaching state \'S43\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
             TestManagerHelpers.AssertAreEqual<ConstrOnAddOpErrs>(this.Manager, ConstrOnAddOpErrs.success, temp6, "errorStatus of AddOperation, state S43");
@@ -927,24 +312,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S13\'");
             ConstrOnAddOpErrs temp8;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestGroup"",""objectClass: group"",""distinguishedName: CN=TestGroup,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestGroup",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: group",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestGroup,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp8);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestGroup", "objectClass: group", "distinguishedName: CN=TestGroup,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp8);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -963,134 +331,14 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Comment("reaching state \'S19\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
             TestManagerHelpers.AssertAreEqual<ConstrOnAddOpErrs>(this.Manager, ConstrOnAddOpErrs.success, temp8, "errorStatus of AddOperation, state S19");
             this.Manager.Comment("reaching state \'S25\'");
             ConstrOnAddOpErrs temp9;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser7"",""objectClass: user"",""distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser7",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp9);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser7", "objectClass: user", "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp9);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1109,132 +357,14 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Comment("reaching state \'S30\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
             TestManagerHelpers.AssertAreEqual<ConstrOnAddOpErrs>(this.Manager, ConstrOnAddOpErrs.success, temp9, "errorStatus of AddOperation, state S30");
             this.Manager.Comment("reaching state \'S35\'");
             ConstrOnAddOpErrs temp10;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser10"",""objectClass: user"",""distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser10",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB" +
-                                                                    "2-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp10);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser10", "objectClass: user", "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp10);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1253,112 +383,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
+            this.Manager.Checkpoint("MS-AD_LDAP_R618");            
             this.Manager.Comment("reaching state \'S40\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
             TestManagerHelpers.AssertAreEqual<ConstrOnAddOpErrs>(this.Manager, ConstrOnAddOpErrs.success, temp10, "errorStatus of AddOperation, state S40");
@@ -1401,29 +426,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S14\'");
             ConstrOnAddOpErrs temp12;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser6"",""objectClass: user"",""distinguishedName: CN=TestUser6,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser6",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser6,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp12);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser6", "objectClass: user", "distinguishedName: CN=TestUser6,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp12);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1442,104 +445,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S20\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -1547,29 +452,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S26\'");
             ConstrOnAddOpErrs temp13;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser7"",""objectClass: user"",""distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser7",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp13);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser7", "objectClass: user", "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp13);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1588,107 +471,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R619");
             this.Manager.Comment("reaching state \'S31\'");
@@ -1707,24 +489,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S36\'");
             ConstrOnAddOpErrs temp14;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser10"",""objectClass: user"",""distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser10",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB" +
-                                                                    "2-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp14);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser10", "objectClass: user", "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp14);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1743,108 +508,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S41\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -1888,24 +551,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S15\'");
             ConstrOnAddOpErrs temp16;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser8"",""objectClass: user"",""distinguishedName: CN=TestUser8,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser8",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser8,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp16);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser8", "objectClass: user", "distinguishedName: CN=TestUser8,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp16);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -1924,104 +570,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S21\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -2029,29 +577,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S27\'");
             ConstrOnAddOpErrs temp17;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser7"",""objectClass: user"",""distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""userPrincipalName: TestUser6@adts""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser7",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "userPrincipalName: TestUser6@adts",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp17);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser7", "objectClass: user", "distinguishedName: CN=TestUser7,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "userPrincipalName: TestUser6@adts" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp17);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -2070,107 +596,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S32\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -2178,24 +603,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S37\'");
             ConstrOnAddOpErrs temp18;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser10"",""objectClass: user"",""distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser10",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB" +
-                                                                    "2-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp18);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser10", "objectClass: user", "distinguishedName: CN=TestUser10,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp18);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R576");
             this.Manager.Checkpoint("MS-AD_LDAP_R154");
@@ -2214,111 +622,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Checkpoint("MS-AD_LDAP_R567");
             this.Manager.Checkpoint("MS-AD_LDAP_R571");
             this.Manager.Checkpoint("MS-AD_LDAP_R544");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
-            this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Checkpoint("MS-AD_LDAP_R618");
             this.Manager.Comment("reaching state \'S42\'");
             this.Manager.Comment("checking step \'return AddOperation/[out success]\'");
@@ -2362,28 +665,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Ldap
             this.Manager.Comment("reaching state \'S16\'");
             ConstrOnAddOpErrs temp20;
             this.Manager.Comment(@"executing step 'call AddOperation([""cn: TestUser9"",""objectClass: user"",""distinguishedName: CN=TestUser9,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}"",""badPwdCount: 5""],RIGHT_DS_CREATE_CHILDwithSE_ENABLE_DELEGATION_PRIVILEGE,RIGHT_DS_ADD_GUID,Windows2K8R2,NoExtendedControl,AD_LDS,False,out _)'");
-            this.IAD_LDAPModelAdapterInstance.AddOperation(this.Make<Microsoft.Modeling.Sequence<string>>(new string[] {
-                            "Rep"}, new object[] {
-                            this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                        "Head",
-                                        "Tail"}, new object[] {
-                                        "cn: TestUser9",
-                                        this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                    "Head",
-                                                    "Tail"}, new object[] {
-                                                    "objectClass: user",
-                                                    this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                "Head",
-                                                                "Tail"}, new object[] {
-                                                                "distinguishedName: CN=TestUser9,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2" +
-                                                                    "-DBCB-41A1-B65B-18FAC4B5516E}",
-                                                                this.Make<Microsoft.Xrt.Runtime.RuntimeList<string>>(new string[] {
-                                                                            "Head",
-                                                                            "Tail"}, new object[] {
-                                                                            "badPwdCount: 5",
-                                                                            ((Microsoft.Xrt.Runtime.RuntimeList<string>)(null))})})})})}), ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp20);
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
-            this.Manager.Checkpoint("MS-AD_LDAP_R620");
+            this.IAD_LDAPModelAdapterInstance.AddOperation(new List<string> { "cn: TestUser9", "objectClass: user", "distinguishedName: CN=TestUser9,CN=DirectoryUpdates,CN=Configuration,CN={368E6FB2-DBCB-41A1-B65B-18FAC4B5516E}", "badPwdCount: 5" }, ((RightsOnParentObjects)(0)), ((NCRight)(0)), ServerVersion.Win2008R2, null, ((ADImplementations)(1)), false, out temp20);
             this.Manager.Checkpoint("MS-AD_LDAP_R620");
             this.Manager.Checkpoint("MS-AD_LDAP_R621");
             this.Manager.Comment("reaching state \'S22\'");

@@ -1,24 +1,23 @@
-###########################################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-###########################################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Config-CDC.ps1
-## Purpose:        Configure Domain Controller in Child Domain for Active Directory Family Test Suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Config-CDC.ps1
+# Purpose:        Configure Domain Controller in Child Domain for Active Directory Family Test Suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -320,7 +319,7 @@ Function Config-Phase3()
 
     # Get OS Version
     Write-ConfigLog "Getting Operating System Version..." -ForegroundColor Yellow
-    $OsVersion = .\Get-OsVersion.ps1 -log
+    $OsVersion = .\Get-OSVersionForADTests.ps1 -log
 
     # Get and log netbiosName from Domain Service domain object <DomainNc>
     Write-ConfigLog "Getting Domain Netbios name..." -ForegroundColor Yellow

@@ -55,9 +55,6 @@
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xrt.Runtime, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>True</SpecificVersion>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
@@ -73,6 +70,7 @@
     </Compile>
     <Compile Include="CommonRequirementHelper.cs" />
     <Compile Include="ISutProtocolControlAdapter.cs" />
+    <Compile Include="SutProtocolControlAdapter.cs" />
     <Compile Include="Smb2FunctionalClient.cs" />
     <Compile Include="TestCategories.cs" />
     <Compile Include="TestConfigBase.cs" />
@@ -94,9 +92,13 @@
       <Project>{C7F08825-D3C9-4DDD-9BA3-06733B1ABE36}</Project>
       <Name>Smb2</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\ProtoSDK\Sspi\Sspi.csproj">
-      <Project>{D0CB354B-2CD3-49C1-8ECA-2F6EBADBCCEE}</Project>
-      <Name>Sspi</Name>
+    <ProjectReference Include="..\..\..\..\..\ProtoSDK\SspiLib\SspiLib.csproj">
+      <Project>{e64bf20f-11d2-49f6-a25b-f4378ab38180}</Project>
+      <Name>SspiLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\ProtoSDK\SspiService\SspiService.csproj">
+      <Project>{1FC8C336-EF82-4F7C-9532-AB8AB268916E}</Project>
+      <Name>SspiService</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

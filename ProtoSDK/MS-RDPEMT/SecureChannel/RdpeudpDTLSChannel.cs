@@ -6,10 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Protocols.TestTools.ExtendedLogging;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
 {
@@ -98,10 +99,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             this.rdpeudpSocket.Received += ReceiveBytes;
             isAuthenticated = false;
 
+            rdpeudpSocket.Disconnected += RdpeudpSocket_Disconnected;
+
             receivedBuffer = new List<byte[]>();
             toSendBuffer = new List<byte[]>();
 
-            if(eudpSocket.AutoHandle)
+            if (eudpSocket.AutoHandle)
             {
                 // Check whether there is packets in unprocessed packet buffer
 
@@ -148,6 +151,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// </summary>
         public event ReceiveData Received;
 
+        /// <summary>
+        /// Event triggered when connection is closed.
+        /// </summary>
+        public event DisconnectedHandler Disconnected;
+
         #endregion Implemented ISecurityChannel Interfaces
 
         #region Authenticate methods
@@ -184,7 +192,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// <param name="targetHost">The name of the server that shares this System.Net.Security.SslStream.</param>
         /// <param name="certValCallback">A System.Net.Security.RemoteCertificateValidationCallback delegate responsible for validating the certificate supplied by the remote party.</param>
         public void AuthenticateAsClient(string targetHost)
-        {            
+        {
             // Using thread in threadpool to manage the authentication process
             ThreadPool.QueueUserWorkItem(AuthenticateAsClient, targetHost);
 
@@ -314,7 +322,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             }
         }
 
-        
+
 
         /// <summary>
         /// Get data to sent, the data is Write by SSL Stream
@@ -354,8 +362,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             if (rdpeudpSocket != null)
             {
                 rdpeudpSocket.Received -= ReceiveBytes;
+
+                rdpeudpSocket.Disconnected -= RdpeudpSocket_Disconnected;
             }
-            if ( dtlsServerContext!= null)
+            if (dtlsServerContext != null)
             {
                 dtlsServerContext.Dispose();
             }
@@ -538,7 +548,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                 {
                     // Don't throw exception in ThreadPool thread
                 }
-                
+
             }
         }
 
@@ -561,6 +571,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                     this.AddDataToSent(data);
                 }
             }
+        }
+
+        private void RdpeudpSocket_Disconnected()
+        {
+            Disconnected?.Invoke();
         }
         #endregion Private Methods
     }

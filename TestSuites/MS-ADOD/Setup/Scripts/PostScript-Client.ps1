@@ -1,16 +1,14 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#############################################################################
-##
-## Microsoft Windows PowerShell Sripting
-## File:           PostScript-Client.ps1
-## Purpose:        Configure Client for MS-ADOD test suite.
-## Requirements:   Windows PowerShell 2.0
-## Supported OS:   Windows Server 2012 or later versions
-##
+##############################################################################
+#
+# Microsoft Windows PowerShell Sripting
+# File:           PostScript-Client.ps1
+# Purpose:        Configure Client for MS-ADOD test suite.
+# Requirements:   Windows PowerShell 2.0
+# Supported OS:   Windows Server 2012 or later versions
+#
 ##############################################################################
 
 Param
@@ -113,7 +111,7 @@ Function Phase1
     Write-Host "Disabling IPv6" -ForegroundColor Yellow
     .\Disable-IPv6.ps1
 
-    if($Content.lab.core.environment -ne "Azure"){ #azure regression do not neet set network configuration.
+    if($Content.lab.core.regressiontype -ne "Azure"){ #azure regression do not neet set network configuration.
         # Set Network
         Write-Host "Setting network configuration" -ForegroundColor Yellow    
         .\Set-NetworkConfiguration.ps1 -IPAddress $clientSetting.ip -SubnetMask $clientSetting.subnet -Gateway $clientSetting.gateway -DNS (($clientSetting.dns).split(';'))

@@ -7,9 +7,7 @@ using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Samr;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Modeling;
 using System.Collections.Generic;
 using Microsoft.Protocols.TestSuites.ActiveDirectory.Common;
 

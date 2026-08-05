@@ -1,0 +1,119 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
+    <IsPackable>false</IsPackable>
+    <SpaRoot>ClientApp\</SpaRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <!-- Required by EF Core 6 and PowerShell 7.2 runtime assets until those dependencies are upgraded. -->
+    <UseRidGraph>true</UseRidGraph>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Suppress internal consumption of preview-marked shared helpers without propagating preview to API clients. -->
+    <NoWarn>$(NoWarn);1591;CA2252</NoWarn>
+    <RootNamespace>Microsoft.Protocols.TestManager.PTMService.PTMService</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.5" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.5" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Don't publish the SPA source files, but do show them in the project files list -->
+    <Content Remove="$(SpaRoot)**" />
+    <None Remove="$(SpaRoot)**" />
+    <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ScriptFiles Include="Scripts\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ClientApp\src\actions\CapabilitiesAction.ts" />
+    <None Remove="ClientApp\src\actions\CapabilitiesConfigAction.ts" />
+    <None Remove="ClientApp\src\components\CapabilitiesGroupsPanel.tsx" />
+    <None Remove="ClientApp\src\components\CapabilitiesTestCasesTreePanel.tsx" />
+    <None Remove="ClientApp\src\components\CapabilitiesTreePanel.tsx" />
+    <None Remove="ClientApp\src\model\CapabilitiesFileInfo.ts" />
+    <None Remove="ClientApp\src\model\CreateCapabilitiesFileRequest.ts" />
+    <None Remove="ClientApp\src\model\FilterCapabilitiesTestCasesRequest.ts" />
+    <None Remove="ClientApp\src\model\SaveCapabilitiesFileRequest.ts" />
+    <None Remove="ClientApp\src\model\UpdateCapabilitiesFileRequest.ts" />
+    <None Remove="ClientApp\src\pages\ConfigureCapabilitiesConfig.tsx" />
+    <None Remove="ClientApp\src\reducers\CapabilitiesConfigReducer.ts" />
+    <None Remove="ClientApp\src\reducers\CapabilitiesListReducer.ts" />
+    <None Remove="ClientApp\src\services\Capabilities.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\AssemblyInfo\PTMAssemblyInfo.cs" Link="PTMAssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DiscoveryTestLogger\DiscoveryTestLogger.csproj" />
+    <ProjectReference Include="..\Abstractions\Abstractions.csproj" />
+    <ProjectReference Include="..\Database\Database.csproj" />
+    <ProjectReference Include="..\PTMKernelService\PTMKernelService.csproj" />
+    <ProjectReference Include="..\Storage\Storage.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="ClientApp\src\actions\CapabilitiesAction.ts" />
+    <TypeScriptCompile Include="ClientApp\src\actions\CapabilitiesConfigAction.ts" />
+    <TypeScriptCompile Include="ClientApp\src\components\CapabilitiesGroupsPanel.tsx" />
+    <TypeScriptCompile Include="ClientApp\src\components\CapabilitiesTestCasesTreePanel.tsx" />
+    <TypeScriptCompile Include="ClientApp\src\components\CapabilitiesTreePanel.tsx" />
+    <TypeScriptCompile Include="ClientApp\src\model\CapabilitiesFileInfo.ts" />
+    <TypeScriptCompile Include="ClientApp\src\model\FilterCapabilitiesTestCasesRequest.ts" />
+    <TypeScriptCompile Include="ClientApp\src\model\SaveCapabilitiesFileRequest.ts" />
+    <TypeScriptCompile Include="ClientApp\src\model\UpdateCapabilitiesFileRequest.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="ClientApp\src\model\CreateCapabilitiesFileRequest.ts" />
+    <TypeScriptCompile Include="ClientApp\src\pages\ConfigureCapabilitiesConfig.tsx" />
+    <TypeScriptCompile Include="ClientApp\src\reducers\CapabilitiesConfigReducer.ts" />
+    <TypeScriptCompile Include="ClientApp\src\reducers\CapabilitiesListReducer.ts" />
+    <TypeScriptCompile Include="ClientApp\src\services\Capabilities.ts" />
+  </ItemGroup>
+
+  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
+    <!-- Ensure Node.js is installed -->
+    <Exec Command="node --version" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+    </Exec>
+    <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+    <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install --legacy-peer-deps" />
+  </Target>
+
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install --legacy-peer-deps" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+
+    <!-- Include the newly-built files in the publish output -->
+    <ItemGroup>
+      <DistFiles Include="$(SpaRoot)build\**; $(SpaRoot)build-ssr\**" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>%(DistFiles.Identity)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyCustomContent" AfterTargets="Publish">
+    <Copy SourceFiles="@(ScriptFiles)" DestinationFolder="$(PublishDir)" />
+  </Target>
+
+</Project>

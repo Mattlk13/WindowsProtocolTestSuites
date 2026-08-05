@@ -10,6 +10,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
 {
@@ -40,7 +41,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// </param>
         /// <param name="destination">The target object converted from byte array.</param>
         /// <exception cref="System.ArgumentNullException">thrown if source is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         internal static void BytesToObject<T>(byte[] source, ref uint offset, out T destination) where T : struct
         {
             if (source == null)
@@ -405,8 +405,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
                     break;
 
                 case AdtsLdapSyntax.StringForSid:
-                    SecurityIdentifier sid = new SecurityIdentifier(buffer, 0);
-                    result = sid.Value;
+                    _SID sid = TypeMarshal.ToStruct<_SID>(buffer);
+                    result = DtypUtility.ToSddlString(sid);
                     break;
 
                 default:

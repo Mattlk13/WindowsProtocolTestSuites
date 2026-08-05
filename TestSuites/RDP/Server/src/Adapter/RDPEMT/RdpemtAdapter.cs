@@ -88,14 +88,19 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
 
                 var rdpeudpClient = new RdpeudpClient(new IPEndPoint(testConfig.localAddress.ParseIPAddress(), 0), new IPEndPoint(testConfig.serverName.ParseIPAddress(), testConfig.serverPort), mode, true);
 
+                rdpeudpClient.UnhandledExceptionReceived += (ex) =>
+                {
+                    Site.Log.Add(LogEntryKind.Debug, $"Unhandled exception from RdpeudpClient: {ex}");
+                };
+
                 rdpeudpClients[request.requestedProtocol] = rdpeudpClient;
 
                 rdpeudpClient.Start();
 
-                rdpeudpClient.Connect(testConfig.timeout);
+                rdpeudpClient.Connect(testConfig.multiTransportTimeout);
 
 
-                var rdpemtClient = new RdpemtClient(rdpeudpClient.Socket, testConfig.serverName, false);
+                var rdpemtClient = new RdpemtClient(rdpeudpClient.Socket, testConfig.serverName, false, testConfig.tlsVersion);
 
                 rdpemtClient.PDUReceived += VerifyPDU;
 
@@ -193,7 +198,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
         /// <returns>The Tunnel Create Response PDU sent by server.</returns>
         public RDP_TUNNEL_CREATERESPONSE ExpectTunnelCreateResponse(Multitransport_Protocol_value requestedProtocol)
         {
-            return rdpemtClients[requestedProtocol].ExpectTunnelCreateResponse(testConfig.timeout);
+            return rdpemtClients[requestedProtocol].ExpectTunnelCreateResponse(testConfig.multiTransportTimeout);
         }
     }
 }

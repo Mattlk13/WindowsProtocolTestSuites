@@ -1,36 +1,24 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 [string]$nodeName
 [string]$domain = $PtfProp_Common_DomainName
 [string]$userName = $PtfProp_Common_AdminUserName
 [string]$password = $PtfProp_Common_PasswordForAllUsers
 
-$SecurePassword = New-Object System.Security.SecureString
-if($Domain -eq $null -or $Domain.trim() -eq "")
+if($nodeName -notmatch "\.")
 {
-    $account = $UserName
-}
-else
-{
-    $NetBIOSName = $Domain.Split(".")[0]
-    $account = "$NetBIOSName\$UserName"
+	$nodeName = "$nodeName.$domain"
 }
 
-for($i=0; $i -lt $Password.Length; $i++)
-{
-    $SecurePassword.AppendChar($Password[$i])
-}
-$credential = New-Object system.Management.Automation.PSCredential($account,$SecurePassword)
-
+$ret = $FALSE
 try
 {
-    $ret = Restart-Computer -ComputerName $nodeName -Force -Credential $credential
+    $result = Invoke-Command -HostName $nodeName -UserName "$domain\$userName" -ScriptBlock { cmd /c net start ClusSvc }
+    $ret = $TRUE
 }
 catch
 {
-    return $FALSE
+    Get-Error
 }
-return $TRUE
+return $ret

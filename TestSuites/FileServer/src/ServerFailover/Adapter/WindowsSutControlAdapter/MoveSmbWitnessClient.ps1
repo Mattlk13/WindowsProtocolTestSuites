@@ -1,7 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 [string]$clientName
 [string]$nodeName
@@ -10,22 +8,20 @@
 [string]$userName = $PtfProp_Common_AdminUserName
 [string]$password = $PtfProp_Common_PasswordForAllUsers
 
-$SecurePassword = New-Object System.Security.SecureString
-if($domain -eq $null -or $domain.trim() -eq "")
+if($clusterName -notmatch "\.")
 {
-    $account = $userName
-}
-else
-{
-    $NetBIOSName = $Domain.Split(".")[0]
-    $account = "$NetBIOSName\$UserName"
+	$clusterName = "$clusterName.$domain"
 }
 
-for($i=0; $i -lt $password.Length; $i++)
+try
 {
-    $SecurePassword.AppendChar($password[$i])
+    Get-PSSession|Remove-PSSession
+    $psSession=New-PSSession -HostName $clusterName -UserName "$domain\$userName"
 }
-$credential = New-Object system.Management.Automation.PSCredential($account,$SecurePassword)
+catch
+{
+    Get-Error
+}
 
 $command = {
     Param
@@ -36,11 +32,19 @@ $command = {
     Move-SmbWitnessClient -ClientName $Name -DestinationNode $Node -Confirm:$false
 }
 
+$ret = $FALSE
 try
 {
-    invoke-Command -ComputerName $clusterName -Credential $credential -scriptblock $command -ArgumentList $clientName,$nodeName
+    $result = Invoke-Command -Session $psSession -ScriptBlock $command -ArgumentList $clientName,$nodeName
+    $ret = $TRUE
 }
 catch
 {
+	Get-Error
     throw "Failed to call Move-SmbWitnessClient to move SWN client"
 }
+finally
+{
+    Get-PSSession|Remove-PSSession
+}
+return $ret

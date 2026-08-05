@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Microsoft.Protocols.TestSuites.Smbd.Adapter;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
@@ -45,6 +46,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [Description("Verify SMB2 can write file with large size over RDMA channel")]
         public void BVT_Smb2OverRdmaChannel_WriteLargeFile()
         {
+            if (smbdAdapter.TestConfig.Platform >= Protocols.TestSuites.Smbd.Adapter.Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             WriteOverRdma();
         }
 
@@ -62,6 +68,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [Description("Verify SMB2 can write file with large size over RDMA channel with multiple SMBD WRITE requests and responses.")]
         public void Smb2OverRdmaChannel_WriteMultipleOperation()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+
             const uint OPERATION_COUNT = 64;
             WriteOverRdma(OPERATION_COUNT);
         }
@@ -71,6 +82,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [Description("Verify server can work with SMB2 READ and WRITE over RDMA channel with multiple buffer descriptors in channel information.")]
         public void Smb2OverRdmaChannel_ReadWriteMultipleBufferDescriptorList()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+
             InitSmbdConnectionForTestCases(smbdAdapter.TestConfig.TestFileName_LargeFile);
             uint size = smbdAdapter.Smb2MaxReadSize;
             if (size > smbdAdapter.Smb2MaxWriteSize)

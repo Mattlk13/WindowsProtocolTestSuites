@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+using Microsoft.Protocols.TestManager.Kernel;
 using System;
 using System.Text;
 using System.Threading;
 
 namespace Microsoft.Protocols.TestManager.CLI
 {
-    class ProgressBar: IDisposable
+    class ProgressBar : IDisposable
     {
         private readonly TimeSpan animationInterval = TimeSpan.FromSeconds(1.0 / 8);
         private const string animation = @"|/-\";
@@ -14,7 +15,6 @@ namespace Microsoft.Protocols.TestManager.CLI
         private readonly Timer timer;
 
         private string nextText = "";
-        private string currentText = "";
         private int animationIndex = 0;
         private bool disposed = false;
 
@@ -35,7 +35,7 @@ namespace Microsoft.Protocols.TestManager.CLI
         {
             value = Math.Max(0, Math.Min(1, value)); // Make sure value is in [0..1] range
             int percent = (int)(value * 100);
-            string next = string.Format("{0,3}% {{0}} {1}", percent, step);
+            string next = string.Format("{0}% {{0}} {1}", percent, step);
             Interlocked.Exchange(ref nextText, next);
         }
 
@@ -49,38 +49,31 @@ namespace Microsoft.Protocols.TestManager.CLI
                 }
 
                 animationIndex = (animationIndex + 1) % animation.Length;
-                string text = string.Format(nextText,animation[animationIndex]);
+                string text = string.Format(nextText, animation[animationIndex]);
                 UpdateText(text);
             }
         }
 
         private void UpdateText(string text)
         {
-            // Get length of common portion
-            int commonPrefixLength = 0;
-            int commonLength = Math.Min(currentText.Length, text.Length);
-            while (commonPrefixLength < commonLength && text[commonPrefixLength] == currentText[commonPrefixLength])
-            {
-                commonPrefixLength++;
-            }
-
-            // Backtrack to the first differing character
             StringBuilder outputBuilder = new StringBuilder();
-            outputBuilder.Append('\b', currentText.Length - commonPrefixLength);
-
-            // Output new suffix
-            outputBuilder.Append(text.Substring(commonPrefixLength));
-
-            // If the new text is shorter than the old one: delete overlapping characters
-            int overlapCount = currentText.Length - text.Length;
-            if (overlapCount > 0)
+            Console.CursorLeft = Console.WindowLeft;
+            outputBuilder.Append(text);
+            int repeatCount = Console.WindowWidth - text.Length - 1;
+            // repeatCount could be negative on Linux while testing.
+            // Do not need to append space when it's negative or zero.
+            if (repeatCount > 0)
             {
-                outputBuilder.Append(' ', overlapCount);
-                outputBuilder.Append('\b', overlapCount);
+                outputBuilder.Append(' ', repeatCount);
+            }
+            else
+            {
+                Logger.AddLog(LogLevel.Debug, "ProgressBar.UpdateText(text)");
+                Logger.AddLog(LogLevel.Debug, $"text: {text}");
+                Logger.AddLog(LogLevel.Debug, $"repeatCount: {repeatCount}");
             }
 
             Console.Write(outputBuilder);
-            currentText = text;
         }
 
         private void EnableTimer()
@@ -97,6 +90,5 @@ namespace Microsoft.Protocols.TestManager.CLI
                 UpdateText(string.Empty);
             }
         }
-
     }
 }

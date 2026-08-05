@@ -16,6 +16,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the length field within tpktHeader in MCS Attach User Confirm PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSAttachUserConfirm_InvalidTPKTLength()
@@ -35,7 +37,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -82,6 +84,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection connection if the result field in MCS Attach User Confirm PDU is not set to rt-successful (0).")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSAttachUserConfirm_Failure()
@@ -101,7 +105,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -149,6 +153,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection connection if the initiator field in MCS Attach User Confirm PDU is not present")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSAttachUserConfirm_InitiatorNotPresent()
@@ -168,7 +174,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -216,6 +222,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the length field within tpktHeader in MCS Channel Join Confirm PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSChannelJoinConfirm_InvalidTPKTLength()
@@ -237,7 +245,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -287,6 +295,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the channelId field is not present in MCS Channel Join Confirm PDU.")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSChannelJoinConfirm_ChannelIdNotPresent()
@@ -308,7 +318,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -358,6 +368,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the result field is not set to rt-successful (0) in MCS Channel Join Confirm PDU")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSChannelJoinConfirm_Failure()
@@ -379,7 +391,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -429,6 +441,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the channelId field is not valid in MCS Channel Join Confirm PDU.")]
         public void S1_ConnectionTest_ChannelConnection_NegativeTest_MCSChannelJoinConfirm_InvalidChannelId()
@@ -450,7 +464,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.

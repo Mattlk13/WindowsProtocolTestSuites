@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Text;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -17,6 +14,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case tests: 1) The correctness of Client X.224 Connection Request PDU. 
                      2) SUT can process the valid Server X.224 Connection Confirm PDU correctly.")]
         public void BVT_ConnectionTest_ConnectionInitiation_PositiveTest()
@@ -44,7 +43,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -70,7 +69,74 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(0)]
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
+        [Description(@"This test case tests: 1) The verification of the credentials (Username) to confirm a connection could not be initiated.")]
+        public void BVT_ConnectionTest_ConnectionInitiation_InvalidAccount_PositiveTest()
+        {
+            #region Test Description
+            /* 
+             This test case tests:
+             1) The correctness of Client X.224 Connection Request PDU.
+             2) SUT can process the valid Server X.224 Connection Confirm PDU correctly.
+
+             Test Execution Steps:
+             1.	Trigger SUT to initiate a RDP connection with sending a Client X.224 Connection Request PDU.
+             2.	Verify the received Client X.224 Connection Request PDU and respond a valid Server X.224 Connection Confirm PDU.
+             3.	Test Suite expects SUT continue the connection sequence with sending a Client MCS Connect Initial PDU 
+                with GCC Conference Create Request. 
+            */
+            #endregion
+
+            #region Test Sequence
+            if(transportProtocol != EncryptedProtocol.DirectCredSsp && transportProtocol != EncryptedProtocol.NegotiationCredSsp)
+            {
+                this.TestSite.Assume.Inconclusive("This case requires using CredSSP encrypted protocol");
+            }
+
+            //Start RDP listening.
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening with transport protocol: {0}", transportProtocol.ToString());
+            this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
+
+            #region Trigger client to initiate a RDP connection
+            //Trigger client to initiate a RDP connection.
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
+            TriggerClientRDPConnect(transportProtocol, false, true);
+            #endregion
+
+            if (transportProtocol == EncryptedProtocol.DirectCredSsp)
+            {
+                //Expect the transport layer connection request.
+                this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to start a transport layer connection request (TCP).");
+                this.rdpbcgrAdapter.ExpectTransportConnectionForInvalidAccount(RDPSessionType.Normal);
+            }
+
+            if (transportProtocol == EncryptedProtocol.NegotiationCredSsp)
+            {
+                //Expect the transport layer connection request.
+                this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to start a transport layer connection request (TCP).");
+                this.rdpbcgrAdapter.ExpectTransportConnection(RDPSessionType.Normal);
+
+                //Expect SUT send a Client X.224 Connection Request PDU.
+                this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client X.224 Connection Request PDU");
+                this.rdpbcgrAdapter.ExpectPacket<Client_X_224_Connection_Request_Pdu>(waitTime);
+
+                //Respond a Server X.224 Connection Confirm PDU.
+                this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server X.224 Connection Confirm PDU to SUT. Selected protocol: {0}; Extended Client Data supported: false", selectedProtocol.ToString());
+                this.rdpbcgrAdapter.Server_X_224_Connection_Confirm(selectedProtocol, false, true, NegativeType.None, invalidAccount: true);
+            }
+
+            #endregion
+        }
+
+        [TestMethod]
+        [Priority(0)]
+        [TestCategory("BVT")]
+        [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case tests: 1) The correctness of Client MCS Connect Initial PDU with GCC Conference Create Request when the server advertised support for Extended Client Data Blocks.
             2) SUT can process the valid Server MCS Connect Response PDU with GCC Conference Create Response correctly.")]
         public void BVT_ConnectionTest_BasicSettingExchange_PositiveTest_ExtendedClientDataSupported()
@@ -103,7 +169,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -138,6 +204,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify SUT can process Channel Connection phase correctly.")]
         public void BVT_ConnectionTest_ChannelConnection_PositiveTest()
         {
@@ -169,7 +237,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -233,6 +301,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify client packets of following phases: 1) RDP Security Commencement; 2) Secure Setting Exchange; 3) Licensing.")]
         public void BVT_ConnectionTest_SecurityExchange_PositiveTest()
         {
@@ -261,7 +331,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -330,6 +400,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can complete Capability Exchange phase successfully.")]
         public void BVT_ConnectionTest_CapabilityExchange_PositiveTest()
         {
@@ -355,7 +427,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -448,6 +520,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to ensure SUT can complete the Connection Finalization phase successfully 
                        when the server advertised support for the Bitmap Host Cache Support Capability Set.")]
         public void BVT_ConnectionTest_ConnectionFinalization_PositiveTest_BitmapHostCacheSupported()
@@ -484,7 +558,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -590,7 +664,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Server Control Granted Control PDU to SUT.");
             this.rdpbcgrAdapter.ServerControlGrantedControl();
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -614,6 +688,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("BVT")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify the messages and behaviors of the disconnection sequence initiated by server.")]
         public void BVT_ConnectionTest_Disconnection_PositiveTest_ServerInitiated()
         {
@@ -639,7 +715,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -746,7 +822,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.ServerControlGrantedControl();
 
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -775,6 +851,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("Interactive")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify the messages and behaviors of the disconnection sequence initiated by the client.")]
         public void S1_ConnectionTest_Disconnection_PositiveTest_ClientInitiated()
         {
@@ -796,7 +873,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -903,7 +980,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.ServerControlGrantedControl();
 
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -921,12 +998,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Trigger SUT to initiate a disconnection
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger SUT to initiate a disconnection.");
-            int iResult = this.sutControlAdapter.TriggerClientDisconnect(this.TestContext.TestName);//Trigger client disconnect the current session.
-            TestSite.Assume.IsTrue(iResult >= 0, "SUT Control Adapter: TriggerClientDisconnect should be successful: {0}.", iResult);
+            int iResult = this.sutControlAdapter.TriggerCloseRDPWindow(this.TestContext.TestName);//Trigger client disconnect the current session.
+            TestSite.Assume.IsTrue(iResult >= 0, "SUT Control Adapter: TriggerCloseRDPWindow should be successful: {0}.", iResult);
             
             this.rdpbcgrAdapter.ExpectClientInitiatedDisconnect(waitTime, false, false);
             

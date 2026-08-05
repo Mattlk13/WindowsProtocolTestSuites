@@ -43,27 +43,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
             XmlReader xmlReader = XmlReader.Create(family.TestSuiteSelectionConfigXml, settings);
             doc.Load(xmlReader);
 
-            // Get Registry info 
-            XmlNode registryPathNode = doc.DocumentElement.SelectSingleNode("DefaultRegistryPath");
-            if (registryPathNode != null)
-            {
-                family.RegistryPath = registryPathNode.InnerText.Trim();
-            }
-            else
-            {
-                throw new InvalidOperationException(StringResource.RegistryPathNotSpecified);
-            }
-
-            XmlNode registryPathNode64 = doc.DocumentElement.SelectSingleNode("DefaultRegistryPath64");
-            if (registryPathNode64 != null)
-            {
-                family.RegistryPath64 = registryPathNode64.InnerText.Trim();
-            }
-            else
-            {
-                throw new InvalidOperationException(StringResource.RegistryPathNotSpecified);
-            }
-
             // Add group and test suites
             if (doc.DocumentElement.SelectNodes("Group") != null)
             {
@@ -106,34 +85,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 }
             }
 
-            // Find Test suite Information from Registry
-            RegistryKey HKLM = Registry.LocalMachine;
-            RegistryKey[] testSuitesRegPathList;
-            if (Environment.Is64BitProcess)
-            {
-                // 32-bit and 64-bit
-                testSuitesRegPathList = new RegistryKey[]
-                {
-                    HKLM.OpenSubKey(family.RegistryPath),
-                    HKLM.OpenSubKey(family.RegistryPath64)
-                };
-            }
-            else
-            {
-                // 32-bit only
-                testSuitesRegPathList = new RegistryKey[]
-                {
-                    HKLM.OpenSubKey(family.RegistryPath)
-                };
-            }
-
-            // Check if all registry paths do not exist
-            testSuitesRegPathList = testSuitesRegPathList.Where(Entry => Entry != null).ToArray();
-            if (testSuitesRegPathList.Length == 0)
-            {
-                return family;
-            }
-
             //Check if the test suite is installed.
             foreach (TestSuiteFamily f in family)
             {
@@ -141,7 +92,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 {
                     // Find the registry key of the test suite.
 
-                    testsuite.IsInstalled = FindTestSuiteInformationInRegistry(testSuitesRegPathList, testsuite);
 
                     if (!testsuite.IsInstalled)
                     {
@@ -172,59 +122,5 @@ namespace Microsoft.Protocols.TestManager.Kernel
             return family;
         }
 
-        /// <summary>
-        /// Find test suite related information in registry.
-        /// </summary>
-        /// <param name="registryList">registry root path for test suite.</param>
-        /// <param name="testSuite">Test suite name.</param>
-        /// <returns>True if found, otherwise false.</returns>
-        private static bool FindTestSuiteInformationInRegistry(RegistryKey[] registryList, TestSuiteInfo testSuite)
-        {
-            string latestTestSuiteVersionString = null;
-            Version latestTestSuiteVersion = null;
-            string latestTestSuiteEndPoint = null;
-
-            foreach (var registryPath in registryList)
-            {
-                var registryKeyNames = registryPath.GetSubKeyNames()
-                                                     .Where(s => s.Contains(testSuite.TestSuiteName));
-
-                if (!registryKeyNames.Any())
-                {
-                    // no match entry
-                    continue;
-                }
-
-                foreach (var registryKeyName in registryKeyNames)
-                {
-                    // match version and endpoint
-                    Match versionMatch = Regex.Match(registryKeyName, StringResource.VersionRegex);
-                    Match endpointMatch = Regex.Match(registryKeyName, StringResource.EndpointRegex);
-
-                    // update version and endpoint
-                    if (Version.TryParse(versionMatch.Value, out var currentVersion))
-                    {
-                        if (latestTestSuiteVersion == null || currentVersion > latestTestSuiteVersion)
-                        {
-                            latestTestSuiteVersionString = versionMatch.Value;
-                            latestTestSuiteVersion = currentVersion;
-                            latestTestSuiteEndPoint = endpointMatch.Success ? endpointMatch.Value : "";
-                        }
-                    }
-                }
-            }
-
-            if (string.IsNullOrEmpty(latestTestSuiteVersionString) && string.IsNullOrEmpty(latestTestSuiteEndPoint))
-            {
-                // not found
-                return false;
-            }
-
-            testSuite.TestSuiteVersion = latestTestSuiteVersionString;
-            testSuite.TestSuiteEndPoint = latestTestSuiteEndPoint;
-
-            // found
-            return true;
-        }
     }
 }

@@ -7,7 +7,7 @@ using System.Text;
 using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestTools;
-using System.Drawing;
+using SkiaSharp;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedisp;
 
 namespace Microsoft.Protocols.TestSuites.Rdpedisp
@@ -20,6 +20,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         [TestCategory("Positive")]
         [TestCategory("RDP8.1")]
         [TestCategory("RDPEDISP")]
+        [TestCategory("BasicFeature")]
         [Description("This test is used to test reposition of monitor and notification with surface management commands")]
         public void S4_RDPEDISP_MonitorReposition_RestartGraphicsPipeline()
         {
@@ -50,6 +51,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         [TestCategory("Positive")]
         [TestCategory("RDP8.1")]
         [TestCategory("RDPEDISP")]
+        [TestCategory("BasicFeature")]
         [Description("This test is used to test reposition of monitor and notification with Deactivation-Reactivation Sequence")]
         public void S4_RDPEDISP_MonitorReposition_DeactivationReactivation()
         {
@@ -71,8 +73,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Initialize Deactivation-Reactivation Sequence");
             this.rdpedispAdapter.initiateDeactivationReactivation(originalDesktopWidth, originalDesktopHeight);
-            Image testImage = LoadImage();
-            this.Site.Assume.AreNotEqual<Image>(null, testImage, "Cannot load the test image");
+            SKImage testImage = SKImage.FromBitmap(LoadImage());
+            this.Site.Assume.AreNotEqual<SKImage>(null, testImage, "Cannot load the test image");
             this.rdpedispAdapter.RdprfxSendImage(testImage, originalDesktopWidth, originalDesktopHeight);
             #endregion
         }

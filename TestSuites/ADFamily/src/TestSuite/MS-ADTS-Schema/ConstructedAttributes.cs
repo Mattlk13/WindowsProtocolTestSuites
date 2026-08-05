@@ -16,7 +16,6 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts;
 
@@ -2832,7 +2831,7 @@ namespace Microsoft.Protocol.TestSuites.ActiveDirectory.Adts.Schema
                 Convert.ToInt32(adAdapter.ADDSPortNum),
                 adAdapter.DomainAdministratorName,
                 adAdapter.DomainUserPassword,
-                adAdapter.PrimaryDomainNetBiosName,
+                adAdapter.PrimaryDomainDnsName,
                 AuthType.Basic | AuthType.Kerberos);
             if (ret.Equals("Success_STATUS_SUCCESS"))
             {

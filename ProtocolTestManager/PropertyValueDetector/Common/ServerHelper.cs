@@ -9,6 +9,7 @@ using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace Microsoft.Protocols.TestManager.Detector.Common
@@ -164,10 +165,8 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
 
         public static string GetComputerIP(string computerName)
         {
-            IPHostEntry host;
             string localIP = string.Empty;
-            host = Dns.GetHostEntry(computerName);
-            foreach (IPAddress ip in host.AddressList)
+            foreach (IPAddress ip in Dns.GetHostAddresses(computerName))
             {
                 if (ip.AddressFamily.ToString() == "InterNetwork")
                 {
@@ -179,9 +178,13 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
 
         public static Platform ConvertPlatform(string platform)
         {
-            if (platform.Contains("Windows Server 2016"))
+            if (platform.Contains("Windows Server 2025"))
+                return Platform.WindowsServer2025;
+            else if (platform.Contains("Windows Server 2022"))
+                return Platform.WindowsServer2022;
+            else if(platform.Contains("Windows Server 2016"))
                 return Platform.WindowsServer2016;
-            if (platform.Contains("Windows Server 2012 R2"))
+            else if(platform.Contains("Windows Server 2012 R2"))
                 return Platform.WindowsServer2012R2;
             else if (platform.Contains("Windows Server 2012"))
                 return Platform.WindowsServer2012;
@@ -193,9 +196,9 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
                 return Platform.NonWindows;
         }
 
-        public static bool DetectClient(DomainInfo domain, ComputerInfo client, Logger logWriter)
+        public static bool DetectClient(DomainInfo domain, ComputerInfo client, DetectLogger logWriter)
         {
-            logWriter.AddLog(string.Format("===== Detect Client/Driver in Domain {0} =====", domain.Name), LogLevel.Normal);
+            logWriter.AddLog(DetectLogLevel.Warning, string.Format("===== Detect Client/Driver in Domain {0} =====", domain.Name));
             string ip = client.IPv4 != null ? client.IPv4 : client.IPv6;
 
             try
@@ -205,19 +208,20 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
             }
             catch
             {
-                logWriter.AddLog("Failed", LogLevel.Error, false, LogStyle.StepFailed);
-                logWriter.AddLineToLog(LogLevel.Advanced);
+                logWriter.AddLog(DetectLogLevel.Error, "Failed", false, LogStyle.StepFailed);
+                logWriter.AddLineToLog(DetectLogLevel.Information);
                 return false;
             }
 
-            logWriter.AddLog("Success", LogLevel.Normal, false, LogStyle.StepPassed);
-            logWriter.AddLineToLog(LogLevel.Advanced);
+            logWriter.AddLog(DetectLogLevel.Warning, "Success", false, LogStyle.StepPassed);
+            logWriter.AddLineToLog(DetectLogLevel.Information);
             return true;
         }
 
-        public static bool DetectDC(DomainInfo domain, Server dc, Logger logWriter)
+        [SupportedOSPlatform("windows")]
+        public static bool DetectDC(DomainInfo domain, Server dc, DetectLogger logWriter)
         {
-            logWriter.AddLog(string.Format("===== Detect DC in Domain {0} =====", domain.Name), LogLevel.Normal);
+            logWriter.AddLog(DetectLogLevel.Warning, string.Format("===== Detect DC in Domain {0} =====", domain.Name));
             DirectoryContext context = new DirectoryContext(DirectoryContextType.Domain, domain.Name, domain.Admin, domain.AdminPassword);
 
             string hostName = DomainController.FindOne(context).Name;
@@ -233,15 +237,15 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
             }
             catch
             {
-                logWriter.AddLog("Failed", LogLevel.Normal, false, LogStyle.StepFailed);
-                logWriter.AddLineToLog(LogLevel.Advanced);
+                logWriter.AddLog(DetectLogLevel.Warning, "Failed", false, LogStyle.StepFailed);
+                logWriter.AddLineToLog(DetectLogLevel.Information);
                 return false;
             }
 
             if (dc.FQDN == null)
             {
-                logWriter.AddLog("Failed", LogLevel.Normal, false, LogStyle.StepFailed);
-                logWriter.AddLineToLog(LogLevel.Advanced);
+                logWriter.AddLog(DetectLogLevel.Warning, "Failed", false, LogStyle.StepFailed);
+                logWriter.AddLineToLog(DetectLogLevel.Information);
                 return false;
             }
 
@@ -253,8 +257,8 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
             }
             catch
             {
-                logWriter.AddLog("Failed", LogLevel.Normal, false, LogStyle.StepFailed);
-                logWriter.AddLineToLog(LogLevel.Advanced);
+                logWriter.AddLog(DetectLogLevel.Warning, "Failed", false, LogStyle.StepFailed);
+                logWriter.AddLineToLog(DetectLogLevel.Information);
                 return false;
             }
             try
@@ -263,17 +267,18 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
             }
             catch
             {
-                logWriter.AddLog("Failed", LogLevel.Normal, false, LogStyle.StepFailed);
-                logWriter.AddLineToLog(LogLevel.Advanced);
+                logWriter.AddLog(DetectLogLevel.Warning, "Failed", false, LogStyle.StepFailed);
+                logWriter.AddLineToLog(DetectLogLevel.Information);
                 return false;
             }
 
-            logWriter.AddLog("Success", LogLevel.Normal, false, LogStyle.StepPassed);
-            logWriter.AddLineToLog(LogLevel.Advanced);
+            logWriter.AddLog(DetectLogLevel.Warning, "Success", false, LogStyle.StepPassed);
+            logWriter.AddLineToLog(DetectLogLevel.Information);
             return true;
         }
 
-        public static bool FetchPlatformInfo(string computerName, Logger logWriter)
+        [SupportedOSPlatform("windows")]
+        public static bool FetchPlatformInfo(string computerName, DetectLogger logWriter)
         {
             bool isWindows = true;
             try
@@ -282,7 +287,7 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
                 foreach (ManagementObject result in resultCollection)
                 {
                     isWindows = (ConvertPlatform(result["Caption"].ToString()) != Platform.NonWindows);
-                    logWriter.AddLog("Platform: " + ConvertPlatform(result["Caption"].ToString()), LogLevel.Advanced);
+                    logWriter.AddLog(DetectLogLevel.Information, "Platform: " + ConvertPlatform(result["Caption"].ToString()));
                     break;
                 }
             }
@@ -293,6 +298,7 @@ namespace Microsoft.Protocols.TestManager.Detector.Common
             return isWindows;
         }
 
+        [SupportedOSPlatform("windows")]
         private static ManagementObjectCollection QueryWmiObject(string machineName, string queryString)
         {
             ConnectionOptions options = new ConnectionOptions() { Timeout = new TimeSpan(0, 0, 5) };

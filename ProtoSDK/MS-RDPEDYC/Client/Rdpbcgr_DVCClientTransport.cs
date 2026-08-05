@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
 
         private ClientDecodingPduBuilder decoder;
         private PduBuilder pduBuilder;
+
+        private ConcurrentQueue<byte[]> cachedData = new ConcurrentQueue<byte[]>();
 
         #endregion Variables
 
@@ -57,11 +60,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
             }
 
             channel.Received += ReceivedBytes;
-            if (!context.SVCManager.IsRunning)
-            {
-                // Must start the SVC manager here, so as to make sure the first packet of RDPEDYC can be processed
-                context.SVCManager.Start();
-            }
+
+            // Must start the SVC manager here, so as to make sure the first packet of RDPEDYC can be processed
+            context.SVCManager.Start();
 
             decoder = new ClientDecodingPduBuilder();
             pduBuilder = new PduBuilder();
@@ -107,9 +108,19 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
         /// <param name="data"></param>
         private void ReceivedBytes(byte[] data)
         {
-            DynamicVCPDU pdu = decoder.ToPdu(data);
-            if (Received != null)
+            if (Received == null)
             {
+                cachedData.Enqueue(data);
+            }
+            else
+            {
+                while (cachedData.TryDequeue(out var res))
+                {
+                    DynamicVCPDU cachedPdu = decoder.ToPdu(res);
+                    Received(cachedPdu);
+                }
+
+                DynamicVCPDU pdu = decoder.ToPdu(data);
                 Received(pdu);
             }
         }

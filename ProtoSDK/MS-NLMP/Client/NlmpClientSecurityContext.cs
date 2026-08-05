@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 {
@@ -67,6 +67,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
         /// </summary>
         private uint serverSequenceNumber;
 
+        /// <summary>
+        /// Context attribute flags.
+        /// </summary>
+        private ClientSecurityContextAttribute contextAttribute;
         #endregion
 
         #region Properties
@@ -227,12 +231,26 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLMSSP_NEGOTIATE_128;
             this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLMSSP_NEGOTIATE_56;
             this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE;
-            // turn on seal and sign
-            this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLMSSP_NEGOTIATE_SEAL;
-            this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLMSSP_NEGOTIATE_SIGN;
+            this.client.Context.ClientConfigFlags |= NegotiateTypes.NTLM_NEGOTIATE_OEM;
         }
 
-
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="credential">the client credential contains the user information</param>
+        /// <param name="contextAttribute">the client Context Attribute</param>
+        /// <exception cref="ArgumentNullException">the previousContext must be null</exception>
+        public NlmpClientSecurityContext(NlmpClientCredential credential, ClientSecurityContextAttribute contextAttribute)
+            : this(credential)
+        {
+            this.contextAttribute = contextAttribute;
+            this.Context.Integrity = contextAttribute.HasFlag(ClientSecurityContextAttribute.Integrity);
+            this.Context.ReplayDetect = contextAttribute.HasFlag(ClientSecurityContextAttribute.ReplayDetect);
+            this.Context.SequenceDetect = contextAttribute.HasFlag(ClientSecurityContextAttribute.SequenceDetect);
+            this.Context.Confidentiality = contextAttribute.HasFlag(ClientSecurityContextAttribute.Confidentiality);
+            this.Context.Datagram = contextAttribute.HasFlag(ClientSecurityContextAttribute.Datagram);
+            this.Context.Identify = contextAttribute.HasFlag(ClientSecurityContextAttribute.Identify);
+        }
         #endregion
 
         #region Gss Api
@@ -260,7 +278,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 
                     if (NlmpUtility.IsWorkstationSupplied(this.Context.ClientConfigFlags))
                     {
-                        workstationName = this.Credential.TargetName;
+                        workstationName = Environment.MachineName;
                     }
                 }
 
@@ -268,7 +286,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
                     workstationName, domainName,
                     this.Credential.AccountName, this.Credential.Password);
 
-                this.token = GetSecurityToken();
+                this.token = GetSecurityToken(workstationName);
 
                 this.needContinueProcessing = true;
             }
@@ -443,7 +461,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 
             #region Prepare the Nlmp Negotiate Flags
 
-            // the flags for negotiage
+            // the flags for negotiate
             NegotiateTypes nlmpFlags = NegotiateTypes.NTLMSSP_NEGOTIATE_NTLM | NegotiateTypes.NTLM_NEGOTIATE_OEM;
 
             #endregion
@@ -461,7 +479,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 
             #endregion
 
-            #region Compute Resonse
+            #region Compute Response
 
             // clientChallenge, a 8 bytes random number.
             ulong clientChallenge = BitConverter.ToUInt64(NlmpUtility.Nonce(8), 0);
@@ -555,9 +573,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
                 flags, challenge.Payload.ServerChallenge, targetInfo, responseKeyNT, responseKeyLM,
                 out lmChallengeResponse, out ntChallengeResponse);
 
-            UpdateLmChallengeResponse(challenge.Payload.TargetInfo, ref lmChallengeResponse);
+            UpdateLmChallengeResponse(targetInfo, ref lmChallengeResponse);
         }
-
 
         /// <summary>
         /// initialize the target info, contains av pairs.
@@ -573,6 +590,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             InitializeMsAvFlags(targetInfo);
 
             InitializeRestriction(targetInfo);
+
+            InitializeMsAvChannelBindings(targetInfo);
+
+            InitializeMsvAvTargetName(targetInfo);
 
             return targetInfo;
         }
@@ -686,16 +707,17 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
         /// </summary>
         /// <param name="targetInfo">the challenge packet</param>
         /// <param name="lmChallengeResponse">the lm challenge response</param>
+        /// <summary>
         private void UpdateLmChallengeResponse(
-            byte[] targetInfo,
+            ICollection<AV_PAIR> targetInfo,
             ref byte[] lmChallengeResponse
             )
         {
-            // If NTLM v2 authentication is used and the CHALLENGE_MESSAGE contains a TargetInfo 
-            // field, the client SHOULD set the LmChallengeResponse to null.
-            if (NlmpUtility.IsNtlmV2(this.client.Config.Version) && targetInfo != null)
+            // If NTLM v2 authentication is used and the CHALLENGE_MESSAGE TargetInfo field (section 2.2.1.2) has an MsvAvTimestamp present, 
+            // the client SHOULD NOT send the LmChallengeResponse and SHOULD send Z(24) instead
+            if (NlmpUtility.IsNtlmV2(this.client.Config.Version) && targetInfo != null && NlmpUtility.AvPairContains(targetInfo, AV_PAIR_IDs.MsvAvTimestamp))
             {
-                lmChallengeResponse = null;
+                lmChallengeResponse = NlmpUtility.Z(24);
             }
         }
 
@@ -737,15 +759,89 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
         /// initialize the negotiate flags
         /// </summary>
         /// <returns>the negotiate flags for authenticate</returns>
-        private NegotiateTypes InitializeNegotiateFlags()
+        private NegotiateTypes InitializeNegotiateFlags(NegotiateTypes challengeFlags)
         {
             NegotiateTypes flags = this.Context.ClientConfigFlags;
 
             flags |= NegotiateTypes.NTLMSSP_NEGOTIATE_TARGET_INFO;
 
+            // A==1: The choice of character set encoding MUST be Unicode.
+            // A==0 and B==1: The choice of character set encoding MUST be OEM.
+            // A==0 and B==0: The protocol MUST return SEC_E_INVALID_TOKEN.
+            if (NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE == (challengeFlags & NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE))
+            {
+                if (flags.HasFlag(NegotiateTypes.NTLM_NEGOTIATE_OEM))
+                {
+                    flags ^= NegotiateTypes.NTLM_NEGOTIATE_OEM;
+                }
+                if (!flags.HasFlag(NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE))
+                {
+                    flags |= NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE;
+                }
+            }
+            else if (NegotiateTypes.NTLM_NEGOTIATE_OEM == (challengeFlags & NegotiateTypes.NTLM_NEGOTIATE_OEM))
+            {
+                if (flags.HasFlag(NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE))
+                {
+                    flags ^= NegotiateTypes.NTLMSSP_NEGOTIATE_UNICODE;
+                }
+                if (!flags.HasFlag(NegotiateTypes.NTLM_NEGOTIATE_OEM))
+                {
+                    flags |= NegotiateTypes.NTLM_NEGOTIATE_OEM;
+                }
+            }
+            else
+            {
+                throw new Exception("The protocol MUST return SEC_E_INVALID_TOKEN");
+            }
+
             return flags;
         }
 
+        //If the ClientChannelBindingsUnhashed (section 3.1.1.2) is not NULL
+        private void InitializeMsAvChannelBindings(
+            ICollection<AV_PAIR> targetInfo
+            )
+        {
+            // update the MsAvChannelBinding of targetInfo
+            // add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvChannelBindings and the Value field to Z(16).
+            var value = NlmpUtility.Z(16);
+            if (NlmpUtility.AvPairContains(targetInfo, AV_PAIR_IDs.MsvChannelBindings))
+            {
+                NlmpUtility.UpdateAvPair(
+                    targetInfo, AV_PAIR_IDs.MsvChannelBindings, (ushort)value.Length, value);
+            }
+            else
+            {
+                NlmpUtility.AddAVPair(
+                    targetInfo, AV_PAIR_IDs.MsvChannelBindings, (ushort)value.Length, value);
+            }
+        }
+
+        // If ClientSuppliedTargetName (section 3.1.1.2) is not NULL
+        private void InitializeMsvAvTargetName(
+            ICollection<AV_PAIR> targetInfo
+            )
+        {
+            // update the MsvAvTargetName of targetInfo
+            // Add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvTargetName and the Value field to ClientSuppliedTargetName without terminating NULL.
+            byte[] targetName = new byte[0];
+            if (!string.IsNullOrEmpty(this.credential.TargetName))
+            {
+                targetName = NlmpUtility.Unicode(this.credential.TargetName);
+            }
+
+            if (NlmpUtility.AvPairContains(targetInfo, AV_PAIR_IDs.MsvAvTargetName))
+            {
+                NlmpUtility.UpdateAvPair(
+                    targetInfo, AV_PAIR_IDs.MsvAvTargetName, (ushort)targetName.Length, targetName);
+            }
+            else
+            {
+                NlmpUtility.AddAVPair(
+                    targetInfo, AV_PAIR_IDs.MsvAvTargetName, (ushort)targetName.Length, targetName);
+            }
+        }
 
         #endregion
 
@@ -755,7 +851,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
         /// get the security token
         /// </summary>
         /// <returns>the security token</returns>
-        private byte[] GetSecurityToken()
+        private byte[] GetSecurityToken(string workstationName)
         {
             if (this.client == null)
             {
@@ -767,7 +863,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 
             NlmpNegotiatePacket packet = this.client.CreateNegotiatePacket(
                 this.Context.ClientConfigFlags, version, this.currentActiveCredential.DomainName,
-                this.currentActiveCredential.TargetName);
+                workstationName);
 
             this.negotiate = packet;
 
@@ -789,10 +885,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
                 throw new InvalidOperationException("The client is null! You must initialize this field first!");
             }
 
-            NegotiateTypes flags = InitializeNegotiateFlags();
-
             // the challenge packet from server
             NlmpChallengePacket challenge = new NlmpChallengePacket(serverToken);
+
+            NegotiateTypes flags = InitializeNegotiateFlags(challenge.Payload.NegotiateFlags);
 
             // the target info
             ICollection<AV_PAIR> targetInfo = InitializeTargetInfo(challenge.Payload.TargetInfo);
@@ -806,7 +902,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             // ntChallengeResponse
             byte[] ntChallengeResponse;
 
-            // initiliaze the challenge response
+            // initialize the challenge response
             InitializeChallengeResponse(
                 flags, challenge, targetInfo, out responseKeyLM, out lmChallengeResponse, out ntChallengeResponse);
 
@@ -834,6 +930,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             InitializeChallengeMIC(exportedSessionKey, targetInfo, packet, challenge);
 
             return packet.ToBytes();
+        }
+
+        public override object QueryContextAttributes(string contextAttribute)
+        {
+            throw new NotImplementedException();
         }
 
 

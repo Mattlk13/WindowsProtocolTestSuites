@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.Protocols.TestSuites.Rdpegt;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpevor;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
-using Microsoft.Protocols.TestSuites.Rdpegt;
-using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Microsoft.Protocols.TestSuites.Rdpevor
 {
@@ -45,8 +44,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
         {
             base.TestInitialize();
 
-            this.rdpevorAdapter = (IRdpevorAdapter)this.TestSite.GetAdapter(typeof(IRdpevorAdapter));
-            this.rdpegtAdapter = (IRdpegtAdapter)this.TestSite.GetAdapter(typeof(IRdpegtAdapter));
+            this.rdpevorAdapter = this.TestSite.GetAdapter<IRdpevorAdapter>();
+            this.rdpegtAdapter = this.TestSite.GetAdapter<IRdpegtAdapter>();
 
             this.rdpevorAdapter.Reset();
             this.rdpegtAdapter.Reset();
@@ -70,11 +69,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
                 rdpedycServer.Dispose();
             
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger client to close all RDP connections for clean up.");
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+
+            TriggerClientDisconnectAll();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
 
             DynamicVCException.SetCleanUp(false);
         }
@@ -101,7 +100,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -119,7 +118,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -133,8 +132,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
         //Stop RDP connection.
         private void StopRDPConnection()
         {
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+            TriggerClientDisconnectAll();
+
             this.rdpbcgrAdapter.Reset();
             this.rdpevorAdapter.Reset();
             this.rdpegtAdapter.Reset();
@@ -146,7 +145,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpevor
             testData = new RdpevorTestData();
             try
             {
-                String RdpevorTestDataPath = this.Site.Properties["RdpevorTestDataPath"];
+                String RdpevorTestDataPath;
+                PtfPropUtility.GetPtfPropertyValue(Site, "RdpevorTestDataPath", out RdpevorTestDataPath);
                 testData.LoadXMLFile(RdpevorTestDataPath);
             }
             catch (System.Xml.XmlException ex)

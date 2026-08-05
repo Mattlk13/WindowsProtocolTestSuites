@@ -1,8 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-##
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 param($workingDir = "$env:SystemDrive\Temp", $protocolConfigFile = "$workingDir\Protocol.xml")
 
@@ -95,6 +92,17 @@ function CreateAndCopyVHDX($vhdName)
 }
 
 CreateAndCopyVHDX("sqos")
+
+$minIops = 100
+$maxIops = 200
+$maxBandwidthInKB = 1600
+$maxBandwidth = 1024*$maxBandwidthInKB
+
+$policy = New-StorageQosPolicy -Name Desktop -PolicyType Dedicated -MinimumIops $minIops -MaximumIops $maxIops -MaximumIOBandwidth $maxBandwidth
+if($policy -ne $null)
+{
+    Set-Content -Path "C:\SqosPolicyId.txt" -Value $policy.PolicyId
+}
 
 Stop-Transcript
 exit 0

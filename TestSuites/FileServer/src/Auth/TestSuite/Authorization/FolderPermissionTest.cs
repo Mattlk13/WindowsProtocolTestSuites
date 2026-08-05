@@ -6,7 +6,9 @@ using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 {
@@ -41,6 +43,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         protected override void TestInitialize()
         {
             base.TestInitialize();
+
+            // valid domain name matching, for example: contoso.com, local.contoso.com
+            if (!Regex.IsMatch(TestConfig.DomainName, @"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$", RegexOptions.IgnoreCase))
+            {
+                BaseTestSite.Assert.Inconclusive("Authentication test cases are not applicable in non-domain environment");
+            }
+
             if (FolderPermissionTestShareUncPath == null)
             {
                 FolderPermissionTestShareUncPath = Smb2Utility.GetUncPath(testConfig.SutComputerName, TestConfig.FolderPermissionTestShare);
@@ -59,11 +68,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 
         protected override void TestCleanup()
         {
-            SetSecurityDescriptor(FolderPermissionTestShareUncPath, null, originalSD,
+            if (FolderPermissionTestShareUncPath != null)
+            {
+                SetSecurityDescriptor(FolderPermissionTestShareUncPath, null, originalSD,
                 SET_INFO_Request_AdditionalInformation_Values.DACL_SECURITY_INFORMATION |
                 SET_INFO_Request_AdditionalInformation_Values.GROUP_SECURITY_INFORMATION |
                 SET_INFO_Request_AdditionalInformation_Values.OWNER_SECURITY_INFORMATION);
-
+            }
             base.TestCleanup();
         }
         #endregion
@@ -77,7 +88,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE with user SID exists in folder Security Descriptor.")]
         public void BVT_FolderPermission_AccessAllow_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnShare(ace);
 
@@ -96,7 +107,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE with user's group SID exists in folder Security Descriptor.")]
         public void FolderPermission_AccessAllow_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnShare(ace);
 
@@ -115,7 +126,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_DENIED_ACE with user SID exists in folder Security Descriptor.")]
         public void FolderPermission_AccessDeny_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessDeniedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnShare(ace);
 
@@ -134,7 +145,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_DENIED_ACE with user's group SID exists in folder Security Descriptor.")]
         public void FolderPermission_AccessDeny_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             object ace = DtypUtility.CreateAccessDeniedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnShare(ace);
 
@@ -153,7 +164,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "user SID does not exist in folder Security Descriptor.")]
         public void FolderPermission_AccessDeny_SidNoInclude()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             BaseTestSite.Assert.IsFalse(
                 AccessShare(), 
                 "User SID ({0}) is not in folder Security Descriptor. User should not be able to access the share.", 
@@ -169,7 +180,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE associated with the user does not have READ permission in folder Security Descriptor.")]
         public void FolderPermission_AccessDeny_UserSidWithoutReadPermission()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, 0, ACE_FLAGS.None);
             SetSecurityDescriptorOnShare(ace);
 

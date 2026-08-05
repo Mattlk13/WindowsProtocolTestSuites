@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Protocols.TestTools.StackSdk.Messages.Marshaling;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
+using System.Numerics;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
 {
@@ -134,6 +135,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         FSCTL_LMR_SET_LINK_TRACKING_INFORMATION = 0x1400ec,
 
         /// <summary>
+        /// The FSCTL_MARK_HANDLE request is used to set specific operational state on the given file handle.
+        /// This state is lost once the handle is closed
+        /// </summary>
+        FSCTL_MARK_HANDLE = 0x900fc,
+
+        /// <summary>
         /// FSCTL function number for FSCTL_OFFLOAD_READ.
         /// </summary>
         FSCTL_OFFLOAD_READ = 0x94264,
@@ -206,6 +213,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         FSCTL_RECALL_FILE = 0x90117,
 
         /// <summary>
+        /// This message requests that the server perform a specific stream snapshot operation on a given data stream 
+        ///  contained in a file.
+        /// </summary>
+        FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT = 0x90440,
+
+        /// <summary>
         /// The FSCTL_SET_COMPRESSION request message requests that the server set the compression state of the file  
         /// or directory associated with the handle on which this FSCTL was invoked. The message contains a 16-bit  
         /// unsigned integer. 
@@ -230,6 +243,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// FSCTL function number for FSCTL_SET_INTEGRITY_INFORMATION.
         /// </summary>
         FSCTL_SET_INTEGRITY_INFORMATION = 0x9C280,
+
+        /// <summary>
+        /// The FSCTL_SET_INTEGRITY_INFORMATION_EX Request message requests that the server set the integrity 
+        /// state of the file or directory associated with the handle on which this FSCTL was invoked.
+        /// </summary>
+        FSCTL_SET_INTEGRITY_INFORMATION_EX = 0x90380,
 
         /// <summary>
         /// This message sets the object identifier for the file or directory associated with the handle on which this 
@@ -1512,6 +1531,59 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// </summary>
         [StaticSize(504)]
         public byte[] TokenId;
+    }
+    #endregion
+
+    #region FSCTL_MARK_HANDLE_INPUT
+    public enum FSCTL_MARK_HANDLE_INPUT_HANDLE_INFO_FLAGS : uint
+    {
+        /// <summary>
+        /// When a file resides on redundant media (ex: mirrored or RAID) this tells the file
+        /// system that read operations on this handle should only come from the specified copy
+        /// of data.
+        /// When this state is not set a file system will return data from any copy available
+        /// as it sees fit.
+        /// </summary>
+        MARK_HANDLE_READ_COPY = 0x00000080,
+
+        /// <summary>
+        /// When a file resides on redundant media (ex: mirrored or RAID) this tells the file
+        /// system that read operations on this handle may come from any copy of the data as
+        /// the file system sees fit. This turns off reading from a specific copy.
+        /// </summary>
+        MARK_HANDLE_NOT_READ_COPY = 0x00000100
+    }
+
+    public partial struct FSCTL_MARK_HANDLE_INPUT
+    {
+        /// <summary>
+        /// A 32-bit unsigned integer that identifies, when reading from a file which resides on
+        /// redundant media, which copy to read.
+        /// </summary>
+        public uint CopyNumber;
+
+        /// <summary>
+        /// Reserved for alignment. This field can contain any value and MUST be ignored.
+        /// </summary>
+        [StaticSize(4, StaticSizeMode.Elements)]
+        public byte[] Unused;
+
+        /// <summary>
+        /// A 64-bit HANDLE that is not used and MUST be set to zero.
+        /// </summary>
+        [StaticSize(8, StaticSizeMode.Elements)]
+        public byte[] VolumeHandle;
+
+        /// <summary>
+        /// A 32-bit unsigned integer containing flags to identify the request.
+        /// </summary>
+        public FSCTL_MARK_HANDLE_INPUT_HANDLE_INFO_FLAGS HandleInfo;
+
+        /// <summary>
+        /// A 32-bit unsigned integer field that is reserved. 
+        /// This field SHOULD be set to 0x00000000 and MUST be ignored.
+        /// </summary>
+        public uint Reserved;
     }
     #endregion
 
@@ -2847,6 +2919,364 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         USN_SOURCE_REPLICATION_MANAGEMENT = 0x00000004,
     }
 
+    
+    #region REFS_STREAM_SNAPSHOT_MANAGEMENT_INPUT_BUFFER    
+
+    /// <summary>
+    /// A value representing the operations for REFS_STREAM_SNAPSHOT_MANAGEMENT request. The value 
+    /// MUST be one of the following:
+    /// </summary>
+    [Flags()]
+    [SuppressMessage("Microsoft.Design", "CA1028:EnumStorageShouldBeInt32")]
+    public enum RefsStreamSnapshotOperation_Values : uint
+    {
+        /// <summary>
+        /// All requests with this operational code MUST 
+        /// be failed by the server.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_INVALID = 0x00000000,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// create a new snapshot of the UNICODE name 
+        /// contained within NameAndInputBuffer, 
+        /// saving a point-in-time view of the data 
+        /// stream represented by the handle the 
+        /// request is being sent on.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_CREATE = 0x00000001,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// return a list of all snapshots of the set 
+        /// containing the data stream represented by 
+        /// the handle the request is being sent on, and 
+        /// matching a given regular expression query 
+        /// string contained in NameAndInputBuffer.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_LIST = 0x00000002,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// return a list of all metadata extents that have 
+        /// incurred modifying operations between the 
+        /// data stream represented by the handle the 
+        /// request is being sent on, and the data 
+        /// stream represented by the UNICODE name 
+        /// contained in NameAndInputBuffer. The data 
+        /// stream represented by the handle must be of 
+        /// a newer creation time than the data stream 
+        /// represented by the UNICODE name.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS = 0x00000003,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// revert the data stream represented by the 
+        /// handle the request is being sent on to a 
+        /// point-in-time snapshot view represented by 
+        /// the UNICODE name contained within 
+        /// NameAndInputBuffer.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_REVERT = 0x00000004,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// create a shadow data stream on the data 
+        /// stream represented by the handle the 
+        /// request is being sent on.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_SET_SHADOW_BTREE = 0x00000005,
+
+        /// <summary>
+        /// This request message requests the server 
+        /// remove a shadow data stream on the data 
+        /// stream represented by the handle the 
+        /// request is being sent on.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_CLEAR_SHADOW_BTREE = 0x00000006,
+
+        /// <summary>
+        /// The maximum operational code supported by
+        /// the server. All operational codes larger than 
+        /// this numerical value will be failed.
+        /// </summary>
+        REFS_STREAM_SNAPSHOT_OPERATION_MAX = 0x00000006,
+    }
+    
+    /// <summary>
+    /// The FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request message requests that the server 
+    /// perform a specific stream snapshot operation on a given data stream contained in a file. The operation 
+    /// performed is dependent on the value defined in REFS_STREAM_SNAPSHOT_OPERATION. The request 
+    /// message takes the form of a REFS_STREAM_SNAPSHOT_MANAGEMENT_INPUT_BUFFER structure.
+    /// The REFS_STREAM_SNAPSHOT_MANAGEMENT_INPUT_BUFFER is as follows.
+    /// </summary>
+    public partial struct REFS_STREAM_SNAPSHOT_MANAGEMENT_INPUT_BUFFER
+    {
+        /// <summary>
+        /// This field specifies the operation and MUST contain one of the following values in RefsStreamSnapshotOperation_Values
+        /// </summary>
+        public RefsStreamSnapshotOperation_Values Operation;
+
+        /// <summary>
+        /// An unsigned integer representing the length in bytes of the 
+        /// unicode name contained within NameAndInputBuffer field. If no such name is present in the 
+        /// message, then this value is set to zero.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort SnapshotNameLength;
+
+        /// <summary>
+        /// An unsigned integer representing the length in bytes of 
+        /// the operational control structure present in the message and contained within 
+        /// NameAndInputBuffer field. If no such control structure is present in the message, then this 
+        /// value is set to zero.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort OperationInputBufferLength;
+
+        /// <summary>
+        /// This field MUST be set to zero and MUST be ignored.
+        /// </summary>
+        [StaticSize(16)]
+        public byte[] Reserved;
+
+        /// <summary>
+        /// An array of bytes optionally containing a unicode name as well as 
+        /// an operational control buffer. When a unicode name is present, it is located immediately within the 
+        /// first byte of NameAndInputBuffer. When an operational control buffer is present, it is located at 
+        /// the next quad aligned boundary past the end of the unicode name. If no such unicode name is 
+        /// present, then the operational control buffer is located at the first byte of NameAndInputBuffer.
+        /// </summary>
+        [Size("SnapshotNameLength + OperationInputBufferLength")]
+        public byte[] NameAndInputBuffer;
+    }
+
+    #endregion
+    
+    #region REFS_STREAM_SNAPSHOT_QUERY_DELTAS_INPUT_BUFFER
+
+    /// <summary>
+    /// The REFS_STREAM_SNAPSHOT_QUERY_DELTAS_INPUT_BUFFER is as follows:
+    /// </summary>
+    public partial struct REFS_STREAM_SNAPSHOT_QUERY_DELTAS_INPUT_BUFFER
+    {
+        /// <summary>
+        /// A signed integer representing the starting VCN for which to perform the 
+        /// request on.
+        /// </summary>
+        public long StartingVcn;
+
+        /// <summary>
+        /// An unsigned integer representing flags to modify the behavior of the request. This 
+        /// field must be set to zero.
+        /// </summary>
+        public uint Flags;
+
+        /// <summary>
+        /// This field MUST be set to zero and MUST be ignored.
+        /// </summary>
+        public uint Reserved;
+    }
+
+    #endregion
+
+    #region REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER
+    /// FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT Reply returns the result of the FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request.
+
+    /// <summary>
+    /// The REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER is as follows:
+    /// </summary>
+    public partial struct REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER
+    {
+        /// <summary>
+        /// An unsigned integer representing the number of entries contained within the 
+        /// Entries field.
+        /// </summary>
+        public int EntryCount;
+
+        /// <summary>
+        /// An unsigned integer representing the total number of 
+        /// bytes to fully satisfy the request. This value is accurate upon returning STATUS_SUCCESS as well 
+        /// as STATUS_BUFFER_OVERFLOW
+        /// </summary>
+        public uint BufferSizeRequiredForQuery;
+
+        /// <summary>
+        /// This field MUST be set to zero and MUST be ignored.
+        /// </summary>
+        public uint Reserved;
+
+        /// <summary>
+        ///  An array of REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER_ENTRY structs.
+        /// </summary>
+        [Size("EntryCount")]
+        public REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER_ENTRY[] Entries;
+    }
+
+    /// <summary>
+    /// The REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER_ENTRY is as follows:
+    /// </summary>
+    public partial struct REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER_ENTRY
+    {
+        /// <summary>
+        /// An unsigned integer representing the offset in bytes to the next 
+        /// REFS_STREAM_SNAPSHOT_LIST_OUTPUT_BUFFER_ENTRY structure. When this value is zero 
+        /// there are no more entries in the array.
+        /// </summary>
+        public uint NextEntryOffset;
+
+        /// <summary>
+        /// A unsigned integer representing the length of the UNICODE name 
+        /// contained in SnapshotName in bytes.
+        /// </summary>
+        public ushort SnapshotNameLength;
+
+        /// <summary>
+        /// An unsigned integer representing a FILETIME structure 
+        /// containing the creation time of the snapshot.
+        /// </summary>
+        public ulong SnapshotCreationTime;
+
+        /// <summary>
+        /// An unsigned integer representing the End-Of-File marker of the data stream 
+        /// represented by this entry.
+        /// </summary>
+        public ulong StreamSize;
+
+        /// <summary>
+        /// An unsigned integer representing the size in bytes used by the 
+        /// data owned by the data stream represented by this entry. 
+        /// </summary>
+        public ulong StreamAllocationSize;
+
+        /// <summary>
+        /// This field MUST be set to zero and MUST be ignored.
+        /// </summary>
+        public ulong Reserved;
+
+        /// <summary>
+        /// An array of WCHARs, as specified in [MS-DTYP] section 2.2.60, 
+        /// representing the UNICODE name for the snapshot representing this entry. The size of the array is 
+        /// defined in the SnapshotNameLength field.
+        /// </summary>
+        [Size("SnapshotNameLength")]
+        public byte[] SnapshotName;
+    }
+
+    #endregion
+
+    #region REFS_STREAM_SNAPSHOT_QUERY_DELTAS_OUTPUT_BUFFER
+
+    /// <summary>
+    /// The REFS_STREAM_SNAPSHOT_QUERY_DELTAS_OUTPUT_BUFFER is as follows:
+    /// </summary>
+    public partial struct REFS_STREAM_SNAPSHOT_QUERY_DELTAS_OUTPUT_BUFFER
+    {
+        /// <summary>
+        /// An unsigned integer representing the number of REFS_STREAM_EXTENT 
+        /// structs contained in the Extents field.
+        /// </summary>
+        public uint ExtentCount;
+
+        /// <summary>
+        /// This field MUST be set to zero and MUST be ignored.
+        /// </summary>
+        public ulong Reserved;
+
+        /// <summary>
+        /// An array of REFS_STREAM_EXTENT structs.
+        /// </summary>
+        public REFS_STREAM_EXTENT Extents;
+    }
+
+    /// <summary>
+    /// The REFS_STREAM_EXTENT is as follows:
+    /// </summary>
+    public partial struct REFS_STREAM_EXTENT
+    {
+        /// <summary>
+        /// A signed integer representing a VCN within a data stream. This value will always be 
+        /// greater than zero
+        /// </summary>
+        public ulong Vcn;
+
+        /// <summary>
+        /// A signed integer representing the LCN mapping to Vcn in a data stream. This value 
+        /// will always be greater than zero.
+        /// </summary>
+        public ulong Lcn;
+
+        /// <summary>
+        /// A signed integer representing the contiguous length in clusters for which the VCN 
+        /// to LCN mapping holds. This value will always be greater than zero.
+        /// </summary>
+        public ulong Length;
+
+        /// <summary>
+        /// A value representing the properties for this VCN to LCN mapping. The value 
+        /// MUST be one of the following:
+        /// </summary>
+        public RefsStreamExtentProperties_Values Properties;
+    }  
+
+    /// <summary>
+    /// A value representing the properties for this VCN to LCN mapping. The value 
+    /// MUST be one of the following:
+    /// </summary>
+    [Flags()]
+    [SuppressMessage("Microsoft.Design", "CA1028:EnumStorageShouldBeInt32")]
+    public enum RefsStreamExtentProperties_Values : uint
+    {
+        /// <summary>
+        /// The metadata extent is considered valid, where the 
+        /// VCN to LCN mapping represents a written or zeroed 
+        /// extent.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_VALID = 0x0010,
+
+        /// <summary>
+        /// The metadata extent does not map to an LCN, but 
+        /// instead contains a token representation an allocation 
+        /// reservation.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_STREAM_RESERVED = 0x0020,
+
+        /// <summary>
+        /// The metadata extent references data that is 
+        /// checksumed with the CRC32 algorithm.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_CRC32 = 0x0080,
+
+        /// <summary>
+        /// The metadata extent references data that is 
+        /// checksumed with the CRC64 algorithm.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_CRC64 = 0x0100,
+
+        /// <summary>
+        /// The metadata extent contains a ghosted recall buffer.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_GHOSTED = 0x0200,
+
+        /// <summary>
+        /// The metadata extent is a cached copy of a different 
+        /// metadata extent. This extent is immutable, and the 
+        /// LCN it references is not writable via this extent.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_READONLY = 0x0400,
+
+        /// <summary>
+        /// The metadata extent represents a sparse range within 
+        /// the stream. The range represented by this extent is 
+        /// analogous to a sparse hole in the stream table.
+        /// </summary>
+        REFS_STREAM_EXTENT_PROPERTY_SPARSE = 0x0008,
+    }
+    
+    #endregion  
+
+
     /// <summary>
     /// The FSCTL_GET_RETRIEVAL_POINTERS request message requests  that the server return a variably sized data  
     /// element,  StartingVcn, that describes the location on disk of  the file or directory associated with the  
@@ -3336,7 +3766,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// <summary>
         /// When set, if a checksum does not match, the associated I/O operation will not be failed.
         /// </summary>
-        FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF = 0x00000001
+        FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF = 0x00000001,
+
+        INVALID = 2
     }
     /// <summary>
     /// The FSCTL_SET_INTEGRITY_INFORMATION Request message requests that the server set the integrity state 
@@ -3360,6 +3792,48 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// </summary>
         public FSCTL_SET_INTEGRITY_INFORMATION_BUFFER_FLAGS Flags;
     }
+
+    /// <summary>
+    /// ChecksumAlgorithm for FSCTL_SET_INTEGRITY_INFORMATION_BUFFER
+    /// </summary>
+    public enum FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER_CHECKSUMALGORITHM : byte
+    {
+        /// <summary>
+        /// The file or directory should be set to not use integrity.
+        /// </summary>
+        CHECKSUM_TYPE_NONE = 0x00,
+
+        /// <summary>
+        /// The file or directory is set to provide integrity using CRC32 or CRC64 checksum.
+        /// </summary>
+        CHECKSUM_TYPE_CRC32_OR_CRC64 = 0x01,
+    }
+
+    public enum FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER_INTEGRITY_STATE : byte
+    {
+        /// <summary>
+        /// The file or directory is set to not use integrity.
+        /// </summary>
+        INTEGRITY_STATE_CHANGE = 0x00,
+
+        /// <summary>
+        /// The file or directory is set to provide integrity using CRC32 or CRC64 checksum.
+        /// </summary>
+        INTEGRITY_STATE_NO_CHANGE = 0x01
+    }
+
+    public partial struct FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER
+    {
+        public FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER_CHECKSUMALGORITHM EnableIntegrity;
+        public FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER_INTEGRITY_STATE KeepIntegrityStateUnchanged;
+        public ushort Reserved;
+        public FSCTL_SET_INTEGRITY_INFORMATION_BUFFER_FLAGS Flags;
+        public byte Version;
+
+        [StaticSize(7, StaticSizeMode.Elements)]
+        public byte[] Reserved2;
+    }
+
     #endregion
 
 
@@ -4220,6 +4694,17 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         FILE_SUPPORTS_REMOTE_STORAGE = 0x00000100,
 
         /// <summary>
+        /// The file system supports POSIX-style delete and rename operations.
+        /// </summary>
+        FILE_SUPPORTS_POSIX_UNLINK_RENAME = 0x00000400,
+
+        /// <summary>
+        /// On a successful cleanup operation, the file system returns information that describes
+        /// additional actions taken during cleanup, such as deleting the file.
+        /// </summary>
+        FILE_RETURNS_CLEANUP_RESULT_INFO = 0x00000200,
+
+        /// <summary>
         /// The file system supports reparse points. 
         /// </summary>
         FILE_SUPPORTS_REPARSE_POINTS = 0x00000080,
@@ -4495,6 +4980,16 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// </summary>
         FileIdFullDirectoryInformation = 38,
 
+        FileIdExtdDirectoryInformation = 60,
+
+        FileId64ExtdDirectoryInformation = 78,
+
+        FileId64ExtdBothDirectoryInformation = 79,
+
+        FileIdAllExtdDirectoryInformation = 80,
+
+        FileIdAllExtdBothDirectoryInformation = 81,
+
         /// <summary>
         /// Query This information class is used to query transactional visibility information for the files in a  
         /// directory. This information class MAY be implemented for file systems that return the  
@@ -4722,12 +5217,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// <summary>
         /// A FILE_MODE_INFORMATION structure specified in section  . 
         /// </summary>
-        public FILE_MODE_INFORMATION ModeInformation;
+        public FileModeInformation ModeInformation;
 
         /// <summary>
         /// A FILE_ALIGNMENT_INFORMATION structure specified in  section . 
         /// </summary>
-        public FILE_ALIGNMENT_INFORMATION AlignmentInformation;
+        public FileAlignmentInformation AlignmentInformation;
 
         /// <summary>
         /// A FILE_NAME_INFORMATION structure specified in section  . 
@@ -4746,7 +5241,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
     //  <remarks>
     //   MS-fscc\9b0b9971-85aa-4651-8438-f1c4298bcb0d.xml
     //  </remarks>
-    public partial struct FILE_ALIGNMENT_INFORMATION
+    public partial struct FileAlignmentInformation
     {
 
         /// <summary>
@@ -5469,7 +5964,73 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
     }
     #endregion
 
-    #region 2.4.17   FileIdBothDirectoryInformation
+    #region 2.4.18 FileId64ExtdBothDirectoryInformation
+    /// <summary>
+    /// This information class is used in directory enumeration to return extended information about the contents of a directory. The
+    /// FILE_ID_64_EXTD_BOTH_DIR_INFORMATION data element is as follows.
+    /// </summary>
+    // <remarks>
+    // MS-fscc/b3a27a50-454f-4f8f-b8ea-decfedc5c454.xml
+    // </remarks>
+    public partial struct FileId64ExtdBothDirectoryInformation
+    {
+        /// <summary>
+        /// The common field structure shared by all the Query Directory Information Class.
+        /// </summary>
+        public FileCommonDirectoryInformation FileCommonDirectoryInformation;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the length,  in bytes, of the FileName field. 
+        /// </summary>
+        public uint FileNameLength;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the combined  length, in bytes, of the extended attributes (EA)  
+        /// for  the file. 
+        /// </summary>
+        public uint EaSize;
+
+        /// <summary>
+        /// If FILE_ATTRIBUTE_REPARSE_POINT is set in the FileAttributes field, this field MUST contain a 32-bit unsigned
+        /// integer value containing the reparse point tag that uniquely identifies the owner of the reparse point.
+        /// </summary>
+        public uint ReparsePointTag;
+
+        /// <summary>
+        /// An 8-byte file reference number for the file. This number  is generated and assigned to the file by the  
+        /// file system.  For file systems which do not support FileId, this  field MUST be set to 0, and MUST be  
+        /// ignored. 
+        /// </summary>
+        public long FileId;
+
+        /// <summary>
+        /// An 8-bit value containing the length, in bytes, of the  ShortName string. 
+        /// </summary>
+        public byte ShortNameLength;
+
+        /// <summary>
+        /// MUST be ignored by the receiver. 
+        /// </summary>
+        public byte Reserved1;
+
+        /// <summary>
+        /// A NULL-terminated 12-character Unicode string containing  the short file name (8.3 name). 
+        /// </summary>
+        [StaticSize(24, StaticSizeMode.Elements)]
+        public byte[] ShortName;
+
+        /// <summary>
+        /// A sequence of Unicode characters containing the file  name. This field might not be NULL-terminated, and   
+        /// MUST be handled as a sequence of FileNameLength bytes.  For every directory that is the target of the  
+        /// FileId64ExtdBothDirectoryInformation  element, there MUST be a FILE_ID_64_EXTD_BOTH_DIR_INFORMATION data element with  
+        /// the FileName field containing the  relative directory names "." and "..". For more details,  see section . 
+        /// </summary>
+        [Size("FileNameLength")]
+        public byte[] FileName;
+    }
+    #endregion
+
+    #region 2.4.22   FileIdBothDirectoryInformation
 
     /// <summary>
     /// This information class is used to query file reference  number information for the files in a directory.  The  
@@ -5537,6 +6098,57 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
 
     #endregion
 
+    #region 2.4.23   FileIdExtdDirectoryInformation
+
+    /// <summary>
+    /// This information class is used in directory enumeration to return extended information about the contents of a directory.
+    /// </summary>
+    //  <remarks>
+    //   MS-fscc\36172f0b-8dce-435a-8748-859978d632f8.xml
+    //  </remarks>
+    public partial struct FileIdExtdDirectoryInformation
+    {
+        /// <summary>
+        /// The common structure shared by FileDirectoryInformation, FileBothDirectoryInformation, FileFullDirectoryInformation, 
+        /// FileIdBothDirectoryInformation, FileIdFullDirectoryInformation, FileIdGlobalTxDirectoryInformation
+        /// </summary>
+        public FileCommonDirectoryInformation FileCommonDirectoryInformation;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the length,  in bytes, of the FileName field. 
+        /// </summary>
+        public uint FileNameLength;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the combined  length, in bytes, of the extended attributes (EA)  
+        /// for  the file. 
+        /// </summary>
+        public uint EaSize;
+
+        /// <summary>
+        /// MUST be ignored by the receiver. 
+        /// </summary>
+        public uint ReparsePointTag;
+
+        /// <summary>
+        /// The 128-bit file ID, as specified in section 2.1.10, of the file. 
+        /// For file systems that do not support a 128-bit file ID, this field MUST be set to 0, 
+        /// and MUST be ignored 
+        /// </summary>
+        public Int128 FileId;
+
+        /// <summary>
+        /// A sequence of Unicode characters containing the file  name. This field might not be NULL-terminated, and   
+        /// MUST be handled as a sequence of FileNameLength bytes.  For every directory that is the target of the  
+        /// FileIdExtdDirectoryInformation  element, there MUST be a FILE_ID_EXTD_DIR_INFORMATION  data element with  
+        /// the FileName field containing the  relative directory names "." and "..". For more details,  see section . 
+        /// </summary>
+        [Size("FileNameLength")]
+        public byte[] FileName;
+    }
+
+    #endregion
+
     #region 2.4.18   FileIdFullDirectoryInformation
 
     /// <summary>
@@ -5587,6 +6199,56 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         public byte[] FileName;
     }
 
+    #endregion
+
+    #region 2.4.19 FileId64ExtdDirectoryInformation
+    /// <summary>
+    /// This information class is used in directory enumeration to return extended information about the contents of a directory. The
+    /// FILE_ID_64_EXTD_DIR_INFORMATION data element is as follows.
+    /// </summary>
+    //  <remarks>
+    //   MS-fscc\174921dd-9be2-42ed-8220-58c310b1b916.xml
+    //  </remarks>
+    public partial struct FileId64ExtdDirectoryInformation
+    {
+        /// <summary>
+        /// The common structure shared by all the Directory Request Information Class.
+        /// </summary>
+        public FileCommonDirectoryInformation FileCommonDirectoryInformation;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the length,  in bytes, of the FileName field. 
+        /// </summary>
+        public uint FileNameLength;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the combined  length, in bytes, of the extended attributes (EA)  
+        /// for  the file. 
+        /// </summary>
+        public uint EaSize;
+
+        /// <summary>
+        /// If FILE_ATTRIBUTE_REPARSE_POINT is set in the FileAttributes field, this field MUST contain a 32-bit unsigned
+        /// integer value containing the reparse point tag that uniquely identifies the owner of the reparse point.
+        /// </summary>
+        public uint ReparsePointTag;
+
+        /// <summary>
+        /// An 8-byte file reference number for the file. This number  is generated and assigned to the file by the  
+        /// file system.  For file systems which do not support FileId, this  field MUST be set to 0, and MUST be  
+        /// ignored. 
+        /// </summary>
+        public long FileId;
+
+        /// <summary>
+        /// A sequence of Unicode characters containing the file  name. This field might not be NULL-terminated, and   
+        /// MUST be handled as a sequence of FileNameLength bytes.  For every directory that is the target of the  
+        /// FileId64ExtdDirectoryInformation  element, there MUST be a FILE_ID_64_EXTD_DIR_INFORMATION  data element with
+        /// the FileName field containing the  relative directory names "." and "..". For more details,  see section . 
+        /// </summary>
+        [Size("FileNameLength")]
+        public byte[] FileName;
+    }
     #endregion
 
     #region 2.4.19   FileIdGlobalTxDirectoryInformation
@@ -5647,6 +6309,78 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         public byte[] FileName;
     }
 
+    #endregion
+
+    #region  2.4.20 FileIdAllExtdBothDirectoryInformation
+    /// <summary>
+    /// This information class is used in directory enumeration to return extended information about the contents of a directory. The
+    /// FILE_ID_ALL_EXTD_BOTH_DIR_INFORMATION data element is as follows.
+    /// </summary>
+    // <remarks>
+    // MS-fscc/1dbb9619-873e-4834-af01-849dcce87d7d.xml
+    // </remarks>
+    public partial struct FileIdAllExtdBothDirectoryInformation
+    {
+        /// <summary>
+        /// The common field structre shared all the Query Directory Informaiton Class
+        /// </summary>
+        public FileCommonDirectoryInformation FileCommonDirectoryInformation;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the length,  in bytes, of the FileName field. 
+        /// </summary>
+        public uint FileNameLength;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the combined  length, in bytes, of the extended attributes (EA)  
+        /// for  the file. 
+        /// </summary>
+        public uint EaSize;
+
+        /// <summary>
+        /// If FILE_ATTRIBUTE_REPARSE_POINT is set in the FileAttributes field, this field MUST contain a 32-bit unsigned
+        /// integer value containing the reparse point tag that uniquely identifies the owner of the reparse point.
+        /// </summary>
+        public uint ReparsePointTag;
+
+        /// <summary>
+        /// An 8-byte file reference number for the file. This number  is generated and assigned to the file by the  
+        /// file system.  For file systems which do not support FileId, this  field MUST be set to 0, and MUST be  
+        /// ignored. 
+        /// </summary>
+        public long FileId;
+
+        /// <summary>
+        /// The 128-bit file ID, as specified in section 2.1.10, of the file. For file systems that do not support
+        /// a 128-bit file ID, this field MUST be set to 0, and MUST be ignored.
+        /// </summary>
+        public Int128 FileId128;
+
+        /// <summary>
+        /// An 8-bit value containing the length, in bytes, of the  ShortName string. 
+        /// </summary>
+        public byte ShortNameLength;
+
+        /// <summary>
+        /// MUST be ignored by the receiver. 
+        /// </summary>
+        public byte Reserved1;
+
+        /// <summary>
+        /// A NULL-terminated 12-character Unicode string containing  the short file name (8.3 name). 
+        /// </summary>
+        [StaticSize(24, StaticSizeMode.Elements)]
+        public byte[] ShortName;
+
+        /// <summary>
+        /// A sequence of Unicode characters containing the file  name. This field might not be NULL-terminated, and   
+        /// MUST be handled as a sequence of FileNameLength bytes.  For every directory that is the target of the  
+        /// FileIdAllExtdBothDirectoryInformation  element, there MUST be a FILE_ID_ALL_EXTD_BOTH_DIR_INFORMATION data element with  
+        /// the FileName field containing the  relative directory names "." and "..". For more details,  see section . 
+        /// </summary>
+        [Size("FileNameLength")]
+        public byte[] FileName;
+    }
     #endregion
 
     #region 2.4.20   FileInternalInformation
@@ -5759,6 +6493,60 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
 
     #endregion
 
+    #region 2.4.21 FileIdAllExtdDirectoryInformation
+    /// <summary>
+    /// This information class is used in directory enumeration to return extended information about the contents of a directory. The
+    /// FILE_ID_ALL_EXTD_DIR_INFORMATION data element is as follows.
+    /// </summary>
+    // <remarks>
+    // MS-fscc/02991a71-6610-4127-93ef-76b8ea80fef6.xml
+    // </remarks>
+    public partial struct FileIdAllExtdDirectoryInformation
+    {
+        /// <summary>
+        /// The common field structure shared by all the Query Directory Information class
+        /// </summary>
+        public FileCommonDirectoryInformation FileCommonDirectoryInformation;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the length,  in bytes, of the FileName field. 
+        /// </summary>
+        public uint FileNameLength;
+
+        /// <summary>
+        /// A 32-bit unsigned integer that contains the combined  length, in bytes, of the extended attributes (EA)  
+        /// for  the file. 
+        /// </summary>
+        public uint EaSize;
+
+        /// <summary>
+        /// MUST be ignored by the receiver. 
+        /// </summary>
+        public uint ReparsePointTag;
+
+        /// <summary>
+        /// The 64-bit file ID, as specified in section 2.1.10, of the file. 
+        /// For file systems that do not support a 64-bit file ID, this field MUST be set to 0, 
+        /// and MUST be ignored 
+        /// </summary>
+        public long FileId;
+
+        /// <summary>
+        /// The 128-bit file ID, as specified in section 2.1.10, of the file. For file systems that do not support a 128-bit file ID, this field MUST be set to 0, and MUST be ignored.
+        /// </summary>
+        public Int128 FileId128;
+
+        /// <summary>
+        /// A sequence of Unicode characters containing the file name. When working with this field, use FileNameLength to
+        /// determine the length of the file name rather than assuming the presence of a trailing null delimiter.
+        /// Dot directory names are valid for this field.
+        /// </summary>
+        [Size("FileNameLength")]
+        public byte[] FileName;
+
+    }
+    #endregion
+
     #region 2.4.22   FileMailslotQueryInformation
 
     /// <summary>
@@ -5839,7 +6627,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
     //  <remarks>
     //   MS-fscc\52df7798-8330-474b-ac31-9afe8075640c.xml
     //  </remarks>
-    public partial struct FILE_MODE_INFORMATION
+    public partial struct FileModeInformation
     {
 
         /// <summary>
@@ -7938,6 +8726,43 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fscc
         /// The supplied handle is not that of a file. 
         /// </summary>
         STATUS_INVALID_DEVICE_REQUEST = 0xC0000010
+    }
+    
+    /// <summary>
+    /// Status of FsctlRefsStreamSnapshotManagementReply
+    /// </summary>
+    [SuppressMessage("Microsoft.Design", "CA1028:EnumStorageShouldBeInt32")]
+    public enum FsctlRefsStreamSnapshotManagementReplyStatus : uint
+    {
+        /// <summary>
+        /// The operation as requested is not supported, or the file system does not support snapshot operations.
+        /// </summary>
+        STATUS_NOT_SUPPORTED = 0xC00000BB,
+
+        /// <summary>
+        /// One of the parameters to the request is incorrect.
+        /// </summary>
+        STATUS_INVALID_PARAMETER = 0xC000000D,
+
+        /// <summary>
+        /// There were insufficient resources to complete the operation.
+        /// </summary>
+        STATUS_INSUFFICIENT_RESOURCES = 0xC000009A,
+            
+        /// <summary>
+        /// The disk is full.
+        /// </summary>
+        STATUS_DISK_FULL = 0xC000007F,
+
+        /// <summary>
+        /// The volume is read-only.
+        /// </summary>
+        STATUS_MEDIA_WRITE_PROTECTED = 0xC00000A2,
+
+        /// <summary>
+        /// The operation completed successfully. 
+        /// </summary>
+        STATUS_SUCCESS = 0x00000000,
     }
 
     /// <summary>

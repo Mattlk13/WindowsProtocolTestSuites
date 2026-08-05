@@ -21,6 +21,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [TestCategory("BVT")]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the encode header messages can be sent in order of Sync -> Versions -> Channels -> Context.")]
         public void Rdprfx_HeaderMessage_PositiveTest_OrderTest_VersionsChannelsContext()
         {
@@ -36,7 +38,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -44,7 +49,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -63,7 +68,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -118,6 +123,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the encode header messages can be sent in order of Sync -> Channels -> Versions -> Context.")]
         public void Rdprfx_HeaderMessage_PositiveTest_OrderTest_ChannelsVersionsContext()
         {
@@ -133,7 +140,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -141,7 +151,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -160,7 +170,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -215,6 +225,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the encode header messages can be sent in order of Sync -> Context -> Versions -> Channels.")]
         public void Rdprfx_HeaderMessage_PositiveTest_OrderTest_ContextVersionsChannels()
         {
@@ -230,7 +242,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -238,7 +253,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -257,7 +272,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -312,6 +327,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the encode header messages can be sent in order of Sync -> Versions -> Context -> Channels.")]
         public void Rdprfx_HeaderMessage_PositiveTest_OrderTest_VersionsContextChannels()
         {
@@ -327,7 +344,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -335,7 +355,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -354,7 +374,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -411,6 +431,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Ensure that the client terminates the RDP connection when received a TS_RFX_SYNC message
         with the blockLen field set to an invalid value.")]
         public void Rdprfx_HeaderMessage_NegativeTest_TsRfxSync_InvalidBlockLen()
@@ -424,7 +446,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -432,7 +457,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -451,7 +476,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -493,6 +518,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]        
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Ensure the client terminates the RDP connection when received an unspecified type of message.")]
         public void Rdprfx_HeaderMessage_NegativeTest_UnspecifiedMessage()
         {
@@ -505,7 +532,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -513,7 +543,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -532,7 +562,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -574,6 +604,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can support the smallest channel 1x1.")]
         public void Rdprfx_HeaderMessage_PositiveTest_ChannelBoundaryTest_1x1Channel()
         {
@@ -587,7 +619,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             ChannelBoundaryTest_Channel(1, 1);
         }
 
@@ -595,6 +630,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can support the channel 2x2.")]
         public void Rdprfx_HeaderMessage_PositiveTest_ChannelBoundaryTest_2x2Channel()
         {
@@ -608,7 +645,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             ChannelBoundaryTest_Channel(2, 2);
         }
 
@@ -616,6 +656,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can support the largest channel 4096x2048.")]
         public void Rdprfx_HeaderMessage_PositiveTest_ChannelBoundaryTest_4096x2048Channel()
         {
@@ -629,7 +671,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             ChannelBoundaryTest_Channel(4096, 2048);
         }
 
@@ -637,6 +682,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can support the channel 4095x2047.")]
         public void Rdprfx_HeaderMessage_PositiveTest_ChannelBoundaryTest_4095x2047Channel()
         {
@@ -650,7 +697,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             ChannelBoundaryTest_Channel(4095, 2047);
         }
 

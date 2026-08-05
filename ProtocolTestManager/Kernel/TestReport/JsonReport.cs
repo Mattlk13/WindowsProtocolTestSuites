@@ -51,11 +51,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
         /// <param name="filename">File name of the exported report</param>
         public override bool ExportReport(string filename)
         {
-            if (this.testCases.Count() == 0)
-            {
-                return false;
-            }
-
             using (StreamWriter sw = new StreamWriter(filename))
             {
                 var serializerSettings = new JsonSerializerSettings
@@ -70,7 +65,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
 
         private class ShouldSerializeContractResolver : DefaultContractResolver
         {
-            public new static readonly ShouldSerializeContractResolver Instance = new ShouldSerializeContractResolver();
+            public static readonly ShouldSerializeContractResolver Instance = new ShouldSerializeContractResolver();
 
             protected override JsonContract CreateContract(Type objectType)
             {

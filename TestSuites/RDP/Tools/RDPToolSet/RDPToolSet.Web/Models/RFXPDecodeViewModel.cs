@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using CodecToolSet.Core;
 using CodecToolSet.Core.RFXPDecode;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RDPToolSet.Web.Models
 {

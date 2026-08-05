@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>SMBDPlugin</AssemblyName>
+        <RootNamespace>Microsoft.Protocols.TestManager.SMBDPlugin</RootNamespace>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+        <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+        <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <Folder Include="Docs\" />
+        <Folder Include="Icons\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.10" />
+        <PackageReference Include="System.Management" Version="9.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\..\ProtocolTestManager\PropertyValueDetector\PropertyValueDetector.csproj" />
+        <ProjectReference Include="..\..\..\..\..\ProtoSDK\RDMA\Rdma.vcxproj"  Condition="'$(OS)' == 'Windows_NT'"/>
+        <ProjectReference Include="..\..\..\..\..\ProtoSDK\RdmaLinux\RdmaLinux.csproj" />
+        <ProjectReference Include="..\..\..\..\..\ProtoSDK\MS-SMB2\Smb2.csproj" />
+        <ProjectReference Include="..\..\..\..\..\ProtoSDK\MS-SMBD\Smbd.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\..\..\..\AssemblyInfo\SharedAssemblyInfo.cs">
+            <Link>SharedAssemblyInfo.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="config.xml">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>

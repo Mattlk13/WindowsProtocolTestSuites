@@ -14,8 +14,6 @@ using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts;
 using System.DirectoryServices.Protocols;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Samr;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
-using Microsoft.Modeling;
 using System.Security.AccessControl;
 
 namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Samr
@@ -159,7 +157,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Samr
         /// <param name="domainName">Variable of string domainName which indicate that the domain name to look up.</param>
         /// <param name="serverHandle">Out parameter of type pointer HANDLE that Lockout the server handle.</param>
         /// <param name="domainHandle">Out parameter of type pointer HANDLE representing the opened domain handle.</param>
-        private void ConnectAndOpenDomain(string serverName, string domainName, out IntPtr serverHandle, out IntPtr domainHandle, uint domainDesiredAccess = Utilities.DOMAIN_ALL_ACCESS)
+        private void ConnectAndOpenDomain(string serverName, string domainName, out IntPtr serverHandle, out IntPtr domainHandle, uint domainDesiredAccess = Utilities.DOMAIN_ALL_ACCESS, bool needSessionKey = false)
         {
 
             Site.Log.Add(LogEntryKind.TestStep, "Initialize: Create Samr Bind to the server.");
@@ -168,7 +166,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Samr
                 _samrProtocolAdapter.primaryDomainFqdn,
                 _samrProtocolAdapter.DomainAdministratorName,
                 _samrProtocolAdapter.DomainUserPassword,
-                false,
+                needSessionKey,
                 true);
 
             //local Variables.

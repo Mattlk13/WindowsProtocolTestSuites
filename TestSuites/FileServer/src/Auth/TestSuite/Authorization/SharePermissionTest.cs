@@ -6,9 +6,12 @@ using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Srvs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 {
@@ -35,6 +38,15 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         protected override void TestInitialize()
         {
             base.TestInitialize();
+
+            CheckDriverSupportsNRPC();
+
+            // valid domain name matching, for example: contoso.com, local.contoso.com
+            if (!Regex.IsMatch(TestConfig.DomainName, @"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$", RegexOptions.IgnoreCase))
+            {
+                BaseTestSite.Assert.Inconclusive("Authentication test cases are not applicable in non-domain environment");
+            }
+
 
             if (dynamicallyConfigurableShareName == null)
             {
@@ -72,7 +84,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE with user SID exists in share Security Descriptor.")]
         public void BVT_SharePermission_AccessAllow_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -98,7 +110,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE with user's group SID exists in share Security Descriptor.")]
         public void SharePermission_AccessAllow_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -126,7 +138,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_DENIED_ACE with user SID exists in share Security Descriptor.")]
         public void SharePermission_AccessDeny_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -152,7 +164,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_DENIED_ACE with user's group SID exists in share Security Descriptor.")]
         public void SharePermission_AccessDeny_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -180,7 +192,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "user SID does not exist in share Security Descriptor.")]
         public void SharePermission_AccessDeny_SidNoInclude()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -206,7 +218,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             "ACCESS_ALLOWED_ACE with user SID exists in share Security Descriptor.")]
         public void SharePermission_AccessDeny_UserSidWithoutReadPermission()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             string shareName;
             if (dynamicallyConfigurableShareExist)
             {
@@ -233,7 +245,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [Description("This case is designed to test whether server can handle file deletion request when Treeconnect.MaximalAccess does not include DELETE or GENERIC_ALL.")]
         public void SharePermission_CreateClose_DeleteFile_MaximalAccessNotIncludeDeleteOrGenericAll()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             if (!dynamicallyConfigurableShareExist)
             {
                 BaseTestSite.Assert.Inconclusive("Required share: {0} does not exist!", dynamicallyConfigurableShareName);
@@ -345,6 +357,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Access the share {0} using account: {1}@{2}.", shareUncPath, azUser01Name, TestConfig.DomainName);
             bool result = AccessShare(new AccountCredential(TestConfig.DomainName, azUser01Name, TestConfig.UserPassword), shareUncPath);
             return result;
+        }
+
+        private void CheckDriverSupportsNRPC()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                BaseTestSite.Assert.Inconclusive("This test is not yet supported on Non-Windows Driver Computers");
+            }
         }
     }
 }

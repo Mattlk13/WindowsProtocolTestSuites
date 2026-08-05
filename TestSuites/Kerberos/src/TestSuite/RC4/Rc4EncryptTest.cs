@@ -27,6 +27,14 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite
             TestClassBase.Cleanup();
         }
 
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            IClientControlAdapter adapter = BaseTestSite.GetAdapter<IClientControlAdapter>();
+            adapter.SetSupportedEncryptionTypesAsRc4(testConfig.LocalRealm.KDC[0].FQDN, testConfig.LocalRealm.RealmName + "\\" + testConfig.LocalRealm.Admin.Username, testConfig.LocalRealm.Admin.Password);
+            adapter.SetSupportedEncryptionTypesAsRc4(testConfig.TrustedRealm.KDC[0].FQDN, testConfig.TrustedRealm.RealmName + "\\" + testConfig.TrustedRealm.Admin.Username, testConfig.TrustedRealm.Admin.Password);
+        }
+
         #region KileTestSuite in RC4
 
         [TestMethod]
@@ -1441,7 +1449,7 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite
             BaseTestSite.Log.Add(LogEntryKind.Comment, "Create and send unarmored TGS request with AD-fx-fast-used.");
             AdFxFastUsed adFxFastUsed = new AdFxFastUsed();
             AuthorizationData authData = new AuthorizationData(new AuthorizationDataElement[] { adFxFastUsed.AuthDataElement });
-            client.SendTgsRequest(testConfig.LocalRealm.ClientComputer.DefaultServiceName, options, null, null, authData);
+            client.SendTgsRequest(testConfig.LocalRealm.ClientComputer.DefaultServiceName, options, null, authData);
             BaseTestSite.Log.Add(LogEntryKind.Comment, "Receive TGS Error, KDC MUST reject the request.");
             KerberosKrbError krbError = client.ExpectKrbError();
             BaseTestSite.Assert.AreEqual(EncryptionType.RC4_HMAC, client.Context.SelectedEType, "Client selected encryption type should be RC4_HMAC.");

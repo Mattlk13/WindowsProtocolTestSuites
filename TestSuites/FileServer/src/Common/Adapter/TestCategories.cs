@@ -10,6 +10,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         public const string Failover = "Failover";
 
         public const string NonSmb = "NonSmb";
+        public const string DomainRequired = "DomainRequired";
         public const string Smb2002 = "Smb2002";
         public const string Smb21 = "Smb21";
         public const string Smb30 = "Smb30";
@@ -34,6 +35,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         public const string FileAccessCheck = "FileAccessCheck";
         public const string CBAC = "CBAC";
         public const string KerberosAuthentication = "KerberosAuthentication";
+        public const string NtlmAuthentication = "NtlmAuthentication";
 
         // SMB2&3 features
         // Note: For one case, only one feature category could be set
@@ -115,6 +117,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         public const string FlushCachedData = "FlushCachedData";
         public const string AlternateDataStream = "AlternateDataStream";
         public const string FileAccess = "FileAccess";
+        public const string CommonAlgorithm = "CommonAlgorithm";
 
         /// <summary>
         /// Indicate this test case is positive
@@ -150,5 +153,10 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         /// Unexpected create context, negotiate context and etc. according to technical document.
         /// </summary>
         public const string UnexpectedContext = "UnexpectedContext";
+
+        /// <summary>
+        /// The volume is a redundant media e.g RAID or mirrored
+        /// </summary>
+        public const string IsRedundantMedia = "IsRedundantMedia";
     }
 }

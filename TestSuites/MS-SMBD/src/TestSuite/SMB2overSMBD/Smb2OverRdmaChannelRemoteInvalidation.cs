@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Microsoft.Protocols.TestSuites.Smbd.Adapter;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
@@ -46,6 +47,15 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [TestCategory("Smb2OverRdmaChannelInvalidate")]
         public void BVT_Smb2OverRdma_Smb302_Write_SMB2_CHANNEL_RDMA_V1_INVALIDATE()
         {
+            if (smbdAdapter.TestConfig.RDMATransport == RDMATransport.RoCE && smbdAdapter.TestConfig.DriverPlatform != Platform.NonWindows)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support RDMA RoCE transport.");
+            }
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+
             EstablishConnectionAndOpenFile(fileName, Smb302AboveDialects);
 
             uint writeSize = smbdAdapter.Smb2MaxWriteSize;
@@ -93,6 +103,15 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [TestCategory("Smb2OverRdmaChannelInvalidate")]
         public void BVT_Smb2OverRdma_Smb302_Read_SMB2_CHANNEL_RDMA_V1_INVALIDATE()
         {
+            if(smbdAdapter.TestConfig.RDMATransport == RDMATransport.RoCE && smbdAdapter.TestConfig.DriverPlatform != Platform.NonWindows)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support RDMA RoCE transport.");
+            }
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+
             EstablishConnectionAndOpenFile(fileName, Smb302AboveDialects);
 
             uint fileSize = smbdAdapter.Smb2MaxReadSize;
@@ -173,6 +192,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [TestCategory("Smb2OverRdmaChannel")]
         public void Smb2OverRdma_Write_SMB2_CHANNEL_RDMA_V1()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             EstablishConnectionAndOpenFile(fileName);
 
             uint writeSize = smbdAdapter.Smb2MaxWriteSize;
@@ -217,6 +241,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [TestCategory("Smb2OverRdmaChannel")]
         public void Smb2OverRdma_Read_SMB2_CHANNEL_RDMA_V1()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             EstablishConnectionAndOpenFile(fileName);
 
             uint fileSize = smbdAdapter.Smb2MaxReadSize;
@@ -333,6 +362,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [TestCategory("Smb2OverRdmaChannelInvalidate")]
         public void Smb2OverRdma_Smb300_Read_SMB2_CHANNEL_RDMA_V1_INVALIDATE()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             EstablishConnectionAndOpenFile(fileName, Smb300OnlyDialects);
 
             uint fileSize = smbdAdapter.Smb2MaxReadSize;

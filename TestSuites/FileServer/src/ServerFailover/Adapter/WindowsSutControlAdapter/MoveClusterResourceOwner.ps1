@@ -1,7 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 [string]$resName
 [string]$nodeName
@@ -10,22 +8,20 @@
 [string]$userName = $PtfProp_Common_AdminUserName
 [string]$password = $PtfProp_Common_PasswordForAllUsers
 
-$SecurePassword = New-Object System.Security.SecureString
-if($domain -eq $null -or $domain.trim() -eq "")
+if($clusterName -notmatch "\.")
 {
-    $account = $userName
-}
-else
-{
-    $NetBIOSName = $Domain.Split(".")[0]
-    $account = "$NetBIOSName\$UserName"
+	$clusterName = "$clusterName.$domain"
 }
 
-for($i=0; $i -lt $password.Length; $i++)
+try
 {
-    $SecurePassword.AppendChar($password[$i])
+    Get-PSSession|Remove-PSSession
+    $psSession=New-PSSession -HostName $clusterName -UserName "$domain\$userName"
 }
-$credential = New-Object system.Management.Automation.PSCredential($account,$SecurePassword)
+catch
+{
+    Get-Error
+}
 
 $command = {
     Param
@@ -36,12 +32,18 @@ $command = {
     Move-ClusterGroup -Name $Name -Node $Node
 }
 
+$ret = $FALSE
 try
 {
-    invoke-Command -ComputerName $clusterName -Credential $credential -scriptblock $command -ArgumentList $resName,$nodeName
-	return $TRUE
+    $result = Invoke-Command -Session $psSession -ScriptBlock $command -ArgumentList $resName,$nodeName
+    $ret = $TRUE
 }
 catch
 {
-	return $FALSE
+	Get-Error
 }
+finally
+{
+    Get-PSSession|Remove-PSSession
+}
+return $ret

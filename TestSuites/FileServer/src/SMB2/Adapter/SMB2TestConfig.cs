@@ -7,7 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
@@ -68,6 +68,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.Adapter
             get
             {
                 return GetProperty("DriverComputerName");
+            }
+        }
+
+        public bool IsKB500139Installed
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("IsKB500139Installed"));
             }
         }
 

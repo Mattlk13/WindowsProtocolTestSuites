@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.IO;
-using System.Drawing;
-using System.Reflection;
-using System.Diagnostics;
-using Microsoft.Protocols.TestTools;
-using System.Text.RegularExpressions;
-using Microsoft.Protocols.TestTools.StackSdk;
+
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
-using System.Runtime.CompilerServices;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SkiaSharp;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Microsoft.Protocols.TestSuites.Rdp
 {
@@ -43,19 +44,29 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         protected bool isClientSupportSoftSync = true;
         protected bool isClientSupportTunnelingStaticVCTraffic = true;
         protected bool isClientSupportEmptyRdpNegData;
-        protected static Image image_64X64; //Defined to static for reuse across test cases
-        protected static Image imageForVideoMode;
+        protected bool supportCompression = false;
+        protected static int? compressionValueResult = null; // the return value of SetCompressionValue(supportCompression)
+        protected static SKImage image_64X64; //Defined to static for reuse across test cases
+        protected static SKImage imageForVideoMode;
         protected uint maxRequestSize = 0x50002A; //The MaxReqestSize field of  Multifragment Update Capability Set. Just for test.
         protected bool isWindowsImplementation = true;
         protected bool DropConnectionForInvalidRequest = true;
         protected bool bVerifyRdpbcgrMessage;
-        protected bool isclientSupportPersistentBitmapCache = false;
+        protected bool isClientSupportPersistentBitmapCache = false;
         protected ushort payloadLength = 15992; //payload length for RDP_BW_PAYLOAD and RDP_BW_STOP
         protected int payloadNum = 10;//How many RDP_BW_PAYLOAD will be sent
 
+        protected bool TurnOffRDPBCGRVerification;
+        protected bool TurnOffRDPEGFXVerification;
+        protected bool TurnOffRDPEIVerification;
+        protected bool TurnOffRDPEUSBVerification;
+        protected bool TurnOffRDPRFXVerification;
+        protected bool invalidCredentialSet = false;
+        protected bool SupportRemoteFX;
+
         // Variable for SUT display verification
         protected bool verifySUTDisplay = false;
-        protected Point sutDisplayShift;
+        protected SKPoint sutDisplayShift;
         protected string bitmapSavePath;
         protected int imageId = 0;
         protected string tmpFilePath = @".\tmpBitmap.bmp";
@@ -65,7 +76,9 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         public static void BaseInitialize(TestContext context)
         {
             TestClassBase.Initialize(context);
-            BaseTestSite.DefaultProtocolDocShortName = BaseTestSite.Properties["ProtocolName"];
+            string defaultProtocolDocShortName;
+            PtfPropUtility.GetPtfPropertyValue(BaseTestSite, "ProtocolName", out defaultProtocolDocShortName);
+            BaseTestSite.DefaultProtocolDocShortName = defaultProtocolDocShortName;
         }
 
         public static void BaseCleanup()
@@ -92,16 +105,18 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             string rdpVersion = GetSupportedRDPVersion(attrs);
             VerifyRDPVersion(testName, rdpVersion);
 
-            this.rdpbcgrAdapter = (IRdpbcgrAdapter)this.TestSite.GetAdapter(typeof(IRdpbcgrAdapter));
-            this.sutControlAdapter = (IRdpSutControlAdapter)this.TestSite.GetAdapter(typeof(IRdpSutControlAdapter));
+            this.rdpbcgrAdapter = this.TestSite.GetAdapter<IRdpbcgrAdapter>();
+            this.sutControlAdapter = this.TestSite.GetAdapter<IRdpSutControlAdapter>();
             this.rdpbcgrAdapter.Reset();
             LoadConfig();
 
-            this.rdpbcgrAdapter.ConfirmActiveRequest += new ConfirmActiveRequestHandler(this.testClassBase_getConfirmActivePduInfo);
+            this.rdpbcgrAdapter.ConfirmActiveRequest += new ConfirmActiveRequestHandler(this.TestClassBase_GetConfirmActivePduInfo);
 
             if (isWindowsImplementation)
             {
-                string RDPClientVersion = this.Site.Properties["RDP.Version"].ToString();
+                string RDPClientVersion;
+                PtfPropUtility.GetPtfPropertyValue(Site, "Version", out RDPClientVersion);
+
                 if (string.CompareOrdinal(RDPClientVersion, "10.3") == 0) // Windows client will not interrupt the connection for RDPClient 10.3.
                 {
                     DropConnectionForInvalidRequest = true; //A switch to avoid waiting till timeout. 
@@ -111,6 +126,18 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                     DropConnectionForInvalidRequest = false; //A switch to avoid waiting till timeout. 
                 }
             }
+
+            if (!compressionValueResult.HasValue)
+            {
+                compressionValueResult = this.sutControlAdapter.SetCompressionValue(supportCompression);
+            }
+
+            if (compressionValueResult < 0)
+            {
+                TestSite.Assume.Inconclusive("The compression value was not set properly as supportCompression");
+            }
+
+            CheckPlatformCompatibility();
         }
 
         protected override void TestCleanup()
@@ -138,22 +165,23 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         {
             try
             {
-                string currentRDPVersion = this.Site.Properties["RDP.Version"];
+                string currentRDPVersion;
+                PtfPropUtility.GetPtfPropertyValue(Site, "Version", out currentRDPVersion);
 
-                //Validate the format of RDP.version in ptfconfig. The format of the version is required to be x.x
+                //Validate the format of version in ptfconfig. The format of the version is required to be x.x
                 Version currentRDPVer = null;
                 if (!Version.TryParse(currentRDPVersion, out currentRDPVer))
                 {
-                    this.Site.Assert.Fail("Invalid format of RDP.Version {0} in config file. The valid format is required to be x.x. Please check the ptf config file.", currentRDPVersion);
+                    this.Site.Assert.Fail("Invalid format of Version {0} in config file. The valid format is required to be x.x. Please check the ptf config file.", currentRDPVersion);
                 }
 
-                //Validate the RDP version required by the test case against the RDP.version in ptfconfig
+                //Validate the RDP version required by the test case against the version in ptfconfig
                 Version testcaseRdpVer = null;
                 if (Version.TryParse(version, out testcaseRdpVer))
                 {
                     if (testcaseRdpVer > currentRDPVer)
                     {
-                        this.Site.Assert.Inconclusive("Test case {0} is only supported by RDP {1} or above. But current RDP version is set to {2}", testCaseName, version, currentRDPVersion);
+                        this.Site.Assume.Inconclusive("Test case {0} is only supported by RDP {1} or above. But current RDP version is set to {2}", testCaseName, version, currentRDPVersion);
                     }
                 }
                 else
@@ -166,7 +194,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 if (ex is ArgumentNullException || ex is FormatException || ex is OverflowException)
                 {
                     this.Site.Log.Add(LogEntryKind.Comment, ex.Message);
-                    this.Site.Assert.Fail("RDP.Version in PTF config, or the RDP version in TestCategory attribute is not configured correctly.");
+                    this.Site.Assert.Fail("Version in PTF config, or the RDP version in TestCategory attribute is not configured correctly.");
                 }
                 else
                 {
@@ -197,9 +225,9 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             return null;
         }
 
-        protected void triggerClientRDPConnect(EncryptedProtocol enProtocol, bool fullScreen = false)
+        protected void TriggerClientRDPConnect(EncryptedProtocol enProtocol, bool fullScreen = false, bool invalidCredentials = false)
         {
-            int iResult = 0;
+            int iResult;
             string strMethod = null;
             switch (enProtocol)
             {
@@ -208,7 +236,15 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 case EncryptedProtocol.NegotiationCredSsp:
                 case EncryptedProtocol.NegotiationTls:
                     {
-                        if (fullScreen)
+                        if (invalidCredentials)
+                        {
+                            iResult = 0;
+                            CredentialManagerAddInvalidAccount();
+                            // Will delay for five seconds as 12R2 is slower to execute Account Name change
+                            Thread.Sleep(5000);
+                            iResult = this.sutControlAdapter.RDPConnectWithNegotiationApproachInvalidAccount(this.TestContext.TestName);
+                        }
+                        else if (fullScreen)
                         {
                             iResult = this.sutControlAdapter.RDPConnectWithNegotiationApproachFullScreen(this.TestContext.TestName);
                         }
@@ -223,16 +259,33 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 // direct approach
                 case EncryptedProtocol.DirectCredSsp:
                     {
-                        if (fullScreen)
+                        if (invalidCredentials)
+                        {
+                            iResult = 0;
+                            CredentialManagerAddInvalidAccount();
+                            // Will delay for five seconds as 12R2 is slower to execute Account Name change
+                            Thread.Sleep(5000);
+                            iResult = this.sutControlAdapter.RDPConnectWithDirectCredSSPInvalidAccount(this.TestContext.TestName);
+                        }
+                        else if (fullScreen)
+                        {
                             iResult = this.sutControlAdapter.RDPConnectWithDirectCredSSPFullScreen(this.TestContext.TestName);
+                        }
                         else
+                        {
                             iResult = this.sutControlAdapter.RDPConnectWithDirectCredSSP(this.TestContext.TestName);
+                        }
+
                         strMethod = "RDPConnectWithDirectCredSSP";
                     }
                     break;
+
+                default:
+                    {
+                        throw new InvalidOperationException($"Unexpected encryption protocol: {enProtocol}!");
+                    }
             }
 
-            TestSite.Assert.IsTrue(strMethod != null, "Unknown encryption protocol: {0}!", enProtocol);
             TestSite.Assert.IsTrue(iResult >= 0, "SUT Control Adapter: {0} should be successful: {1}.", strMethod, iResult);
         }
 
@@ -243,15 +296,15 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             #region Security Approach and Protocol
             string strRDPSecurityProtocol;
             bool isNegotiationBased = true;
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RdpSecurityNegotiation, out isNegotiationBased))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RdpSecurityNegotiation, out isNegotiationBased, new string[] { RdpPtfGroupNames.Security }))
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityNegotiation);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityNegotiation);
             }
 
             selectedProtocol = selectedProtocols_Values.PROTOCOL_RDP_FLAG;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, RdpPtfPropNames.RdpSecurityProtocol, out strRDPSecurityProtocol))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RdpSecurityProtocol, out strRDPSecurityProtocol, new string[] { RdpPtfGroupNames.Security }))
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityProtocol);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityProtocol);
             }
 
             // Check the combination of RdpSecurityNegotiation and RdpSecurityProtocol
@@ -284,16 +337,16 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             }
             else
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityProtocol);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityProtocol);
             }
             #endregion
 
             #region Encryption Level
             string strRDPSecurityEncryptionLevel;
             enLevel = EncryptionLevel.ENCRYPTION_LEVEL_LOW;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, RdpPtfPropNames.RdpSecurityEncryptionLevel, out strRDPSecurityEncryptionLevel))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RdpSecurityEncryptionLevel, out strRDPSecurityEncryptionLevel, new string[] { RdpPtfGroupNames.Security, RdpPtfGroupNames.Encryption }))
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionLevel);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionLevel);
             }
             else
             {//None, Low, Client, High, FIPS
@@ -319,7 +372,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 }
                 else
                 {
-                    assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionLevel);
+                    AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionLevel);
                 }
 
             }
@@ -339,9 +392,9 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             #region Encryption Method
             string strRDPSecurityEncryptionMethod;
             enMethod = EncryptionMethods.ENCRYPTION_METHOD_128BIT;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, RdpPtfPropNames.RdpSecurityEncryptionMethod, out strRDPSecurityEncryptionMethod))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RdpSecurityEncryptionMethod, out strRDPSecurityEncryptionMethod, new string[] { RdpPtfGroupNames.Security, RdpPtfGroupNames.Encryption }))
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionMethod);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionMethod);
             }
             else
             {//None, 40bit, 56bit, 128bit, FIPS
@@ -367,7 +420,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 }
                 else
                 {
-                    assumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionMethod);
+                    AssumeFailForInvalidPtfProp(RdpPtfPropNames.RdpSecurityEncryptionMethod);
                 }
             }
 
@@ -388,9 +441,9 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
             #region WaitTime
             int waitSeconds;
-            if (!PtfPropUtility.GetIntPtfProperty(TestSite, RdpPtfPropNames.Timeout, out waitSeconds))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.Timeout, out waitSeconds))
             {
-                assumeFailForInvalidPtfProp(RdpPtfPropNames.Timeout);
+                AssumeFailForInvalidPtfProp(RdpPtfPropNames.Timeout);
             }
             else
             {
@@ -401,25 +454,25 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
             #region SUT Display Verification
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, "VerifySUTDisplay.Enable", out verifySUTDisplay))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "Enable", out verifySUTDisplay, new string[] { RdpPtfGroupNames.VerifySUTDisplay }))
             {
                 verifySUTDisplay = false;
             }
 
             int shiftX, shiftY;
-            if (!PtfPropUtility.GetIntPtfProperty(TestSite, "VerifySUTDisplay.Shift.X", out shiftX))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "ShiftX", out shiftX, new string[] { RdpPtfGroupNames.VerifySUTDisplay }))
             {
                 shiftX = 0;
             }
 
-            if (!PtfPropUtility.GetIntPtfProperty(TestSite, "VerifySUTDisplay.Shift.Y", out shiftY))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "ShiftY", out shiftY, new string[] { RdpPtfGroupNames.VerifySUTDisplay }))
             {
                 shiftY = 0;
             }
 
-            sutDisplayShift = new Point(shiftX, shiftY);
+            sutDisplayShift = new SKPoint(shiftX, shiftY);
 
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, "VerifySUTDisplay.BitmapSavePath", out bitmapSavePath))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "BitmapSavePath", out bitmapSavePath, new string[] { RdpPtfGroupNames.VerifySUTDisplay }))
             {
                 bitmapSavePath = @".\";
             }
@@ -434,83 +487,108 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
             #region Other configrations
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportFastPathInput, out isClientSupportFastPathInput))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportFastPathInput, out isClientSupportFastPathInput))
             {
                 isClientSupportFastPathInput = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportAutoReconnect, out isClientSuportAutoReconnect))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportAutoReconnect, out isClientSuportAutoReconnect))
             {
                 isClientSuportAutoReconnect = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportRDPEFS, out isClientSupportRDPEFS))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportRDPEFS, out isClientSupportRDPEFS))
             {
                 isClientSupportRDPEFS = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportServerRedirection, out isClientSupportServerRedirection))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportServerRedirection, out isClientSupportServerRedirection))
             {
                 isClientSupportServerRedirection = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportSoftSync, out isClientSupportSoftSync))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportSoftSync, out isClientSupportSoftSync))
             {
                 isClientSupportSoftSync = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportTunnelingStaticVCTraffic, out isClientSupportTunnelingStaticVCTraffic))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportTunnelingStaticVCTraffic, out isClientSupportTunnelingStaticVCTraffic))
             {
                 isClientSupportTunnelingStaticVCTraffic = false; //if property not found, set to false as default value
             }
-
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.RDPClientSupportRdpNegDataEmpty, out isClientSupportEmptyRdpNegData))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.SupportCompression, out supportCompression))
+            {
+                supportCompression = false; //if property not found, set to false as default value
+            }
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.RDPClientSupportRdpNegDataEmpty, out isClientSupportEmptyRdpNegData))
             {
                 isClientSupportEmptyRdpNegData = false; //if property not found, set to false as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.IsWindowsImplementation, out isWindowsImplementation))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.IsWindowsImplementation, out isWindowsImplementation))
             {
                 isWindowsImplementation = true; //if property not found, set to true as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, RdpPtfPropNames.DropConnectionForInvalidRequest, out DropConnectionForInvalidRequest))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.DropConnectionForInvalidRequest, out DropConnectionForInvalidRequest))
             {
                 DropConnectionForInvalidRequest = true; //if property not found, set to true as default value
             }
 
-            if (!PtfPropUtility.GetBoolPtfProperty(TestSite, "VerifyRdpbcgrMessage", out bVerifyRdpbcgrMessage))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "VerifyRdpbcgrMessage", out bVerifyRdpbcgrMessage))
             {
                 bVerifyRdpbcgrMessage = true; //if property not found, set to true as default value
             }
 
-            String rdprfxImageFile;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, "RDPRFX.Image", out rdprfxImageFile))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "TurnOffRDPBCGRVerification", out TurnOffRDPBCGRVerification))
             {
-                rdprfxImageFile = ""; //if property not found, set to true as default value
+                TurnOffRDPBCGRVerification = true; //if property not found, set to true as default value
             }
 
-            String rdprfxVideoModeImageFile;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, "RDPRFXVideoMode.Image", out rdprfxVideoModeImageFile))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "TurnOffRDPEGFXVerification", out TurnOffRDPEGFXVerification))
             {
-                rdprfxVideoModeImageFile = ""; //if property not found, set to true as default value
+                TurnOffRDPEGFXVerification = true; //if property not found, set to true as default value
             }
 
-            try
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "TurnOffRDPEIVerification", out TurnOffRDPEIVerification))
             {
-                //Get image from file
-                image_64X64 = Image.FromFile(rdprfxImageFile);
-                imageForVideoMode = Image.FromFile(rdprfxVideoModeImageFile);
+                TurnOffRDPEIVerification = true; //if property not found, set to true as default value
             }
-            catch (System.IO.FileNotFoundException)
-            {
-                //capture screen if failed to get image from file
-                //Capture 64*64 bitmap for Image Mode
-                image_64X64 = captureScreenImage(0, 0, TileSize, TileSize);
 
-                //Capture screen bitmap for Vedio Mode
-                imageForVideoMode = captureScreenImage(0, 0, TileSize * VideoMode_TileRowNum, TileSize * VideoMode_TileColNum);
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "TurnOffRDPEUSBVerification", out TurnOffRDPEUSBVerification))
+            {
+                TurnOffRDPEUSBVerification = true; //if property not found, set to true as default value
             }
+
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "TurnOffRDPRFXVerification", out TurnOffRDPRFXVerification))
+            {
+                TurnOffRDPRFXVerification = true; //if property not found, set to true as default value
+            }
+            if(!PtfPropUtility.GetPtfPropertyValue(TestSite, "SupportRemoteFX", out SupportRemoteFX))
+            {
+                SupportRemoteFX = false;
+            }
+            if (image_64X64 == null)
+            {
+                String rdprfxImageFile;
+                if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.MSRDPRFX_Image, out rdprfxImageFile))
+                {
+                    AssumeFailForInvalidPtfProp(RdpPtfPropNames.MSRDPRFX_Image);
+                }
+                image_64X64 = SKImage.FromEncodedData(rdprfxImageFile);
+            }
+
+            if (imageForVideoMode == null)
+            {
+                String rdprfxVideoModeImageFile;
+                if (!PtfPropUtility.GetPtfPropertyValue(TestSite, RdpPtfPropNames.MSRDPRFX_VideoModeImage, out rdprfxVideoModeImageFile))
+                {
+                    AssumeFailForInvalidPtfProp(RdpPtfPropNames.MSRDPRFX_VideoModeImage);
+                }
+
+                imageForVideoMode = SKImage.FromEncodedData(rdprfxVideoModeImageFile);
+            }
+
             #endregion
 
             #endregion
@@ -540,7 +618,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         /// <param name="usingRemoteFX">Whether the output image is using RemoteFX codec</param>
         /// <param name="compareRect">The Rectangle on the image to be compared</param>
         /// <param name="callStackIndex">Call stack index from the test method</param>
-        protected void VerifySUTDisplay(bool usingRemoteFX, Rectangle compareRect, int callStackIndex = 1)
+        protected void VerifySUTDisplay(bool usingRemoteFX, SKRect compareRect, int callStackIndex = 1)
         {
             if (!verifySUTDisplay || this.rdpbcgrAdapter.SimulatedScreen == null)
             {
@@ -564,19 +642,20 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             this.TestSite.Log.Add(LogEntryKind.Debug, "The absolute path of screen shot file is {0}.", fileInfoScreenShot.FullName);
 
             // Compare the screenshot with base image in simulated screen
-            Bitmap image = new Bitmap(pathForSUTScreenShot);
+            SKBitmap image = SKBitmap.Decode(pathForSUTScreenShot);
             string pathForBaseImage = bitmapSavePath + @"\" + sf.GetMethod().Name + "_" + imageId + "_BaseImage.bmp";
-            this.rdpbcgrAdapter.SimulatedScreen.BaseImage.Save(tmpFilePath);
+            using var stream = File.OpenWrite(tmpFilePath);
+            this.rdpbcgrAdapter.SimulatedScreen.BaseImage.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
             File.Copy(tmpFilePath, pathForBaseImage, true);
 
             // print the absolute path of base image file
             var fileInfoBaseImage = new FileInfo(pathForBaseImage);
             this.TestSite.Log.Add(LogEntryKind.Debug, "The absolute path of base image file is {0}.", fileInfoBaseImage.FullName);
 
-            bool compareRes = this.rdpbcgrAdapter.SimulatedScreen.Compare(image, sutDisplayShift, compareRect, usingRemoteFX);
+            bool compareRes = this.rdpbcgrAdapter.SimulatedScreen.Compare(SKImage.FromBitmap(image), sutDisplayShift, compareRect, usingRemoteFX);
             this.TestSite.Assert.IsTrue(compareRes, "SUT display verification should success, the output on RDP client should be equal (or similar enough if using RemoteFX codec) as expected.");
         }
-        
+
         /// <summary>
         /// End the test case with inconclusive if it's Windows implementation and using RDP security protocol
         /// Used in test cases which need to establish TLS/DTLS on RDP-UDP connection.
@@ -586,28 +665,18 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         {
             if (transportProtocol == EncryptedProtocol.Rdp && isWindowsImplementation)
             {
-                Site.Assert.Inconclusive("Not Applicable, Microsoft RDP clients fail the TLS or DTLS handshake for a multitransport connection if Enhanced RDP Security is not in effect for the main RDP connection.");
+                Site.Assume.Inconclusive("Not Applicable, Microsoft RDP clients fail the TLS or DTLS handshake for a multitransport connection if Enhanced RDP Security is not in effect for the main RDP connection.");
             }
         }
         //override, assume fail for an invalid PTF property.
-        private void assumeFailForInvalidPtfProp(string propName)
+        private void AssumeFailForInvalidPtfProp(string propName)
         {
             this.TestSite.Assume.Fail("The property \"{0}\" is invalid or not present in PTFConfig file!", propName);
         }
 
-        //Capture image from screen
-        private Bitmap captureScreenImage(int left, int top, int width, int height)
-        {
-            Bitmap bitmap = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(bitmap);
-            g.CopyFromScreen(left, top, 0, 0, new Size(width, height));
-            g.Dispose();
-            return bitmap;
-        }
-
         //Get capability information from Client_Confirm_Active_Pdu, 
         //will be added to ConfirmActiveRequest event
-        private void testClassBase_getConfirmActivePduInfo(Client_Confirm_Active_Pdu confirmActivePdu)
+        private void TestClassBase_GetConfirmActivePduInfo(Client_Confirm_Active_Pdu confirmActivePdu)
         {
             foreach (ITsCapsSet cap in confirmActivePdu.confirmActivePduData.capabilitySets)
             {
@@ -616,14 +685,56 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                     TS_BITMAPCACHE_CAPABILITYSET_REV2 bitmapCacheV2 = (TS_BITMAPCACHE_CAPABILITYSET_REV2)cap;
                     if ((bitmapCacheV2.CacheFlags & CacheFlags_Values.PERSISTENT_KEYS_EXPECTED_FLAG) != 0)
                     {
-                        isclientSupportPersistentBitmapCache = true;
+                        isClientSupportPersistentBitmapCache = true;
                     }
-
                 }
             }
         }
-                
+
         #endregion
+
+        /// <summary>
+        /// Try the function until it does not throw exceptions or the time is out.
+        /// </summary>
+        /// <param name="func">Specifies the pointer that points to the function that is under trial, if the function throws out exception we would try the function again until succeed or timeout.</param>
+        /// <param name="timeout">Specifies the overall retry time span.</param>
+        /// <param name="retryInterval">Specifies the retry interval.</param>
+        /// <param name="format">Specifies the retry error message format.</param>
+        /// <param name="args">Specifies the retry error message format's args.</param>
+        /// <returns>true,false</returns>
+        protected bool DoUntilSucceed(Func<bool> func, TimeSpan timeout, TimeSpan retryInterval, string format, params object[] args)
+        {
+            DateTime endTime = DateTime.Now.Add(timeout);
+            string lastException = null;
+            bool result = false;
+            string desc = string.Format(format, args);
+            DateTime retryStart = DateTime.Now;
+            do
+            {
+                try
+                {
+                    result = func();
+                }
+                catch (Exception e)
+                {
+                    lastException = e.Message;
+                    BaseTestSite.Log.Add(LogEntryKind.Debug, "Throw an exception: {0}.", e.Message);
+                    Thread.Sleep(retryInterval);
+                }
+            } while (!result && DateTime.Now < endTime);
+            TimeSpan retryDuration = DateTime.Now - retryStart;
+            BaseTestSite.Log.Add(LogEntryKind.Debug, "Retry {0} after retry duration: {1}",
+                result == true ? "succeed" : "fail",
+                retryDuration.ToString());
+
+            if (result != true)
+            {
+                throw new InvalidOperationException(String.Format("Retry failed. The last exception is: {0}", lastException ?? desc));
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Provide a generic method to handle the invalid request from RDP server
         /// For Windows, it drops the rdp connection directly.
@@ -645,6 +756,111 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             {
                 this.TestSite.Log.Add(LogEntryKind.Warning, "Non-Windows RDP client did not terminate the connection when invalid " + requestDesc + " received.");
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Please double check the RDP client behavior is as expected.");
+            }
+        }
+
+        /// <summary>
+        /// Trigger RDP client to disconnect all RDP connections.
+        /// </summary>
+        public void TriggerClientDisconnectAll()
+        {
+            int? iResult;
+
+            try
+            {
+                iResult = sutControlAdapter?.TriggerClientDisconnectAll(this.TestContext.TestName);
+
+                if (invalidCredentialSet)
+                {
+                    CredentialManagerReverseInvalidAccount();
+                }
+            }
+            catch (Exception ex)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "Exception happened during TriggerClientDisconnectAll(): {0}.", ex);
+
+                return;
+            }
+
+            if (iResult != null)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+            }
+        }
+
+        /// <summary>
+        /// Trigger Change Of Stored Credentials To Invalid User Account.
+        /// </summary>
+        public void CredentialManagerAddInvalidAccount()
+        {
+            int? iResult;
+
+            try
+            {
+                iResult = sutControlAdapter?.CredentialManagerAddInvalidAccount(this.TestContext.TestName);
+                invalidCredentialSet = true;
+            }
+            catch (Exception ex)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "Exception happened during CredentialManagerAddInvalidAccount(): {0}.", ex);
+                TestSite.Assert.Fail("Adding an invalid credential failed");
+                return;
+            }
+
+            if (iResult != null)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "The result of CredentialManagerAddInvalidAccount is {0}.", iResult);
+            }
+
+            if (iResult < 0)
+            {
+                TestSite.Assert.Fail("Adding an invalid credential failed"); ;
+            }
+        }
+
+        /// <summary>
+        /// Trigger Change Of Stored Credentials To Valid User Account.
+        /// </summary>
+        public void CredentialManagerReverseInvalidAccount()
+        {
+            int? iResult;
+
+            try
+            {
+                iResult = sutControlAdapter?.CredentialManagerReverseInvalidAccount(this.TestContext.TestName);
+                invalidCredentialSet = false;
+            }
+            catch (Exception ex)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "Exception happened during CredentialManagerReverseInvalidAccount(): {0}.", ex);
+                TestSite.Assert.Fail("Removing the invalid credential failed");
+                return;
+            }
+
+            if (iResult != null)
+            {
+                TestSite.Log.Add(LogEntryKind.Debug, "The result of CredentialManagerReverseInvalidAccount is {0}.", iResult);
+            }
+
+            if (iResult < 0)
+            {
+                TestSite.Assert.Fail("Removing the invalid credential failed");
+            }
+
+        }
+
+        /// <summary>
+        /// Check platform compatibility.
+        /// </summary>
+        private void CheckPlatformCompatibility()
+        {
+            // Check CredSSP, which is currently only supported on Windows.
+            if (transportProtocol == EncryptedProtocol.NegotiationCredSsp || transportProtocol == EncryptedProtocol.DirectCredSsp)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    TestSite.Assume.Inconclusive("The transport protocols based on CredSSP are only supported on Windows.");
+                }
             }
         }
     }

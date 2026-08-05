@@ -9,6 +9,7 @@ using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.Protocols.TestSuites.Rdp;
 
 namespace Microsoft.Protocols.TestSuites.Rdprfx
 {
@@ -19,6 +20,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [TestCategory("BVT")]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the connection type and color depth within Client Core Data.")]
         public void Rdprfx_VerifyClientCoreData()
         {
@@ -40,7 +43,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region Connection initialization phase
@@ -79,6 +82,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [TestCategory("BVT")]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client capabilities.")]
         public void Rdprfx_VerifyClientCapabilities()
         {
@@ -92,6 +97,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
+            if(SupportRemoteFX==false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
 
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
@@ -100,7 +109,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region Connection initialization phase

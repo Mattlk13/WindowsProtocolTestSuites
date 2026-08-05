@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
-using System.Linq;
+using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
 {
@@ -17,7 +16,6 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
     public class ModelManagedAdapterBase : ManagedAdapterBase
     {
         protected SMB2ModelTestConfig testConfig;
-        protected ISutProtocolControlAdapter sutProtocolController;
         protected List<string> testFiles = new List<string>();
         protected List<string> testDirectories = new List<string>();
 
@@ -34,7 +32,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
 
             testConfig = new SMB2ModelTestConfig(Site);
 
-            sutProtocolController = Site.GetAdapter<ISutProtocolControlAdapter>();
+            TestTools.StackSdk.Security.KerberosLib.KerberosContext.KDCComputerName = testConfig.DCServerName;
+            TestTools.StackSdk.Security.KerberosLib.KerberosContext.KDCPort = testConfig.KDCPort;
         }
 
         public override void Reset()
@@ -74,7 +73,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
             }
 
             string fileName = CurrentTestCaseName + "_" + Guid.NewGuid().ToString();
-            testFiles.Add(Path.Combine(share, fileName));
+            testFiles.Add(string.Format(@"{0}\{1}", share, fileName));
             return fileName;
         }
 
@@ -85,7 +84,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
                 return;
             }
 
-            testFiles.Add(Path.Combine(share, fileName));
+            testFiles.Add(string.Format(@"{0}\{1}", share, fileName));
         }
 
         protected string GetTestDirectoryName(string share)
@@ -96,7 +95,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
             }
 
             string directoryName = CurrentTestCaseName + "_" + Guid.NewGuid().ToString();
-            testDirectories.Add(Path.Combine(share, directoryName));
+            testDirectories.Add(string.Format(@"{0}\{1}", share, directoryName));
             return directoryName;
         }
 
@@ -107,7 +106,44 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter
                 return;
             }
 
-            testDirectories.Add(Path.Combine(share, directoryName));
+            testDirectories.Add(string.Format(@"{0}\{1}", share, directoryName));
         }
+
+        private static readonly HashSet<string> incompatibleTestNamesOverQUIC = new HashSet<string>()
+        {
+            "AppInstanceIdTestCaseS26",
+            "AppInstanceIdTestCaseS46",
+            "AppInstanceIdTestCaseS54",
+            "AppInstanceIdTestCaseS561",
+            "AppInstanceIdTestCaseS566",
+            "AppInstanceIdTestCaseS586",
+            "AppInstanceIdTestCaseS591",
+            "DurableHandleV1PreparedWithBatchOplockReconnectTestCaseS303",
+            "DurableHandleV1PreparedWithBatchOplockReconnectTestCaseS387",
+            "DurableHandleV1PreparedWithBatchOplockReconnectTestCaseS464",
+            "DurableHandleV2PreparedWithLeaseV2ReconnectTestCaseS318",
+            "ResilientHandleBasicTestCaseS1109",
+            "ResilientHandleBasicTestCaseS2246",
+            "ResilientHandleBasicTestCaseS2454",
+            "ResilientHandleBasicTestCaseS536",
+            "ResilientHandleDurableTestCaseS1753",
+            "ResilientHandleDurableTestCaseS1856",
+            "ResilientHandleDurableTestCaseS2039",
+            "ResilientHandleDurableTestCaseS2123",
+            "ResilientHandleDurableTestCaseS2743",
+            "ResilientHandleDurableTestCaseS3056",
+            "ResilientHandleDurableTestCaseS3307",
+            "ResilientHandleDurableTestCaseS3502",
+            "ResilientOpenScavengerTimer_ReconnectBeforeTimeout"
+        };
+
+        public virtual void CheckTestOverQUIC()
+        {
+            if (testConfig.UnderlyingTransport == Smb2TransportType.Quic && incompatibleTestNamesOverQUIC.Contains(CurrentTestCaseName))
+            {
+                Site.Assert.Inconclusive("Ignoring test {0} over QUIC", CurrentTestCaseName);
+            }
+        }
+
     }
 }

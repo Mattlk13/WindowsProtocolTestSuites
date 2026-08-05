@@ -1,20 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestSuites.Rdp;
-using Microsoft.Protocols.TestSuites.Rdpegfx;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
-using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.Protocols.TestSuites.Rdpegfx;
+using Microsoft.Protocols.TestSuites.Rdprfx;
+using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedisp;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
-using Microsoft.Protocols.TestSuites.Rdprfx;
-using System.Drawing;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
+using SkiaSharp;
 
 namespace Microsoft.Protocols.TestSuites.Rdpedisp
 {
@@ -73,14 +75,20 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         {
             base.TestInitialize();
 
+            VerifyInteractiveRdpedispTestCase();
+
             try
             {
-                originalDesktopWidth = Convert.ToUInt16(Site.Properties["originalDesktopWidth"]);
-                originalDesktopHeight = Convert.ToUInt16(Site.Properties["originalDesktopHeight"]);
-                changedDesktopWidth = Convert.ToUInt16(Site.Properties["changedDesktopWidth"]);
-                changedDesktopHeight = Convert.ToUInt16(Site.Properties["changedDesktopHeight"]);
-                originalMonitorNumber = Convert.ToUInt16(Site.Properties["originalMonitorNumber"]);
-                changedMonitorNumber = Convert.ToUInt16(Site.Properties["changedMonitorNumber"]);
+                bool isValid = PtfPropUtility.GetPtfPropertyValue(Site, "OriginalDesktopWidth", out originalDesktopWidth)
+                               && PtfPropUtility.GetPtfPropertyValue(Site, "OriginalDesktopHeight", out originalDesktopHeight)
+                               && PtfPropUtility.GetPtfPropertyValue(Site, "ChangedDesktopWidth", out changedDesktopWidth)
+                               && PtfPropUtility.GetPtfPropertyValue(Site, "ChangedDesktopHeight", out changedDesktopHeight)
+                               && PtfPropUtility.GetPtfPropertyValue(Site, "OriginalMonitorNumber", out originalMonitorNumber)
+                               && PtfPropUtility.GetPtfPropertyValue(Site, "ChangedMonitorNumber", out changedMonitorNumber);
+                if (!isValid)
+                {
+                    throw new InvalidCastException("Invalid configured parameters");
+                }
             }
             catch (Exception)
             {
@@ -92,9 +100,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
                 changedMonitorNumber = 2;
             }
 
-            this.rdpedispAdapter = (IRdpedispAdapter)this.TestSite.GetAdapter(typeof(IRdpedispAdapter));
+            this.rdpedispAdapter = this.TestSite.GetAdapter<IRdpedispAdapter>();
             this.rdpedispAdapter.Reset();
-            this.rdpedispSutControlAdapter = (IRdpedispSUTControlAdapter)this.TestSite.GetAdapter(typeof(IRdpedispSUTControlAdapter));
+            this.rdpedispSutControlAdapter = this.TestSite.GetAdapter<IRdpedispSUTControlAdapter>();
+
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening with transport protocol: {0}", transportProtocol.ToString());
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -118,7 +127,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
 
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
 
             DynamicVCException.SetCleanUp(false);
         }
@@ -127,11 +136,41 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         #region Private Methods
 
         /// <summary>
+        /// Inconclude the interactive test cases.
+        /// </summary>
+        private void VerifyInteractiveRdpedispTestCase()
+        {
+            var isInteractiveTestCase = IsInteractiveRdpedispTestCase();
+            var isInteractiveAdapter = Site.Config.GetAdapterConfig("IRdpedispSUTControlAdapter").GetType().Name == "InteractiveAdapterConfig";
+
+            if (isInteractiveTestCase && !isInteractiveAdapter)
+            {
+                Site.Assume.Inconclusive("This case only supports interactive SUT control adapter.");
+            }
+        }
+
+        /// <summary>
+        /// Determine whether the executing Rdpedisp test case is interactive or not
+        /// </summary>
+        /// <returns>The executing Rdpedisp test case is interactive or not</returns>
+        private bool IsInteractiveRdpedispTestCase()
+        {
+            var testName = this.TestContext.TestName;
+            var method = GetType().GetMethod(testName);
+            var attrs = method.GetCustomAttributes<TestCategoryAttribute>();
+
+            return attrs.Any(attr => attr.TestCategories.Contains("Interactive"));
+        }
+
+        /// <summary>
         /// Verify the version of operation system or MSTSC
         /// </summary>
         private void VerifyRDPVersion()
         {
-            this.Site.Assert.AreEqual<String>(this.Site.Properties["RDP.Version"], "8.1", "MS-RDPEDISP only support RDP 8.1 and above.");
+            string RDPClientVersion;
+            PtfPropUtility.GetPtfPropertyValue(Site, "Version", out RDPClientVersion);
+
+            this.Site.Assert.AreEqual<String>(RDPClientVersion, "8.1", "MS-RDPEDISP only support RDP 8.1 and above.");
         }
 
         /// <summary>
@@ -155,7 +194,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
 
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -173,7 +212,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -181,7 +220,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             rdpedycServer.ExchangeCapabilities(waitTime);
             if (notificationType == NotificationType.SurfaceManagementCommand)
             {
-                this.rdpegfxAdapter = (IRdpegfxAdapter)this.TestSite.GetAdapter(typeof(IRdpegfxAdapter));
+                this.rdpegfxAdapter = this.TestSite.GetAdapter<IRdpegfxAdapter>();
                 this.rdpegfxAdapter.Reset();
                 this.rdprfxAdapter = null;
                 // RDPEGFX capability exchange
@@ -191,8 +230,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             }
             else
             {
-                this.rdprfxAdapter = (IRdprfxAdapter)this.TestSite.GetAdapter(typeof(IRdprfxAdapter));
-                this.rdprfxAdapter.Reset();                
+                this.rdprfxAdapter = this.TestSite.GetAdapter<IRdprfxAdapter>();
+                this.rdprfxAdapter.Reset();
                 //Initial the RDPRFX adapter context.
                 rdprfxAdapter.Accept(this.rdpbcgrAdapter.ServerStack, this.rdpbcgrAdapter.SessionContext);
                 receiveAndLogClientRfxCapabilites();
@@ -206,12 +245,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         /// </summary>
         private void StopRDPConnection()
         {
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
-            this.rdpbcgrAdapter.Reset();
-            if(this.rdpegfxAdapter != null)
+            TriggerClientDisconnectAll();
+
+            this.rdpbcgrAdapter?.Reset();
+            if (this.rdpegfxAdapter != null)
                 this.rdpegfxAdapter.Reset();
-            if(this.rdprfxAdapter != null)
+            if (this.rdprfxAdapter != null)
                 this.rdprfxAdapter.Reset();
         }
 
@@ -245,19 +284,19 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         /// Load Rdpedisp test image RdpedispTestImage
         /// </summary>
         /// <returns></returns>
-        private Bitmap LoadImage()
+        private SKBitmap LoadImage()
         {
             // Load Rdpedisp test image
             String RdpedispTestImagePath;
-            Bitmap testImage = null;
-            if (!PtfPropUtility.GetStringPtfProperty(this.TestSite, "RdpedispTestImage", out RdpedispTestImagePath))
+            SKBitmap testImage = null;
+            if (!PtfPropUtility.GetPtfPropertyValue(this.TestSite, "RdpedispTestImage", out RdpedispTestImagePath))
             {
                 RdpedispTestImagePath = "";
                 return null;
             }
             try
             {
-                testImage = new Bitmap(RdpedispTestImagePath);
+                testImage = SKBitmap.Decode(RdpedispTestImagePath);
             }
             catch (System.IO.FileNotFoundException)
             {
@@ -310,7 +349,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             }
         }
 
-       
+
         /// <summary>
         /// Check whether two monitors are overlapped
         /// </summary>
@@ -368,11 +407,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         /// </summary>
         /// <param name="monitors">Monitor array</param>
         /// <returns></returns>
-        private bool VerifyMonitorsOverlap(DISPLAYCONTROL_MONITOR_LAYOUT[] monitors){
+        private bool VerifyMonitorsOverlap(DISPLAYCONTROL_MONITOR_LAYOUT[] monitors)
+        {
             bool anyOverlap = false;
-            for (int i = 0; i < monitors.Length-1; i++)
+            for (int i = 0; i < monitors.Length - 1; i++)
             {
-                for (int j = i+1; j < monitors.Length; j++)
+                for (int j = i + 1; j < monitors.Length; j++)
                 {
                     if (isOverlap(monitors[i], monitors[j])) anyOverlap = true;
                 }
@@ -452,7 +492,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
                true, true, true);
         }
 
-        private void SendInstruction(ushort screenWidth, ushort screenHeight, Bitmap bitmap)
+        private void SendInstruction(ushort screenWidth, ushort screenHeight, SKBitmap bitmap)
         {
             this.TestSite.Log.Add(LogEntryKind.Comment, "Create a surface and fill it with white color.");
             // Create & output a surface 
@@ -463,19 +503,19 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             // Send solid fill request to client to fill surface with white color
             RDPGFX_RECT16 fillSurfRect = RdpegfxTestUtility.ConvertToRect(new RDPGFX_POINT16(0, 0), screenWidth, screenHeight);
             RDPGFX_RECT16[] fillRects = { fillSurfRect };  // Relative to surface
-            uint fid = this.rdpegfxAdapter.SolidFillSurface(surf, RdpegfxTestUtility.ToRdpgfx_Color32(Color.White), fillRects);
+            uint fid = this.rdpegfxAdapter.SolidFillSurface(surf, RdpegfxTestUtility.ToRdpgfx_Color32(SKColors.White), fillRects);
             this.TestSite.Log.Add(LogEntryKind.Debug, "Surface is filled with solid color in frame: {0}", fid);
             this.rdpegfxAdapter.ExpectFrameAck(fid);
             this.rdpegfxAdapter.DeleteSurface(surf.Id);
             this.TestSite.Log.Add(LogEntryKind.Debug, "Surface {0} is deleted", surf.Id);
 
-            ushort startX = (ushort) (screenWidth / 2 - bitmap.Width / 2);
-            ushort startY = (ushort) (screenHeight / 2 - bitmap.Height / 2);
+            ushort startX = (ushort)(screenWidth / 2 - bitmap.Width / 2);
+            ushort startY = (ushort)(screenHeight / 2 - bitmap.Height / 2);
             surfRect = RdpegfxTestUtility.ConvertToRect(new RDPGFX_POINT16(startX, startY), (ushort)bitmap.Width, (ushort)bitmap.Height);
             surf = this.rdpegfxAdapter.CreateAndOutputSurface(surfRect, PixelFormat.PIXEL_FORMAT_XRGB_8888);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Instruction Image to client.");
-            List<Dictionary<uint, byte[]>> layerDataList = this.rdpegfxAdapter.RfxProgressiveCodecEncode(surf, bitmap, PixelFormat.PIXEL_FORMAT_XRGB_8888,
+            List<Dictionary<uint, byte[]>> layerDataList = this.rdpegfxAdapter.RfxProgressiveCodecEncode(surf, SKImage.FromBitmap(bitmap), PixelFormat.PIXEL_FORMAT_XRGB_8888,
                                                             false, true, ImageQuality_Values.Lossless, false, false, true);
             fid = SendRfxProgCodecEcodedData(layerDataList);
             this.rdpegfxAdapter.ExpectFrameAck(fid);

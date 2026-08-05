@@ -1,22 +1,21 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Reflection;
-using System.Threading;
-using System.IO;
-using System.Xml;
-using System.Xml.Serialization;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
-using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace Microsoft.Protocols.TestSuites.Rdpegfx
 {
@@ -52,10 +51,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         protected override void TestInitialize()
         {
             base.TestInitialize();
-            this.rdpegfxAdapter = (IRdpegfxAdapter)this.TestSite.GetAdapter(typeof(IRdpegfxAdapter));
+            this.rdpegfxAdapter = this.TestSite.GetAdapter<IRdpegfxAdapter>();
             this.rdpegfxAdapter.Reset();
             this.GetTestData();
-            this.rdpbcgrAdapter.TurnVerificationOff(true);
+            this.rdpbcgrAdapter.TurnVerificationOff(TurnOffRDPEGFXVerification);
 
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening with transport protocol: {0}", transportProtocol.ToString());
@@ -77,7 +76,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger client to close all RDP connections for clean up.");
             StopRDPConnection();
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
 
             DynamicVCException.SetCleanUp(false);
         }
@@ -105,7 +104,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -136,7 +135,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             }
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -151,10 +150,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// </summary>
         private void StopRDPConnection()
         {
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
-            this.rdpbcgrAdapter.Reset();
-            this.rdpegfxAdapter.Reset();
+            TriggerClientDisconnectAll();
+
+            this.rdpbcgrAdapter?.Reset();
+            this.rdpegfxAdapter?.Reset();
         }
 
         /// <summary>
@@ -167,33 +166,40 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
 
             // Load clearcodec image
             String RdpegfxClearCodecImagePath;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, "ClearCodecImage", out RdpegfxClearCodecImagePath))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "ClearCodecImage", out RdpegfxClearCodecImagePath))
             {
                 RdpegfxClearCodecImagePath = "";
             }
 
+            // Load clearcodec image
+            string screenshotCommand;
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "LinuxScreenshotCaptureCommand", out screenshotCommand))
+            {
+                screenshotCommand = "gnome-screenshot --file={{fileName}}";
+            }
+
             try
             {
-                testData.ClearCodecImage = (Bitmap)Image.FromFile(RdpegfxClearCodecImagePath);
+                testData.ClearCodecImage = SKBitmap.Decode(RdpegfxClearCodecImagePath);
             }
             catch (System.IO.FileNotFoundException)
             {
-                testData.ClearCodecImage = RdpegfxTestUtility.captureFromScreen(0, 0, RdpegfxTestUtility.surfWidth, RdpegfxTestUtility.surfHeight);
+                testData.ClearCodecImage = RdpegfxTestUtility.CaptureFromScreen(0, 0, RdpegfxTestUtility.surfWidth, RdpegfxTestUtility.surfHeight, screenshotCommand);
             }
 
             // Load RfxProgressiveCodec image
             String RdpegfxRfxProgCodecImagePath;
-            if (!PtfPropUtility.GetStringPtfProperty(TestSite, "RfxProgressiveCodecImage", out RdpegfxRfxProgCodecImagePath))
+            if (!PtfPropUtility.GetPtfPropertyValue(TestSite, "RfxProgressiveCodecImage", out RdpegfxRfxProgCodecImagePath))
             {
                 RdpegfxRfxProgCodecImagePath = "";
             }
             try
             {
-                testData.RfxProgCodecImage = (Bitmap)Image.FromFile(RdpegfxRfxProgCodecImagePath);
+                testData.RfxProgCodecImage = SKBitmap.Decode(RdpegfxRfxProgCodecImagePath);
             }
             catch (System.IO.FileNotFoundException)
             {
-                testData.RfxProgCodecImage = RdpegfxTestUtility.captureFromScreen(0, 0, RdpegfxTestUtility.surfWidth, RdpegfxTestUtility.surfHeight);
+                testData.RfxProgCodecImage = RdpegfxTestUtility.CaptureFromScreen(0, 0, RdpegfxTestUtility.surfWidth, RdpegfxTestUtility.surfHeight, screenshotCommand);
             }
 
         }
@@ -260,13 +266,13 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
                     {
                         this.isH264AVC420Supported = true;
                     }
-                    else if (capSet.version == CapsVersions.RDPGFX_CAPVERSION_10
+                    else if ((capSet.version == CapsVersions.RDPGFX_CAPVERSION_10
                         || capSet.version == CapsVersions.RDPGFX_CAPVERSION_102
                         || capSet.version == CapsVersions.RDPGFX_CAPVERSION_103
                         || capSet.version == CapsVersions.RDPGFX_CAPVERSION_104
                         || capSet.version == CapsVersions.RDPGFX_CAPVERSION_105
                         || capSet.version == CapsVersions.RDPGFX_CAPVERSION_106
-
+                        || capSet.version == CapsVersions.RDPGFX_CAPVERSION_107)
                         && (flag & CapsFlags.RDPGFX_CAPS_FLAG_AVC_DISABLED) == 0)
                     {
                         this.isH264AVC420Supported = true;
@@ -427,7 +433,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="callStackIndex">Call stack index from the test method, which help to get test method name in the function</param>
         private void VerifySUTDisplay(bool usingRemoteFX, RDPGFX_RECT16 rect, int callStackIndex = 1)
         {
-            Rectangle compareRect = new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+            SKRect compareRect = new SKRect(rect.left, rect.top, rect.right, rect.bottom);
             base.VerifySUTDisplay(usingRemoteFX, compareRect, callStackIndex + 1);
         }
 
@@ -443,8 +449,20 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             {
                 foreach (RDPGFX_RECT16 rect in rects)
                 {
-                    Rectangle compareRect = new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+                    SKRect compareRect = new SKRect(rect.left, rect.top, rect.right, rect.bottom);
                     base.VerifySUTDisplay(usingRemoteFX, compareRect, callStackIndex + 1);
+                }
+            }
+        }
+
+        private void CheckPlatformCompatibility(DynamicVC_TransportType dvcTransportType)
+        {
+            // Check lossy dynamic virtual channel transport type, which is currently only supported on Windows.
+            if (dvcTransportType == DynamicVC_TransportType.RDP_UDP_Lossy)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    TestSite.Assume.Inconclusive("The lossy dynamic virtual channel transport type is only supported on Windows.");
                 }
             }
         }
@@ -473,9 +491,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         public static ushort surfHeight3 = 356;
         public static ushort largeSurfWidth = 512;
         public static ushort largeSurfHeight = 512;
-        public static RDPGFX_COLOR32 fillColorGreen = ToRdpgfx_Color32(Color.Green);
-        public static RDPGFX_COLOR32 fillColorRed = ToRdpgfx_Color32(Color.Red);
-        public static RDPGFX_COLOR32 fillColorBlue = ToRdpgfx_Color32(Color.Blue);
+        public static RDPGFX_COLOR32 fillColorGreen = ToRdpgfx_Color32(SKColors.Green);
+        public static RDPGFX_COLOR32 fillColorRed = ToRdpgfx_Color32(SKColors.Red);
+        public static RDPGFX_COLOR32 fillColorBlue = ToRdpgfx_Color32(SKColors.Blue);
         public static RDPGFX_COLOR32 fillColorARGB = new RDPGFX_COLOR32(0xff, 0xff, 0xff, 0xff);  // ARGB format color
         public static RDPGFX_POINT16 imgPos = new RDPGFX_POINT16(0, 0);            // Relative to surface
         public static RDPGFX_POINT16 imgPos2 = new RDPGFX_POINT16(64, 64);          // Relative to surface
@@ -519,8 +537,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         public static int maxCacheSize = 100; // 100M
         public static int maxCacheSizeForSmallCache = 16; //16M
 
-        public Bitmap ClearCodecImage;
-        public Bitmap RfxProgCodecImage;
+        public SKBitmap ClearCodecImage;
+        public SKBitmap RfxProgCodecImage;
 
 
         /// <summary>
@@ -528,9 +546,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// </summary>
         /// <param name="c"> Color to be converted </param>
         /// <returns> RDPGRX_COLOR32 structure color </returns>
-        public static RDPGFX_COLOR32 ToRdpgfx_Color32(Color c)
+        public static RDPGFX_COLOR32 ToRdpgfx_Color32(SKColor c)
         {
-            return new RDPGFX_COLOR32(c.B, c.G, c.R, c.A);
+            return new RDPGFX_COLOR32(c.Blue, c.Green, c.Red, c.Alpha);
         }
         /// <summary>
         /// Convert a position and width/height into Rectangle structure
@@ -552,13 +570,41 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="width"> Width of captured bitmap </param>
         /// <param name="height"> Height of captured bitmap </param>
         /// <returns> The captured bitmap </returns>
-        public static Bitmap captureFromScreen(int left, int top, int width, int height)
+        public static SKBitmap CaptureFromScreen(int left, int top, int width, int height, string screenshotCommand = null)
         {
-            Bitmap bitmap = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(bitmap);
-            g.CopyFromScreen(left, top, 0, 0, new Size(width, height));
-            g.Dispose();
-            return bitmap;
+            SKBitmap sKBitmap = new SKBitmap(width, height);
+            string fileName = "tempScreen.png";
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            if (isWindows)
+            {
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(width, height);
+                System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bitmap);
+                g.CopyFromScreen(left, top, 0, 0, new System.Drawing.Size(width, height));
+                g.Dispose();
+
+                bitmap.Save(fileName);
+                sKBitmap = SKBitmap.Decode(fileName);
+            }
+            else
+            {
+                const string fileNamePlaceholder = "{{fileName}}";
+                screenshotCommand = screenshotCommand.Replace(fileNamePlaceholder, fileName);
+
+                Process process = new Process();
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.FileName = "/bin/bash";
+                process.StartInfo.Arguments = $"-c \"{screenshotCommand}\"";
+                process.StartInfo.CreateNoWindow = true;
+                process.Start();
+                process.WaitForExit();
+
+                SKBitmap screenBitmap = SKBitmap.Decode(fileName);
+                SKCanvas skcanvas = new SKCanvas(sKBitmap);
+                skcanvas.DrawImage(SKImage.FromBitmap(screenBitmap), new SKRect((float)left, (float)top, (float)(width + left), (float)(height + top)), new SKRect((float)0, (float)0, (float)width, (float)height));
+                skcanvas.Dispose();
+            }
+
+            return sKBitmap;
         }
 
         /// <summary>
@@ -570,22 +616,22 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="height"> Height of captured bitmap </param>
         /// <param name="bgImage"> The image after a part is captured </param>
         /// <returns> The captured bitmap </returns>
-        public static Bitmap captureFromImage(Image srcImage, RDPGFX_POINT16 capPos, int width, int height, out Image bgImage)
+        public static SKBitmap captureFromImage(SKImage srcImage, RDPGFX_POINT16 capPos, int width, int height, out SKImage bgImage)
         {
             // Cut a bitmap(width * height) from position(left,top) of srcImage
-            Bitmap bitmap = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(bitmap);
-            Rectangle destRect = new Rectangle(0, 0, width, height);
-            Rectangle srcRect = new Rectangle(capPos.x, capPos.y, width, height);
-            g.DrawImage(srcImage, destRect, srcRect, GraphicsUnit.Pixel);
+            SKBitmap bitmap = new SKBitmap(width, height);
+            SKCanvas canvas = new SKCanvas(bitmap);
+            SKRect destRect = new SKRect(0, 0, width, height);
+            SKRect srcRect = new SKRect(capPos.x, capPos.y, width + capPos.x, height + capPos.y);
+            canvas.DrawImage(srcImage, srcRect, destRect);
 
             // Fill the cut rectangle with solid color at position(left, top) 
             bgImage = srcImage;
-            Bitmap bgBmp = (Bitmap)bgImage;
-            Color brushColor = bgBmp.GetPixel(capPos.x, capPos.y);
-            SolidBrush pixelBrush = new SolidBrush(brushColor);
-            Graphics srcg = Graphics.FromImage(srcImage);
-            srcg.FillRectangle(pixelBrush, srcRect);
+            SKBitmap bgBmp = SKBitmap.FromImage(bgImage);
+            SKColor brushColor = bgBmp.GetPixel(capPos.x, capPos.y);
+            SKPaint paint = new SKPaint { Color = brushColor };
+            SKCanvas sKCanvas = new SKCanvas(bgBmp);
+            sKCanvas.DrawRect(srcRect, paint);
             return bitmap;
         }
 
@@ -594,13 +640,13 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// </summary>
         /// <param name="srcImage"> The source image </param>
         /// <returns> The image with diagonal </returns>
-        public static Bitmap drawDiagonal(Image srcImage)
+        public static SKBitmap drawDiagonal(SKImage srcImage)
         {
-            Bitmap newBmp = (Bitmap)srcImage;
+            SKBitmap newBmp = srcImage == null ? null : SKBitmap.FromImage(srcImage);
             for (int x = 0; x < newBmp.Width; x++)
             {
                 int y = (x * newBmp.Height) / newBmp.Width;
-                newBmp.SetPixel(x, y, Color.Black);
+                newBmp.SetPixel(x, y, SKColors.Black);
             }
 
             return newBmp;
@@ -613,13 +659,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="h"> Height of an image </param>
         /// <param name="c"> The color to fill image </param>
         /// <returns> The drawn bitmap </returns>
-        public static Bitmap DrawImage(int w, int h, Color c)
+        public static SKBitmap DrawImage(int w, int h, SKColor c)
         {
-            Bitmap bitmap = new Bitmap(w, h);
-            Graphics g = Graphics.FromImage(bitmap);
-            SolidBrush pixelBrush = new SolidBrush(c);
-            g.FillRectangle(pixelBrush, 0, 0, w, h);
-
+            SKBitmap bitmap = new SKBitmap(w, h);
+            SKCanvas canvas = new SKCanvas(bitmap);
+            SKPaint paint = new SKPaint { Color = c };
+            canvas.DrawRect(new SKRect(0, 0, w, h), paint);
             return bitmap;
         }
 
@@ -631,18 +676,16 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="h"> Height of an image </param>
         /// <param name="startColor"> The start color to draw image </param>
         /// <returns> The result bitmap </returns>
-        public static Bitmap DrawGradientImage(int w, int h, Color startColor)
+        public static SKBitmap DrawGradientImage(int w, int h, SKColor startColor)
         {
-            Bitmap bitmap = new Bitmap(w, h);
+            SKBitmap bitmap = new SKBitmap(w, h);
 
-            for (int y = 0; y < h; y++)
+            for (int row = 0; row < w; row++)
             {
-                int argb = startColor.ToArgb();
-                for (int x = 0; x < w; x++)
+                var (r, g, b) = ((byte)startColor.Red, startColor.Green, (byte)(startColor.Blue + row));
+                for (int col = 0; col < h; col++)
                 {
-                    Color c = Color.FromArgb(argb);
-                    bitmap.SetPixel(x, y, c);
-                    argb++;         // Change color for next pixel
+                    bitmap.SetPixel(row, col, new SKColor(r, g, b));
                 }
             }
 
@@ -657,17 +700,15 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="h"> Height of image </param>
         /// <param name="startColor"> The start color to draw image </param>
         /// <returns> The result bitmap </returns>
-        public static Bitmap DrawImageWithUniqueColor(int w, int h, Color startColor)
+        public static SKBitmap DrawImageWithUniqueColor(int w, int h, SKColor startColor)
         {
-            Bitmap bitmap = new Bitmap(w, h);
-            int argb = startColor.ToArgb();
-            for (int y = 0; y < h; y++)
+            SKBitmap bitmap = new SKBitmap(w, h);
+            for (int row = 0; row < w; row++)
             {
-                for (int x = 0; x < w; x++)
+                for (int col = 0; col < h; col++)
                 {
-                    Color c = Color.FromArgb(argb);
-                    bitmap.SetPixel(x, y, c);
-                    argb++;                // Change color for next pixel
+                    var (r, g, b) = ((byte)startColor.Red, (byte)(startColor.Green + col), (byte)(startColor.Blue + row));
+                    bitmap.SetPixel(row, col, new SKColor(r, g, b));
                 }
             }
 
@@ -682,17 +723,17 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         /// <param name="pic"> The bitmap to be drawn in surface image </param>
         /// <param name="picPos"> The bitmap position in surface </param>
         /// <returns> A surface image </returns>
-        public static Bitmap DrawSurfImage(Surface surf, Color bgcolor, Bitmap pic, RDPGFX_POINT16 picPos)
+        public static SKBitmap DrawSurfImage(Surface surf, SKColor bgcolor, SKBitmap pic, RDPGFX_POINT16 picPos)
         {
-            Bitmap bitmap = new Bitmap(surf.Width, surf.Height);
-            Graphics g = Graphics.FromImage(bitmap);
-            SolidBrush pixelBrush = new SolidBrush(bgcolor);
-            g.FillRectangle(pixelBrush, 0, 0, surf.Width, surf.Height);
+            SKBitmap bitmap = new SKBitmap(surf.Width, surf.Height);
+            SKCanvas canvas = new SKCanvas(bitmap);
+            SKPaint paint = new SKPaint { Color = bgcolor };
+            canvas.DrawRect(new SKRect(0, 0, surf.Width, surf.Height), paint);
             for (int x = picPos.x; (x < surf.Width) && (x < (picPos.x + pic.Width)); x++)
             {
                 for (int y = picPos.y; (y < surf.Height) && (y < (picPos.y + pic.Height)); y++)
                 {
-                    Color c = pic.GetPixel(x - picPos.x, y - picPos.y);
+                    SKColor c = pic.GetPixel(x - picPos.x, y - picPos.y);
                     bitmap.SetPixel(x, y, c);
                 }
             }

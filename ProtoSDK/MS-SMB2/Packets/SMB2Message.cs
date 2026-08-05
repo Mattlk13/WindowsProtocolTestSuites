@@ -237,6 +237,19 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// as specified in section 2.2.9.2.1.
         /// </summary>
         SHAREFLAG_IDENTITY_REMOTING = 0x00040000,
+
+        /// <summary>
+        /// If set, The server supports compression of read/write messages on this share.
+        /// This flag is only valid for the SMB 3.1.1 dialect.
+        /// </summary>
+        SHAREFLAG_COMPRESS_DATA = 0x00100000,
+
+        /// <summary>
+        /// The server indicates that administrator set share property telling client that it is preferable to
+        /// isolate communication to that share on a separate set of connections. This flag is advisory and can
+        /// be ignored by SMB clients.
+        /// </summary>
+        SHAREFLAG_ISOLATED_TRANSPORT = 0x00200000,
     }
 
     /// <summary>
@@ -286,6 +299,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// </summary>
         GLOBAL_CAP_ENCRYPTION = 0x00000040,
 
+        /// <summary>
+        /// When set, indicates that the client supports receiving one-way notifications from a server.
+        /// </summary>
+        GLOBAL_CAP_NOTIFICATIONS = 0x00000080,
     }
 
     /// <summary>
@@ -600,8 +617,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         /// <summary>
         /// A lease is requested. If set, the request packet MUST contain an 
-        /// SMB2_CREATE_REQUEST_LEASE create context. This value is only valid 
-        /// for the SMB 2.1 dialect.
+        /// SMB2_CREATE_REQUEST_LEASE (section 2.2.13.2.8) or an
+        /// SMB2_CREATE_REQUEST_LEASE_V2 (section 2.2.13.2.10) create
+        /// context. This value is not valid for the SMB 2.0.2 dialect.
         /// </summary>
         OPLOCK_LEVEL_LEASE = 0xFF,
     }
@@ -1817,6 +1835,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// </summary>
         public OplockLevel_Values OplockLevel;
 
+        /// <summary>
+        /// When set, indicates the last portion of the file path is a reparse 
+        /// point.This MUST be used when the last component of a file opened 
+        /// is a reparse point, and the create request Create Options do not
+        ///  FILE_OPEN_REPARSE_POINT.
+        /// </summary>
         [StaticSize(1)]
         public CREATE_RESPONSE_Flags Flags;
 
@@ -1941,8 +1965,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         /// <summary>
         /// A lease is requested. If set, the request packet MUST contain an 
-        /// SMB2_CREATE_REQUEST_LEASE create context. This value is only valid 
-        /// for the SMB 2.1 dialect.
+        /// SMB2_CREATE_REQUEST_LEASE (section 2.2.13.2.8) or an
+        /// SMB2_CREATE_REQUEST_LEASE_V2 (section 2.2.13.2.10) create
+        /// context. This value is not valid for the SMB 2.0.2 dialect.
         /// </summary>
         OPLOCK_LEVEL_LEASE = 0xFF,
     }
@@ -2710,7 +2735,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// and ReadChannelInfoLength fields. The server is requested to perform remote invalidation when responding to 
         /// the request as specified in [MS-SMBD] section 3.1.4.2.
         /// </summary>
-        CHANNEL_RDMA_V1_INVALIDATE = 0x00000002
+        CHANNEL_RDMA_V1_INVALIDATE = 0x00000002,
+
+        /// <summary>
+        /// This flag is not valid for SMB 3.0 and 3.0.2 dialects. When connection supports RDMA transform, SMB2_RDMA_TRANSFORM
+        /// structure is present in the channel information specified by the RemainingBytes, WriteChannelInfoOffset, and 
+        /// WriteChannelInfoLength fields.
+        /// </summary>
+        CHANNEL_RDMA_TRANSFORM = 0x00000003
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 52)]
@@ -2780,6 +2812,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         ENCRYPTION_NONE = 0,
         ENCRYPTION_AES128_CCM = 0x0001,
         ENCRYPTION_AES128_GCM = 0x0002,
+        ENCRYPTION_AES256_CCM = 0x0003,
+        ENCRYPTION_AES256_GCM = 0x0004,
         ENCRYPTION_INVALID = 0xFFFF
     }
 
@@ -2812,14 +2846,129 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public CompressionAlgorithm CompressionAlgorithm;
 
         /// <summary>
-        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// This field MUST be set to one of the Compression_Transform_Header_Flags.
         /// </summary>
-        public ushort Reserved;
+        public Compression_Transform_Header_Flags Flags;
 
         /// <summary>
         /// The offset, in bytes, from the end of this structure to the start of compressed data segment.
         /// </summary>
         public uint Offset;
+    }
+
+    /// <summary>
+    /// Definition of Flags field in Compression_Transform_Header.
+    /// </summary>
+    [Flags]
+    public enum Compression_Transform_Header_Flags : UInt16
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_NONE = 0x0000,
+
+        /// <summary>
+        /// The Compressed message is chained with multiple compressed payloads.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_CHAINED = 0x0001,
+    }
+
+    /// <summary>
+    /// The SMB2_COMPRESSION_PAYLOAD_HEADER is used by the client or server when sending chained compressed payloads.
+    /// This optional structure is only valid for the SMB 3.1.1 dialect.
+    /// </summary>
+    public struct SMB2_COMPRESSION_PAYLOAD_HEADER
+    {
+        /// <summary>
+        /// This field MUST contain one of the algorithms used to compress the payload.
+        /// </summary>
+        public CompressionAlgorithm CompressionAlgorithm;
+
+        /// <summary>
+        /// This field MUST be set to one of SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.
+        /// </summary>
+        public SMB2_COMPRESSION_PAYLOAD_HEADER_Flags Flags;
+
+        /// <summary>
+        /// The length, in bytes, of the compressed payload.
+        /// </summary>
+        public UInt32 Length;
+
+        /// <summary>
+        /// This optional field is present only when AlgorithmId is LZNT1, LZ77, or LZ77+Huffman. The size, in bytes, of the uncompressed payload.
+        /// </summary>
+        [MarshalingCondition(nameof(IsOriginalPayloadSizePresent))]
+        public UInt32 OriginalPayloadSize;
+
+        public static SMB2_COMPRESSION_PAYLOAD_HEADER Create(CompressionAlgorithm compressionAlgorithm, UInt32 length, UInt32 originalPayloadSize, ref bool isFirst)
+        {
+            var result = new SMB2_COMPRESSION_PAYLOAD_HEADER();
+
+            result.CompressionAlgorithm = compressionAlgorithm;
+
+            result.Flags = isFirst ? SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.SMB2_COMPRESSION_FLAG_CHAINED : SMB2_COMPRESSION_PAYLOAD_HEADER_Flags.SMB2_COMPRESSION_FLAG_NONE;
+
+            isFirst = false;
+
+            result.Length = length;
+
+            result.OriginalPayloadSize = originalPayloadSize;
+
+            return result;
+        }
+
+        public static bool IsOriginalPayloadSizePresent(MarshalingType marshalingType, object value)
+        {
+            var compressionAlgorithm = ((SMB2_COMPRESSION_PAYLOAD_HEADER)value).CompressionAlgorithm;
+
+            bool result = Smb2Consts.AllCompressionAlgorithms.Contains(compressionAlgorithm);
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Definition of Flags field in SMB2_COMPRESSION_PAYLOAD_HEADER.
+    /// </summary>
+    [Flags]
+    public enum SMB2_COMPRESSION_PAYLOAD_HEADER_Flags : UInt16
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_NONE = 0x0000,
+
+        /// <summary>
+        /// The Compressed message is chained with multiple compressed payloads.
+        /// </summary>
+        SMB2_COMPRESSION_FLAG_CHAINED = 0x0001,
+    }
+
+    /// <summary>
+    /// The SMB2_COMPRESSION_PATTERN_PAYLOAD_V1 is used by the client or server when sending compressed pattern payload.
+    /// This optional structure is only valid for the SMB 3.1.1 dialect.
+    /// </summary>
+    public struct SMB2_COMPRESSION_PATTERN_PAYLOAD_V1
+    {
+        /// <summary>
+        /// This field contains the repeated byte.
+        /// </summary>
+        public byte Pattern;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// </summary>
+        public byte Reserved1;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. The sender MUST set this to 0, and the receiver MUST ignore it.
+        /// </summary>
+        public UInt16 Reserved2;
+
+        /// <summary>
+        /// The number of pattern repetitions in the payload.
+        /// </summary>
+        public UInt32 Repetitions;
     }
 
     /// <summary>
@@ -2870,7 +3019,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         ///  READ0x0008SMB2 WRITE0x0009SMB2 LOCK0x000ASMB2 IOCTL0x000BSMB2
         ///  CANCEL0x000CSMB2 ECHO0x000DSMB2 QUERY_DIRECTORY0x000ESMB2
         ///  CHANGE_NOTIFY 0x000FSMB2 QUERY_INFO0x0010SMB2
-        ///  SET_INFO0x0011SMB2 OPLOCK_BREAK0x0012
+        ///  SET_INFO0x0011SMB2 OPLOCK_BREAK0x0012 SERVER_TO_CLIENT_NOTIFICATION0x0013
         /// </summary>
         [StaticSize(2)]
         public Smb2Command Command;
@@ -3064,7 +3213,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         ///  FLUSH0x07SMB2 READ0x08SMB2 WRITE0x09SMB2 LOCK0x0ASMB2
         ///  IOCTL0x0BSMB2 CANCEL0x0CSMB2 ECHO0x0DSMB2 QUERY_DIRECTORY0x0ESMB2
         ///  CHANGE_NOTIFY0x0FSMB2 QUERY_INFO0x10SMB2 SET_INFO0x11SMB2
-        ///  OPLOCK_BREAK0x12
+        ///  OPLOCK_BREAK0x12 SERVER_TO_CLIENT_NOTIFICATION0x0013
         /// </summary>
         [StaticSize(2)]
         public Smb2Command Command;
@@ -4725,6 +4874,21 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// The Data field contains the server name to which the client connects.
         /// </summary>
         SMB2_NETNAME_NEGOTIATE_CONTEXT_ID = 0x0005,
+
+        /// <summary>
+        /// The Data field contains the list of signing algorithms, as specified in section 2.2.3.1.7
+        /// </summary>
+        SMB2_SIGNING_CAPABILITIES = 0x0008,
+
+        /// <summary>
+        /// The Data field contains a list of RDMA transforms, as specified in section 2.2.3.1.6
+        /// </summary>
+        SMB2_RDMA_TRANSFORM_CAPABILITIES = 0x0007,
+
+        /// <summary>
+        /// The Data field contains transport capabilities, as specified in section 2.2.3.1.5
+        /// </summary>
+        SMB2_TRANSPORT_CAPABILITIES = 0x0006,
     }
 
     /// <summary>
@@ -4833,9 +4997,31 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         LZ77Huffman = 0x0003,
 
         /// <summary>
+        /// Pattern Scanning algorithm
+        /// </summary>
+        Pattern_V1 = 0x0004,
+
+        /// <summary>
         /// Not a real compression algorithm value, SHOULD be unsupported
         /// </summary>
         Unsupported = 0x00FF,
+    }
+
+    /// <summary>
+    /// Possible values of Flags in SMB2_COMPRESSION_CAPABILITIES.
+    /// </summary>
+    [Flags]
+    public enum SMB2_COMPRESSION_CAPABILITIES_Flags : UInt32
+    {
+        /// <summary>
+        /// Chained compression is not supported.
+        /// </summary>
+        SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE = 0x00000000,
+
+        /// <summary>
+        /// Chained compression is supported on this connection.
+        /// </summary>
+        SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED = 0x00000001,
     }
 
     /// <summary>
@@ -4860,10 +5046,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public ushort Padding;
 
         /// <summary>
-        /// This field MUST NOT be used and MUST be reserved.
-        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// This field MUST be set to one of the values defined by SMB2_COMPRESSION_CAPABILITIES_Flags.
         /// </summary>
-        public uint Reserved;
+        public SMB2_COMPRESSION_CAPABILITIES_Flags Flags;
 
         /// <summary>
         /// An array of 16-bit integer IDs specifying the supported compression algorithms.
@@ -4874,7 +5059,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         public int GetDataLength()
         {
-            int dataLength = Marshal.SizeOf(CompressionAlgorithmCount) + Marshal.SizeOf(Padding) + Marshal.SizeOf(Reserved);
+            int dataLength = Marshal.SizeOf(CompressionAlgorithmCount) + Marshal.SizeOf(Padding) + sizeof(SMB2_COMPRESSION_CAPABILITIES_Flags);
             if (CompressionAlgorithms != null)
             {
                 dataLength += CompressionAlgorithms.Length * sizeof(CompressionAlgorithm);
@@ -4895,7 +5080,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public SMB2_NEGOTIATE_CONTEXT_Header Header;
 
         /// <summary>
-        /// A null-terminated Unicode string containing the server name and specified by the client application.
+        /// A Unicode string containing the server name and specified by the client application.
         /// </summary>
         public char[] NetName;
 
@@ -4945,9 +5130,152 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// </summary>
         /// <returns>The data length of this context.</returns>
         public ushort GetDataLength()
-        {            
-            return (ushort)NetName.Length;
+        {
+            return (ushort)Encoding.Unicode.GetBytes(NetName).Length;
         }
+    }
+
+    public enum SigningAlgorithm : short
+    {
+        /// <summary>
+        /// HMAC-SHA256 signing algorithm
+        /// </summary>
+        HMAC_SHA256 = 0x0000,
+
+        /// <summary>
+        /// AES-CMAC signing algorithm
+        /// </summary>
+        AES_CMAC = 0x0001,
+
+        /// <summary>
+        /// AES-GMAC signing algorithm
+        /// </summary>
+        AES_GMAC = 0x0002,
+    }
+
+    /// <summary>
+    /// The SMB2_TRANSPORT_CAPABILITIES context is specified in an SMB2 NEGOTIATE request to indicate transport capabilities over which the connection is made.
+    /// </summary>
+    public struct SMB2_TRANSPORT_CAPABILITIES
+    {
+        /// <summary>
+        /// Negotiate context header.
+        /// </summary>
+        public SMB2_NEGOTIATE_CONTEXT_Header Header;
+
+        /// <summary>
+        /// This field MUST contain zero or more of SMB2_TRANSPORT_CAPABILITIES Flags.
+        /// </summary>
+        [StaticSize(4)]
+        public SMB2_TRANSPORT_CAPABILITIES_Flags Flags;
+
+        /// <summary>
+        /// Get the data length of the structure.
+        /// </summary>
+        /// <returns>The data length of the SMB2_TRANSPORT_CAPABILITIES negotiate context.</returns>
+        public int GetDataLength()
+        {
+            int dataLength = sizeof(SMB2_TRANSPORT_CAPABILITIES_Flags);
+            return dataLength;
+        }
+    }
+
+    /// <summary>
+    /// SMB2_TRANSPORT_CAPABILITIES Flags.
+    /// </summary>
+    [Flags()]
+    public enum SMB2_TRANSPORT_CAPABILITIES_Flags : uint
+    {
+        SMB2_ACCEPT_TRANSPORT_LEVEL_SECURITY = 0x00000001,
+    }
+
+
+    public struct SMB2_SIGNING_CAPABILITIES
+    {
+        /// <summary>
+        /// Header
+        /// </summary>
+        public SMB2_NEGOTIATE_CONTEXT_Header Header;
+
+        /// <summary>
+        /// The number of signing algorithms in the SigningAlgorithms array. This value MUST be greater zero
+        /// </summary>
+        public ushort SigningAlgorithmCount;
+
+        /// <summary>
+        /// An array of 16-bit integer IDs specifying the supported signing algorithms. 
+        /// These IDs MUST be in an order such that the most preferred signing algorithm MUST be 
+        /// at the beginning of the array and least preferred signing algorithm at the end of the array. 
+        /// </summary>
+        [Size("SigningAlgorithmCount")]
+        public SigningAlgorithm[] SigningAlgorithms;
+
+        public int GetDataLength()
+        {
+            int dataLength = sizeof(ushort); // SigningAlgorithmCount
+            if (SigningAlgorithms != null) dataLength += SigningAlgorithms.Length * sizeof(SigningAlgorithm);
+
+            return dataLength;
+        }
+    }
+
+    /// <summary>
+    /// The SMB2_RDMA_TRANSFORM_CAPABILITIES context is specified in an SMB2 NEGOTIATE request 
+    /// by the client to indicate transforms supported when data is sent over RDMA
+    /// </summary>
+    public struct SMB2_RDMA_TRANSFORM_CAPABILITIES
+    {
+        /// <summary>
+        /// Header.
+        /// </summary>
+        public SMB2_NEGOTIATE_CONTEXT_Header Header;
+
+        // <summary>
+        // The number of elements in RDMATransformIds array
+        // </summary>
+        [StaticSize(2)]
+        public ushort TransformCount;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. 
+        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort Reserved1;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. 
+        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// </summary>
+        [StaticSize(4)]
+        public uint Reserved2;
+
+        // <summary>
+        // An array of 16-bit integer IDs specifying the supported RDMA transforms
+        // </summary>
+        [Size("TransformCount")]
+        public Smb2RDMATransformId[] RDMATransformIds;
+
+        /// <summary>
+        /// Get the data length
+        /// </summary>
+        /// <returns>The data length of this context.</returns>
+        public int GetDataLength()
+        {
+            int dataLength = Marshal.SizeOf(TransformCount) + sizeof(ushort) + sizeof(uint);
+            if (RDMATransformIds != null) dataLength += sizeof(Smb2RDMATransformId) * RDMATransformIds.Length;
+            return dataLength;
+        }
+    }
+
+
+    public enum Smb2RDMATransformId : ushort
+    {
+        SMB2_RDMA_TRANSFORM_NONE = 0x0000,
+
+        SMB2_RDMA_TRANSFORM_ENCRYPTION = 0x0001,
+
+        SMB2_RDMA_TRANSFORM_SIGNING = 0x0002,
     }
 
 
@@ -5191,7 +5519,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// <summary>
         /// Control code for SVHDX_META_OPERATION_START_REQUEST
         /// </summary>
-        FSCTL_SVHDX_ASYNC_TUNNEL_REQUEST = 0x00090364
+        FSCTL_SVHDX_ASYNC_TUNNEL_REQUEST = 0x00090364,
+
+        /// <summary>
+        /// Control code for FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT
+        /// </summary>
+        FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT = 0x00090440,
     }
 
     /// <summary>
@@ -7000,6 +7333,137 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
     }
 
+    /// <summary> 
+    /// The SMB2_RDMA_TRANSFORM is used by the client or server to send/receive transformed RDMA 
+    /// payload in READ/WRITE operations. The SMB2_RDMA_TRANSFORM is optional and only valid for the 
+    /// SMB 3.1.1 dialect when connection supports RDMA transform
+    /// </summary>
+    public struct SMB2_RDMA_TRANSFORM
+    {
+        // <summary>
+        // This field contains the offset, in bytes, from the beginning of
+        // this structure to the RDMA descriptors as specified by the Channel field.
+        // </summary>
+        [StaticSize(2)]
+        public ushort RdmaDescriptorOffset;
+
+        // <summary>
+        // This field contains the length, in bytes, of the RDMA
+        // descriptors as specified by the Channel field.
+        // </summary>
+        [StaticSize(2)]
+        public ushort RdmaDescriptorLength;
+
+        /// <summary>
+        /// This field MUST contain exactly one of the following values:
+        /// SMB2_CHANNEL_NONE, SMB2_CHANNEL_RDMA_V1, SMB2_CHANNEL_RDMA_V1_INVALIDATE
+        /// </summary>
+        [StaticSize(4)]
+        public Smb2RdmaTransformChannel Channel;
+
+        // <summary>
+        // This field specifies the number of transforms present after
+        // this structure. This value MUST be greater than 0.
+        // </summary>
+        [StaticSize(2)]
+        public ushort TransformCount;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. 
+        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort Reserved1;
+
+        /// <summary>
+        /// This field MUST NOT be used and MUST be reserved. 
+        /// The sender MUST set this to 0, and the receiver MUST ignore it on receipt.
+        /// </summary>
+        [StaticSize(4)]
+        public uint Reserved2;
+    }
+
+    public enum Smb2RdmaTransformChannel : uint
+    {
+        /// <summary>
+        /// No channel information is present in the request. The RemainingBytes, WriteChannelInfoOffset 
+        /// and WriteChannelInfoLength fields MUST be set to zero by the client and MUST be ignored by the server.
+        /// </summary>
+        SMB2_CHANNEL_NONE = 0x00000000,
+
+        /// <summary>
+        /// One or more SMB_DIRECT_BUFFER_DESCRIPTOR_V1 structures as specified in [MS-SMBD] section 2.2.3.1 
+        /// are present in the channel information specified by RemainingBytes, WriteChannelInfoOffset and 
+        /// WriteChannelInfoLength fields.
+        /// </summary>
+        SMB2_CHANNEL_RDMA_V1 = 0x00000001,
+
+        /// <summary>
+        /// One or more SMB_DIRECT_BUFFER_DESCRIPTOR_V1 structures as specified in [MS-SMBD] section 2.2.3.1 
+        /// are present in the channel information specified by the RdmaDescriptorOffset and RdmaDescriptorLength 
+        /// fields. The server is requested to perform remote invalidation when responding to the request as 
+        /// specified in [MS-SMBD] section 3.1.4.2.
+        /// </summary>
+        SMB2_CHANNEL_RDMA_V1_INVALIDATE = 0x00000002
+    }
+
+    /// <summary>
+    ///  The SMB2_RDMA_CRYPTO_TRANSFORM is used by the client or server to send/receive encrypted or 
+    ///  signed RDMA payload in READ/WRITE operations. The SMB2_RDMA_CRYPTO_TRANSFORM is optional 
+    ///  and only valid for the SMB 3.1.1 dialect.
+    /// </summary>
+    public partial struct SMB2_RDMA_CRYPTO_TRANSFORM
+    {
+        /// <summary>
+        ///  This field MUST be set to one of the following values.
+        ///  SMB2_RDMA_TRANSFORM_TYPE_ENCRYPTION - 0x0001
+        ///  SMB2_RDMA_TRANSFORM_TYPE_SIGNING - 0x0002.
+        /// </summary>
+        [StaticSize(2)]
+        public Smb2RDMATransformType TransformType;
+
+        /// <summary>
+        ///  The length, in bytes, of Signature field.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort SignatureLength;
+
+        /// <summary>
+        ///  The length, in bytes, of Nonce field.
+        /// </summary>
+        [StaticSize(2)]
+        public ushort NonceLength;
+
+        [StaticSize(2)]
+        public ushort Reserved;
+
+        /// <summary>
+        ///   The signature of the encrypted/signed data generated using Session.EncryptionKey.
+        /// </summary>
+        [Size("SignatureLength")]
+        public byte[] Signature;
+
+        /// <summary>
+        ///   An implementation-specific value assigned for encrypted/signed data. 
+        ///   This MUST NOT be reused for an SMB2 message within a session.
+        /// </summary>
+        [Size("NonceLength")]
+        public byte[] Nonce;
+    }
+
+    public enum Smb2RDMATransformType : ushort
+    {
+        /// <summary>
+        /// RDMA transform of type encryption is present and the payload is encrypted.
+        /// </summary>
+        SMB2_RDMA_TRANSFORM_TYPE_ENCRYPTION = 0x0001,
+
+        /// <summary>
+        /// RDMA transform of type signing is present and the payload is signed.
+        /// </summary>
+        SMB2_RDMA_TRANSFORM_TYPE_SIGNING = 0x0002,
+    }
+
     /// <summary>
     ///  The SMB2 NEGOTIATE Response packet is sent by the server
     ///  to notify the client of the preferred common dialect.
@@ -7244,6 +7708,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         GLOBAL_CAP_DIRECTORY_LEASING = 0x00000020,
 
         GLOBAL_CAP_ENCRYPTION = 0x00000040,
+
+        GLOBAL_CAP_NOTIFICATIONS = 0x00000080,
     }
 
     /// <summary>
@@ -9338,88 +9804,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
     }
 
     /// <summary>
-    ///  The buffer alignment required by the underlying device.The
-    ///  FILE_ATTRIBUTE_INFORMATION data element is as follows.
-    /// </summary>
-    public partial struct FileAlignmentInformation
-    {
-
-        /// <summary>
-        ///A 32-bit unsigned integer that MUST contain one
-        ///  of the following values.
-        /// </summary>
-        [StaticSize(4)]
-        public AlignmentRequirement_Values AlignmentRequirement;
-    }
-
-    /// <summary>
-    /// AlignmentRequirement_Values
-    /// </summary>
-    public enum AlignmentRequirement_Values : uint
-    {
-
-        /// <summary>
-        ///  If this value is specified, there are no alignment requirements
-        ///  for the device.
-        /// </summary>
-        FILE_BYTE_ALIGNMENT = 0x00000000,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 2-byte boundary.
-        /// </summary>
-        FILE_WORD_ALIGNMENT = 0x00000001,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 4-byte boundary.
-        /// </summary>
-        FILE_LONG_ALIGNMENT = 0x00000003,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  an 8-byte boundary.
-        /// </summary>
-        FILE_QUAD_ALIGNMENT = 0x00000007,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 16-byte boundary.
-        /// </summary>
-        FILE_OCTA_ALIGNMENT = 0x0000000f,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 32-byte boundary.
-        /// </summary>
-        FILE_32_BYTE_ALIGNMENT = 0x0000001f,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 64-byte boundary.
-        /// </summary>
-        FILE_64_BYTE_ALIGNMENT = 0x0000003f,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 128-byte boundary.
-        /// </summary>
-        FILE_128_BYTE_ALIGNMENT = 0x0000007f,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 256-byte boundary.
-        /// </summary>
-        FILE_256_BYTE_ALIGNMENT = 0x000000ff,
-
-        /// <summary>
-        ///  If this value is specified, data MUST be aligned on
-        ///  a 512-byte boundary.
-        /// </summary>
-        FILE_512_BYTE_ALIGNMENT = 0x000001ff,
-    }
-
-    /// <summary>
     ///  This information class is used to query for the size
     ///  of the extended attributes (EA) for a file. An extended
     ///  attribute is a piece of application-specific metadata
@@ -9536,29 +9920,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         ///  extended attributes.
         /// </summary>
         FILE_NEED_EA = 0x00000080,
-    }
-
-    /// <summary>
-    ///  This information class is used to query for the file
-    ///  system's 8-byte file reference number for a file.The
-    ///  FILE_INTERNAL_INFORMATION data element is as follows.
-    /// </summary>
-    public partial struct FileInternalInformation
-    {
-
-        /// <summary>
-        ///  A 64-bit signed integer that contains the 8-byte
-        ///  file reference number for the file. This number MUST
-        ///  be assigned by the file system and is unique to the
-        ///  volume on which the file or directory is located. This
-        ///  file reference number is the same as the file reference
-        ///  number that is stored in the FileId field of the FILE_ID_BOTH_DIR_INFORMATION
-        ///  and FILE_ID_FULL_DIR_INFORMATION data elements. The
-        ///  value of this field MUST be greater than or equal to
-        ///  0.
-        /// </summary>
-        [StaticSize(8)]
-        public long IndexNumber;
     }
 
     /// <summary>
@@ -9890,30 +10251,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
     }
 
     /// <summary>
-    ///  This information class is used to query or set information
-    ///  on a named pipe that is not specific to one end of
-    ///  the pipe or another.The FILE_PIPE_INFORMATION
-    ///  data element is as follows.
-    /// </summary>
-    public partial struct FilePipeInformation
-    {
-
-        /// <summary>
-        ///A 32-bit unsigned integer that MUST contain one
-        ///  of the following values.
-        /// </summary>
-        [StaticSize(4)]
-        public ReadMode_Values ReadMode;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that MUST contain one
-        ///  of the following values.
-        /// </summary>
-        [StaticSize(4)]
-        public CompletionMode_Values CompletionMode;
-    }
-
-    /// <summary>
     /// ReadMode_Values
     /// </summary>
     public enum ReadMode_Values : uint
@@ -9954,91 +10291,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         ///  or written from, the operation completes immediately.
         /// </summary>
         FILE_PIPE_COMPLETE_OPERATION = 0x00000001,
-    }
-
-    /// <summary>
-    ///  This information class is used to query information
-    ///  on a named pipe that is associated with the end of
-    ///  the pipe that is being queried.The FILE_PIPE_LOCAL_INFORMATION
-    ///  data element is as follows.
-    /// </summary>
-    public partial struct FilePipeLocalInformation
-    {
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the named
-        ///  pipe type. MUST be one of the following.
-        /// </summary>
-        [StaticSize(4)]
-        public NamedPipeType_Values NamedPipeType;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the named
-        ///  pipe configuration. MUST be one of the following. 
-        /// 
-        /// </summary>
-        [StaticSize(4)]
-        public NamedPipeConfiguration_Values NamedPipeConfiguration;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the maximum
-        ///  number of instances that can be created for this pipe.
-        ///  The first instance of the pipe MUST specify this value.
-        /// </summary>
-        [StaticSize(4)]
-        public uint MaximumInstances;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the number
-        ///  of current named pipe instances.
-        /// </summary>
-        [StaticSize(4)]
-        public uint CurrentInstances;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the inbound
-        ///  quota in bytes for the named pipe.
-        /// </summary>
-        [StaticSize(4)]
-        public uint InboundQuota;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the bytes
-        ///  of data available to be read from the named pipe.
-        /// </summary>
-        [StaticSize(4)]
-        public uint ReadDataAvailable;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains outbound
-        ///  quota in bytes for the named pipe.
-        /// </summary>
-        [StaticSize(4)]
-        public uint OutboundQuota;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the write
-        ///  quota in bytes for the named pipe.
-        /// </summary>
-        [StaticSize(4)]
-        public uint WriteQuotaAvailable;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the named
-        ///  pipe state that specifies the connection status for
-        ///  the named pipe. MUST be one of the following.
-        /// </summary>
-        [StaticSize(4)]
-        public NamedPipeState_Values NamedPipeState;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the type
-        ///  of the named pipe end, which specifies whether this
-        ///  is the client or the server side of a named pipe. MUST
-        ///  be one of the following.
-        /// </summary>
-        [StaticSize(4)]
-        public NamedPipeEnd_Values NamedPipeEnd;
     }
 
     /// <summary>
@@ -10376,122 +10628,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public byte Directory;
     }
 
-    /// <summary>
-    ///  This information class is used to query alternate name
-    ///  information for a file. The alternate name for a file
-    ///  is its 8.3 format name (8 characters that appear before
-    ///  the "." and 3 characters that appear after). This name
-    ///  exists for compatibility with MS-DOS and 16-bit versions
-    ///  of , which did not support longer file names or spaces
-    ///  within file names. A file MAY have an alternate name
-    ///  if its full name is not compliant with the restrictions
-    ///  for file names under MS-DOS and 16-bit .NTFS assigns
-    ///  an alternate name to a file whose full name is not
-    ///  compliant with restrictions for file names under MS-DOS
-    ///  and 16-bit  unless the system has been configured through
-    ///  a registry entry to not generate these names to improve
-    ///  performance.The FILE_NAME_INFORMATION data element
-    ///  is as follows.
-    /// </summary>
-    public partial struct FileAlternateNameInformation
-    {
 
-        /// <summary>
-        ///  A 32-bit unsigned integer that contains the length in
-        ///  bytes of the FileName member.
-        /// </summary>
-        [StaticSize(4)]
-        public uint FileNameLength;
 
-        /// <summary>
-        ///  A sequence of Unicode characters containing the file
-        ///  name. This field might not be NULL-terminated, and
-        ///  MUST be handled as a sequence of FileNameLength bytes.
-        /// </summary>
-        [Size("FileNameLength")]
-        public byte[] FileName;
-    }
-
-    /// <summary>
-    ///  This information class is used to enumerate the streams
-    ///  for a file. The FILE_STREAM_INFORMATION data element
-    ///  is as follows.
-    /// </summary>
-    public partial struct FileStreamInformation
-    {
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the byte
-        ///  offset from the beginning of this entry, at which the
-        ///  next FILE_ STREAM _INFORMATION entry is located, if
-        ///  multiple entries are present in a buffer. This member
-        ///  is zero if no other entries follow this one. An implementation
-        ///  MUST use this value to determine the location of the
-        ///  next entry (if multiple entries are present in a buffer),
-        ///  and MUST NOT assume that the value of NextEntryOffset
-        ///  is the same as the size of the current entry.
-        /// </summary>
-        [StaticSize(4)]
-        public uint NextEntryOffset;
-
-        /// <summary>
-        ///A 32-bit unsigned integer that contains the length
-        ///  in bytes of the stream name string.
-        /// </summary>
-        [StaticSize(4)]
-        public uint StreamNameLength;
-
-        /// <summary>
-        ///A 64-bit unsigned integer that contains the size
-        ///  in bytes of the stream.
-        /// </summary>
-        [StaticSize(8)]
-        public ulong StreamSize;
-
-        /// <summary>
-        ///A 64-bit signed integer that contains the file
-        ///  stream allocation size in bytes. Usually, this value
-        ///  is a multiple of the sector or cluster size of the
-        ///  underlying physical device. The value of this field
-        ///  MUST be greater than or equal to 0.
-        /// </summary>
-        [StaticSize(8)]
-        public long StreamAllocationSize;
-
-        /// <summary>
-        ///A sequence of Unicode characters containing the
-        ///  name of the stream. This field might not be NULL-terminated,
-        ///  and MUST be handled as a sequence of StreamNameLength
-        ///  bytes.
-        /// </summary>
-        [Size("StreamNameLength")]
-        public byte[] StreamName;
-    }
-
-    /// <summary>
-    ///  This information class is used to set the valid data
-    ///  length information for a file. The FILE_VALID_DATA_LENGTH_INFORMATION
-    ///  data element is as follows.
-    /// </summary>
-    public partial struct FileValidDataLengthInformation
-    {
-
-        /// <summary>
-        ///A 64-bit signed integer that contains the new
-        ///  valid data length for the file. This parameter MUST
-        ///  be a positive value that is greater than the current
-        ///  valid data length, but less than or equal to the current
-        ///  file size.The FILE_VALID_DATA_LENGTH_INFORMATION structure
-        ///  is used to set a new valid data length for a file on
-        ///  an NTFS volume. A file's valid data length is the length
-        ///  in bytes of the data that has been written to the file.
-        ///  This valid data extends from the beginning of the file
-        ///  to the last byte in the file that has not been zeroed
-        ///  or left uninitialized.
-        /// </summary>
-        [StaticSize(8)]
-        public long FileNameLength;
-    }
 
     /// <summary>
     ///  The information class is used to provide the list of
@@ -10850,6 +10988,57 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// The file system supports sharing logical clusters between files on the same volume.
         /// </summary>
         FILE_SUPPORTS_BLOCK_REFCOUNTING = 0x08000000,
+
+        /// <summary>
+        /// The file system supports integrity streams.
+        /// </summary>
+        FILE_SUPPORT_INTEGRITY_STREAMS = 0x04000000,
+
+        /// <summary>
+        /// The file system implements a USN change journal.
+        /// </summary>
+        FILE_SUPPORTS_USN_JOURNAL = 0x02000000,
+
+        /// <summary>
+        /// The file system supports opening a file by FileID or ObjectID.
+        /// </summary>
+        FILE_SUPPORTS_OPEN_BY_FILE_ID = 0x01000000,
+
+        /// <summary>
+        /// The file system persistently stores Extended Attribute information per file.
+        /// </summary>
+        FILE_SUPPORTS_EXTENDED_ATTRIBUTES = 0x00800000,
+
+        /// <summary>
+        /// The file system supports hard linking files.
+        /// </summary>
+        FILE_SUPPORTS_HARD_LINKS = 0x00400000,
+
+        /// <summary>
+        /// The volume supports transactions.
+        /// </summary>
+        FILE_SUPPORTS_TRANSACTIONS = 0x00200000,
+
+        /// <summary>
+        /// The volume supports a single sequential write, such as for a tape-based file system.
+        /// </summary>
+        FILE_SEQUENTIAL_WRITE_ONCE = 0x00100000,
+
+        /// <summary>
+        /// The file system supports POSIX-style delete and rename operations.
+        /// </summary>
+        FILE_SUPPORTS_POSIX_UNLINK_RENAME = 0x00000400,
+
+        /// <summary>
+        /// On a successful cleanup operation, the file system returns information that describes
+        /// additional actions taken during cleanup, such as deleting the file.
+        /// </summary>
+        FILE_RETURNS_CLEANUP_RESULT_INFO = 0x00000200,
+
+        /// <summary>
+        /// The file system tracks whether each cluster of a file contains valid data or invalid data.
+        /// </summary>
+        FILE_SUPPORTS_SPARSE_VDL = 0x10000000,
     }
 
     /// <summary>
@@ -11481,6 +11670,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// OPLOCK_BREAK
         /// </summary>
         OPLOCK_BREAK = 0x12,
+
+        /// <summary>
+        /// SERVER_TO_CLIENT_NOTIFICATION
+        /// </summary>
+        SERVER_TO_CLIENT_NOTIFICATION = 0x13,
+
     }
 
     public static class ErrefStatus
@@ -11538,6 +11733,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// No more entries are available from an enumeration operation.
         /// </summary>
         public const uint STATUS_NO_MORE_ENTRIES = 0x8000001A;
+
+        /// <summary>
+        /// No more files found which match the file specification.
+        /// </summary>
+        public const uint STATUS_NO_MORE_FILES = 0x80000006;
 
         /// <summary>
         /// The create operation stopped after reaching a symbolic link.
@@ -11784,7 +11984,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// The volume is write-protected and changes to it cannot be made. 
         /// </summary>
         public const uint STATUS_MEDIA_WRITE_PROTECTED = 0xC00000A2;
-
+        
         #endregion
 
         public static string GetStatusCode(uint status)
@@ -11814,6 +12014,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
                 case Smb2Status.STATUS_NO_MORE_ENTRIES:
                     statusCode = "STATUS_NO_MORE_ENTRIES";
+                    break;
+
+                case Smb2Status.STATUS_NO_MORE_FILES:
+                    statusCode = "STATUS_NO_MORE_FILES";
                     break;
 
                 case Smb2Status.STATUS_STOPPED_ON_SYMLINK:

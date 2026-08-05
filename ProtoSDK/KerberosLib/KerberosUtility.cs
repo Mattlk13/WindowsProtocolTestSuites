@@ -9,6 +9,8 @@ using System.Security.Cryptography;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Spng;
 using Microsoft.Protocols.TestTools.StackSdk.Asn1;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using System.Net;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
 {
@@ -666,7 +668,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <returns>The computed result.</returns>
         public static byte[] RC4(byte[] key, byte[] data)
         {
-            RC4CryptoServiceProvider rc4Enc = new RC4CryptoServiceProvider();
+            RC4 rc4Enc = Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic.RC4.Create();
             byte[] result = new byte[data.Length];
             ICryptoTransform rc4Encrypt = rc4Enc.CreateEncryptor(key, null);
             rc4Encrypt.TransformBlock(data, 0, data.Length, result, 0);
@@ -728,7 +730,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
 
             byte[] result = ArrayUtility.ConcatenateArrays(preData, data);
 
-            MD5CryptoServiceProvider md5CryptoServiceProvider = new MD5CryptoServiceProvider();
+            MD5CryptoServiceProvider md5CryptoServiceProvider = new MD5CryptoServiceProvider(); // CodeQL [SM02196] Required by RFC 1964: the rc4-hmac MIC computes MD5 over (DES-CBC of reversed key prepended to the data); replicates the spec checksum for Kerberos legacy etype interop. Protocol-test interop code, not a security boundary.
             byte[] md5 = md5CryptoServiceProvider.ComputeHash(result);
             return md5;
         }
@@ -743,7 +745,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <returns>The computed result.</returns>
         public static byte[] DesCbcMac(byte[] key, byte[] iv, byte[] data)
         {
-            DESCryptoServiceProvider desEncrypt = new DESCryptoServiceProvider();
+            DESCryptoServiceProvider desEncrypt = new DESCryptoServiceProvider(); // CodeQL [SM02192, SM00400] Required by RFC 3961 / [MS-KILE]: Kerberos legacy etype 1 (des-cbc-crc) and etype 3 (des-cbc-md5) use DES-CBC-MAC. Protocol-test interop code, not a security boundary.
             desEncrypt.IV = iv;
             desEncrypt.Key = key;
             desEncrypt.Mode = CipherMode.CBC;
@@ -764,7 +766,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <returns>The computed result.</returns>
         public static byte[] DesCbcEncrypt(byte[] key, byte[] iv, byte[] data)
         {
-            DESCryptoServiceProvider desEncrypt = new DESCryptoServiceProvider();
+            DESCryptoServiceProvider desEncrypt = new DESCryptoServiceProvider(); // CodeQL [SM02192, SM00400] Required by RFC 3961 / [MS-KILE]: Kerberos legacy etypes 1 (des-cbc-crc) and 3 (des-cbc-md5) use DES-CBC encryption. Protocol-test interop code, not a security boundary.
             desEncrypt.IV = iv;
             desEncrypt.Key = key;
             desEncrypt.Mode = CipherMode.CBC;
@@ -784,7 +786,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <returns>The computed result.</returns>
         public static byte[] DesCbcDecrypt(byte[] key, byte[] iv, byte[] data)
         {
-            DESCryptoServiceProvider desDecrypt = new DESCryptoServiceProvider();
+            DESCryptoServiceProvider desDecrypt = new DESCryptoServiceProvider(); // CodeQL [SM02192, SM00400] Required by RFC 3961 / [MS-KILE]: Kerberos legacy etypes 1 (des-cbc-crc) and 3 (des-cbc-md5) use DES-CBC decryption. Protocol-test interop code, not a security boundary.
             desDecrypt.IV = iv;
             desDecrypt.Key = key;
             desDecrypt.Mode = CipherMode.CBC;
@@ -836,7 +838,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             }
             else
             {
-                throw new NotSupportedException("Kile only support user or computer account.");
+                throw new NotSupportedException("Kerberos only support user or computer account.");
             }
 
             return salt;
@@ -1061,6 +1063,193 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             }
         }
         #endregion
-    }
 
+        #region Security Context Methods
+
+        /// <summary>
+        /// This takes the given SecurityBuffer array, signs data part, and updates signature into token part
+        /// </summary>
+        /// <param name="kerberosRole">Represents client or server</param>
+        /// <param name="securityBuffers">Data to sign and token to update.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the data or token is not valid.</exception>
+        internal static void Sign(KerberosRole kerberosRole, params SecurityBuffer[] securityBuffers)
+        {
+            byte[] token = SspiUtility.ConcatenateReadWriteSecurityBuffers(securityBuffers, SecurityBufferType.Token);
+
+            if (token.Length == 0)
+            {
+                throw new ArgumentException("No token can be updated for signature.");
+            }
+            byte[] message = GetToBeSignedDataFromSecurityBuffers(securityBuffers);
+            SGN_ALG sgnAlg = GetSgnAlg(kerberosRole.Context.ContextKey);
+            KerberosPdu pdu = kerberosRole.GssGetMic(sgnAlg, message);
+            byte[] signature = pdu.ToBytes();
+
+            SspiUtility.UpdateSecurityBuffers(securityBuffers, SecurityBufferType.Token, signature);
+        }
+
+
+        /// <summary>
+        /// This takes the given byte array and verifies it using the SSPI VerifySignature method.
+        /// </summary>
+        /// <param name="kerberosRole">Represents client or server</param>
+        /// <param name="securityBuffers">Data and token to verify</param>
+        /// <returns>Success if true, Fail if false</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the data or token is not valid.</exception>
+        internal static bool Verify(KerberosRole kerberosRole, params SecurityBuffer[] securityBuffers)
+        {
+            KerberosPdu pdu;
+            return kerberosRole.GssVerifyMicEx(securityBuffers, out pdu);
+        }
+
+        /// <summary>
+        /// Encrypts Message. User decides what SecBuffers are used.
+        /// </summary>
+        /// <param name="kerberosRole">Represents client or server</param>
+        /// <param name="securityBuffers">The security buffers to encrypt.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the data or token is not valid.</exception>
+        internal static void Encrypt(KerberosRole kerberosRole, params SecurityBuffer[] securityBuffers)
+        {
+            byte[] message = SspiUtility.ConcatenateReadWriteSecurityBuffers(securityBuffers, SecurityBufferType.Data);
+            byte[] token = SspiUtility.ConcatenateSecurityBuffers(securityBuffers, SecurityBufferType.Token);
+
+            if (token.Length == 0)
+            {
+                throw new ArgumentException("Token buffer is not valid.");
+            }
+
+            SGN_ALG sgnAlg = GetSgnAlg(kerberosRole.Context.ContextKey);
+            KerberosPdu pdu = kerberosRole.GssWrap(true, sgnAlg, message);
+
+            byte[] cipherData = null;
+
+            if (pdu.GetType() == typeof(Token4121))
+            {
+                cipherData = pdu.ToBytes();
+            }
+            else
+            {
+                byte[] allData = pdu.ToBytes();
+                byte[] paddingData = ((Token1964_4757)pdu).paddingData;
+                cipherData = ArrayUtility.SubArray(allData, 0, allData.Length - paddingData.Length);
+                SspiUtility.UpdateSecurityBuffers(securityBuffers, SecurityBufferType.Padding, paddingData);
+            }
+            SspiUtility.UpdateSecurityBuffers(securityBuffers, SecurityBufferType.Data,
+                ArrayUtility.SubArray(cipherData, cipherData.Length - message.Length));
+            SspiUtility.UpdateSecurityBuffers(securityBuffers, SecurityBufferType.Token,
+                ArrayUtility.SubArray(cipherData, 0, cipherData.Length - message.Length));
+        }
+
+
+        /// <summary>
+        /// This takes the given byte array, decrypts it, and returns
+        /// the original, unencrypted byte array.
+        /// </summary>
+        /// <param name="kileRole">Represents client or server</param>
+        /// <param name="securityBuffers">The security buffers to decrypt.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the data or token is not valid.</exception>
+        internal static bool Decrypt(KerberosRole kerberosRole, params SecurityBuffer[] securityBuffers)
+        {
+            KerberosPdu pdu = kerberosRole.GssUnWrapEx(securityBuffers);
+            byte[] decryptedMessage = null;
+
+            if (pdu.GetType() == typeof(Token4121))
+            {
+                decryptedMessage = ((Token4121)pdu).Data;
+            }
+            else if (pdu.GetType() == typeof(Token1964_4757))
+            {
+                Token1964_4757 tokenData = (Token1964_4757)pdu;
+                decryptedMessage = tokenData.Data;
+                SspiUtility.UpdateSecurityBuffers(securityBuffers, SecurityBufferType.Padding, tokenData.paddingData);
+            }
+            // else do nothing
+
+            return true;
+        }
+
+        #endregion
+
+        #region Public
+        /// <summary>
+        /// Get serverName's full FQDN
+        /// </summary>
+        /// <param name="serverName">Server Name</param>
+        /// <param name="domainName">Domain Name</param>
+        /// <returns></returns>
+        public static string GetFullDomainName(string serverName, string domainName)
+        {
+            try
+            {
+                serverName = serverName.Substring(serverName.LastIndexOf("/") + 1);
+                IPHostEntry serverHostInfo = Dns.GetHostEntry(serverName);
+                return serverHostInfo.HostName.Substring(serverHostInfo.HostName.ToLower().IndexOf(domainName.ToLower()));
+            }
+            catch
+            {
+                return domainName;
+            }
+        }
+        #endregion
+
+        #region private
+        /// <summary>
+        /// Get SGN_ALG for encryption and sign.
+        /// </summary>
+        /// <returns>The SGN_ALG got from context.</returns>
+        /// <exception cref="System.FormatException">Thrown when the key is not valid.</exception>
+        internal static SGN_ALG GetSgnAlg(EncryptionKey contextKey)
+        {
+            if (contextKey == null || contextKey.keytype == null || contextKey.keyvalue == null || contextKey.keyvalue.Value == null)
+            {
+                throw new FormatException("Initialization is not complete successfully!");
+            }
+
+            SGN_ALG sgnAlg = SGN_ALG.HMAC;
+            EncryptionType type = (EncryptionType)contextKey.keytype.Value;
+
+            if (type == EncryptionType.DES_CBC_MD5 || type == EncryptionType.DES_CBC_CRC)
+            {
+                sgnAlg = SGN_ALG.DES_MAC_MD5;
+            }
+
+            return sgnAlg;
+        }
+
+        /// <summary>
+        /// Get the data to be signed.
+        /// </summary>
+        /// <param name="securityBuffers">The security buffer to extract the data to be signed</param>
+        /// <returns>The data to be signed</returns>
+        internal static byte[] GetToBeSignedDataFromSecurityBuffers(SecurityBuffer[] securityBuffers)
+        {
+            if (securityBuffers == null)
+            {
+                throw new ArgumentNullException(nameof(securityBuffers));
+            }
+            var message = new byte[0];
+
+            for (int i = 0; i < securityBuffers.Length; i++)
+            {
+                if (securityBuffers[i] == null)
+                {
+                    throw new ArgumentNullException(nameof(securityBuffers));
+                }
+                SecurityBufferType securityBufferType = (securityBuffers[i].BufferType & ~SecurityBufferType.AttrMask);
+
+                if (securityBufferType == SecurityBufferType.Data || securityBufferType == SecurityBufferType.Padding)
+                {
+                    bool skip = (securityBuffers[i].BufferType & SecurityBufferType.ReadOnly) != 0;
+
+                    if (!skip && securityBuffers[i].Buffer != null)
+                    {
+                        message = ArrayUtility.ConcatenateArrays(message, securityBuffers[i].Buffer);
+                    }
+                }
+            }
+
+            return message;
+        }
+        #endregion
+    }
 }

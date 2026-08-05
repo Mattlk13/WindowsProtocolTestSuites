@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Asn1
 {
@@ -10,6 +11,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Asn1
     /// Represents an INTEGER in ASN.1 Definition.
     /// </summary>
     [Asn1Tag(Asn1TagType.Universal, Asn1TagValue.Integer)]
+    [EventData]
     public class Asn1Integer : Asn1Object
     {
         /// <summary>
@@ -264,13 +266,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Asn1
                     fullContent[curPos++] = 0;
                 }
             }
-            else//it's a negative data's encoding result
-            {
-                while (curPos != BytesCountForLong)
-                {
-                    fullContent[curPos++] = 255;
-                }
-            }
+
             return fullContent;
         }
 

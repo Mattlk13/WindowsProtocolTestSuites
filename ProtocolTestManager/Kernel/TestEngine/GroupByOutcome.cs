@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Microsoft.Protocols.TestManager.Kernel
 {
@@ -12,7 +13,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
     /// </summary>
     public class GroupByOutcome
     {
-        private object locker = new object();
+        private ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
         Dictionary<string, TestCaseGroup> testcasemap;
 
         /// <summary>
@@ -38,39 +39,35 @@ namespace Microsoft.Protocols.TestManager.Kernel
             testcasemap = new Dictionary<string, TestCaseGroup>();
             foreach (TestCase testcase in testcases)
             {
-                switch (testcase.Status)
+                locker.EnterReadLock();
+                try
                 {
-                    case TestCaseStatus.NotRun:
-                        NotRunTestCases.AddTestCase(testcase);
-                        lock (locker)
-                        {
-                            testcasemap.Add(testcase.Name, NotRunTestCases);
-                        }
-                        break;
-                    case TestCaseStatus.Passed:
-                        PassedTestCases.AddTestCase(testcase);
-                        lock (locker)
-                        {
-                            testcasemap.Add(testcase.Name, PassedTestCases);
-                        }
-                        break;
-                    case TestCaseStatus.Failed:
-                        FailedTestCases.AddTestCase(testcase);
-                        lock (locker)
-                        {
-                            testcasemap.Add(testcase.Name, FailedTestCases);
-                        }
-                        break;
-                    case TestCaseStatus.Other:
-                        OtherTestCases.AddTestCase(testcase);
-                        lock (locker)
-                        {
-                            testcasemap.Add(testcase.Name, OtherTestCases);
-                        }
-                        break;
-                    case TestCaseStatus.Running:
-                        RunningTestCase = testcase;
-                        break;
+                    switch (testcase.Status)
+                    {
+                        case TestCaseStatus.NotRun:
+                            NotRunTestCases.AddTestCase(testcase);
+                            testcasemap.Add(testcase.FullName, NotRunTestCases);
+                            break;
+                        case TestCaseStatus.Passed:
+                            PassedTestCases.AddTestCase(testcase);
+                            testcasemap.Add(testcase.FullName, PassedTestCases);
+                            break;
+                        case TestCaseStatus.Failed:
+                            FailedTestCases.AddTestCase(testcase);
+                            testcasemap.Add(testcase.FullName, FailedTestCases);
+                            break;
+                        case TestCaseStatus.Other:
+                            OtherTestCases.AddTestCase(testcase);
+                            testcasemap.Add(testcase.FullName, OtherTestCases);
+                            break;
+                        case TestCaseStatus.Running:
+                            RunningTestCase = testcase;
+                            break;
+                    }
+                }
+                finally
+                {
+                    locker.ExitReadLock();
                 }
             }
             groupList = null;
@@ -82,6 +79,14 @@ namespace Microsoft.Protocols.TestManager.Kernel
         public TestCaseGroup OtherTestCases { get; set; }
 
         public TestCase RunningTestCase { get; set; }
+
+        /// <summary>
+        /// Indicates test cases are reported by several concurrent execution units.
+        /// When enabled, status updates are serialized with a write lock and the previously
+        /// reported case is never demoted, because more than one case can be running at a time.
+        /// When disabled, the original single threaded behavior is preserved.
+        /// </summary>
+        public bool ConcurrentExecution { get; set; }
 
         private List<TestCaseGroup> groupList = null;
         public List<TestCaseGroup> GetList()
@@ -99,65 +104,54 @@ namespace Microsoft.Protocols.TestManager.Kernel
 
         public void ChangeStatus(string testCaseName, TestCaseStatus status)
         {
-            lock (locker)
-            {
-                TestCaseGroup from = testcasemap[testCaseName];
-                TestCaseGroup to = OtherTestCases;
-                if (from == null) return;
-                TestCase testcase = from.TestCaseList.FirstOrDefault(c => c.Name == testCaseName);
-                // If changed to Running/Waiting status, no need to change group.
+            bool concurrent = ConcurrentExecution;
 
-                if (status == TestCaseStatus.Running)
+            if (concurrent)
+            {
+                locker.EnterWriteLock();
+            }
+            else
+            {
+                locker.EnterReadLock();
+            }
+
+            try
+            {
+                if (!testcasemap.TryGetValue(testCaseName, out TestCaseGroup from) || from == null)
                 {
-                    if (RunningTestCase != null)
-                    {
-                        if (RunningTestCase.Status == TestCaseStatus.Running)
-                            RunningTestCase.Status = TestCaseStatus.Waiting;
-                    }
-                    RunningTestCase = testcase;
-                    RunningTestCase.Status = status;
-                    if (UpdateTestCaseList != null)
-                    {
-                        UpdateTestCaseList(from, RunningTestCase);
-                    }
                     return;
                 }
-                if (status == TestCaseStatus.Waiting)
+
+                TestCase testcase = from.TestCaseList.FirstOrDefault(c => c.FullName == testCaseName);
+                if (testcase == null)
                 {
-                    if (testcase.Status == TestCaseStatus.Running)
-                    {
-                        testcase.Status = status;
-                        return;
-                    }
+                    return;
                 }
 
-                switch (status)
+                // Only a single case can be running when execution is sequential, so the case
+                // reported previously is put back into Waiting if it never reached a final status.
+                // Concurrent execution units report interleaved, so demoting is not valid there.
+                if (!concurrent &&
+                    RunningTestCase != null &&
+                    RunningTestCase.Status == TestCaseStatus.Running)
                 {
-                    case TestCaseStatus.Passed:
-                        to = PassedTestCases;
-                        break;
-                    case TestCaseStatus.Failed:
-                        to = FailedTestCases;
-                        break;
-                    case TestCaseStatus.Other:
-                        to = OtherTestCases;
-                        break;
-                    case TestCaseStatus.NotRun:
-                        to = NotRunTestCases;
-                        break;
+                    RunningTestCase.Status = TestCaseStatus.Waiting;
                 }
-                testcase.Status = status;
-                if (UpdateTestCaseStatus != null)
-                {
 
-                    UpdateTestCaseStatus(from, to, testcase);
+                RunningTestCase = testcase;
+                RunningTestCase.Status = status;
+                UpdateTestCaseList?.Invoke(from, RunningTestCase);
+            }
+            finally
+            {
+                if (concurrent)
+                {
+                    locker.ExitWriteLock();
                 }
                 else
                 {
-                    from.RemoveTestCase(testcase);
-                    to.AddTestCase(testcase);
+                    locker.ExitReadLock();
                 }
-                testcasemap[testCaseName] = to;
             }
         }
 

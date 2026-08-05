@@ -1,16 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Drawing;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestTools;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Protocols.TestSuites.Rdpegfx
 {
@@ -22,6 +18,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to test create surface, map to output, solid fill, and delete surface command.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_MapAndFill()
         {
@@ -61,6 +59,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to test create surface, solid fill, map to output, and delete surface command.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_FillAndMap()
         {
@@ -106,6 +106,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP10.6")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to test create surface, solid fill, map to output, update scaled output and delete surface command.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_ScaledOutput()
         {
@@ -146,6 +148,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can process correctly when fill color to an overlapped surface.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_FillOverlappedSurface()
         {
@@ -193,6 +197,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can create a surface with max surfaceId: UINT16.max.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_CreateSurface_MaxSurfaceId()
         {
@@ -232,6 +238,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can create a surface which just cover the full RDP window.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_CreateSurface_FullWindow()
         {
@@ -274,6 +282,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can create a surface which have max width.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_CreateSurface_MaxWidth()
         {
@@ -315,6 +325,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can process correctly when receiving a RDPGFX_MAP_SURFACE_TO_OUTPUT_PDU to map a surface whose specific borders are overlapped with RDP window.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_MapSurface_SurfaceBorderOverlapWindow()
         {
@@ -364,6 +376,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can delete a surface successfully.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_DeleteSurface()
         {
@@ -409,6 +423,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can reuse surface Id after a surface is deleted.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_ReuseSurfaceId()
         {
@@ -438,6 +454,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can process correctly when receiving a RDPGFX_START_FRAME_PDU with maximum frameId.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_StartFrame_MaxFrameId()
         {
@@ -477,6 +495,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can process correctly when receive a RDPGFX_SOLIDFILL_PDU with many fillRects.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_SolidFill_ManyFillRects()
         {
@@ -524,6 +544,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can process correctly when receive a RDPGFX_SOLIDFILL_PDU with fillRects whose specific borders are overlapped with surface.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_SolidFill_FillRectsBorderOverlapSurface()
         {
@@ -585,6 +607,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can process correctly when receive a RDPGFX_SOLIDFILL_PDU with fillRects overlapped partially.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_SolidFill_MultiFillRectsOverlapped()
         {
@@ -640,6 +664,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can process correctly when receiving a RDPGFX_RESET_GRAPHICS_PDU whose width and height are max value(32766).")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_ResetGraphic_MaxHeighWidth()
         {
@@ -667,6 +693,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify RDP client can process correctly when receiving a RDPGFX_RESET_GRAPHICS_PDU whose monitorCount is max value(16).")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_ResetGraphic_MaxMonitorCount()
         {
@@ -689,6 +717,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to test create multiple surfaces and overlapped.")]
         public void RDPEGFX_SurfaceToScreen_PositiveTest_MultiSurfaceOverlap()
         {
@@ -719,11 +749,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             heights[2] = (ushort)(RdpegfxTestUtility.surfHeight / 2);
             heights[3] = RdpegfxTestUtility.surfHeight;
 
-            Color[] colors = new Color[4];
-            colors[0] = Color.Green;
-            colors[1] = Color.Blue;
-            colors[2] = Color.Red;
-            colors[3] = Color.Yellow;
+            SKColor[] colors = new SKColor[4];
+            colors[0] = SKColors.Green;
+            colors[1] = SKColors.Blue;
+            colors[2] = SKColors.Red;
+            colors[3] = SKColors.Yellow;
 
             Surface[] surfaces = new Surface[4];
             // Test the overlap
@@ -765,6 +795,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("Create a new surface with surfaceId is duplicated with another surface")]
         public void RDPEGFX_SurfaceToScreen_Negative_CreateDuplicateSurface()
         {
@@ -802,6 +834,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("Attempt to delete a surface, which has inexistent surfaceId")]
         public void RDPEGFX_SurfaceToScreen_Negative_DeleteInexistentSurface()
         {
@@ -849,6 +883,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("Attempt to map bitmap of an inexistent surface to output")]
         public void RDPEGFX_SurfaceToScreen_Negative_MapInexistentSurfaceToOutput()
         {
@@ -881,6 +917,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("Attempt to fill solid to an inexistent surface")]
         public void RDPEGFX_SurfaceToScreen_Negative_SolidFillToInexistentSurface()
         {
@@ -921,6 +959,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("Check if client can handle a message with incorrect pdu length in RDPGFX_HEADER")]
         public void RDPEGFX_SurfaceToScreen_Negative_IncorrectPduLengthInHeader()
         {

@@ -72,7 +72,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             base.TestInitialize();
 
             // Turn on verification
-            this.rdpbcgrAdapter.TurnVerificationOff(false);
+            this.rdpbcgrAdapter.TurnVerificationOff(TurnOffRDPBCGRVerification);
         }
 
         protected override void TestCleanup()
@@ -80,11 +80,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             base.TestCleanup();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger client to close all RDP connections for clean up.");
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+
+            this.TriggerClientDisconnectAll();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
 
             if (this.rdpefsAdapter != null)
                 this.rdpefsAdapter.Dispose();
@@ -112,7 +112,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
                     return;
                 }
             }
-            
+
         }
 
         /// <summary>
@@ -159,12 +159,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             return result;
         }
-    
+
         private void SendStaticVirtualChannelTraffics(StaticVirtualChannel_InvalidType invalidType)
         {
             if (this.rdpefsAdapter == null)
             {
-                this.rdpefsAdapter = (IRdpefsAdapter)this.TestSite.GetAdapter(typeof(IRdpefsAdapter));
+                this.rdpefsAdapter = this.TestSite.GetAdapter<IRdpefsAdapter>();
                 this.rdpefsAdapter.Reset();
                 this.rdpefsAdapter.AttachRdpbcgrAdapter(this.rdpbcgrAdapter);
             }
@@ -172,6 +172,17 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Start to sending ref traffics.");
             this.rdpefsAdapter.GenerateStaticVirtualChannelTraffics(invalidType);
         }
+
+        private enum LargePointerSize : UInt16
+        {
+            Small = 32,
+            Medium = 64,
+            Large = 128,
+            ExtraLarge = 384,
+        }
+
+        // From the section which gives definition of TS_LARGE_POINTER_CAPABILITYSET in [MS-RDPBCGR].
+        private const UInt32 MaxMultiFragmentRequestSizeSupported = 608299;
     }
 }
 ;

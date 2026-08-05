@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Text;
-using System.Drawing;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SkiaSharp;
 
 namespace Microsoft.Protocols.TestSuites.Rdprfx
 {
@@ -19,7 +15,9 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(0)]
         [TestCategory("BVT")]
         [TestCategory("RDP7.1")]
-        [TestCategory("RDPRFX")]        
+        [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Sending client an encoded bitmap data which encoded with RLGR1 algorithm.")]
         public void Rdprfx_ImageMode_PositiveTest_RLGR1()
         {
@@ -35,7 +33,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -43,7 +44,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -61,7 +62,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -97,9 +98,9 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             rdprfxAdapter.ExpectTsFrameAcknowledgePdu(frameId, waitTime);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
-            Rectangle compareRect = new Rectangle(destLeft, destTop, image_64X64.Width, image_64X64.Height);
-            this.VerifySUTDisplay(true, compareRect);             
-           
+            SKRect compareRect = new SKRect(destLeft, destTop, destLeft + image_64X64.Width, destTop + image_64X64.Height);
+            this.VerifySUTDisplay(true, compareRect);
+
             #endregion
         }
 
@@ -107,7 +108,9 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(0)]
         [TestCategory("BVT")]
         [TestCategory("RDP7.1")]
-        [TestCategory("RDPRFX")]        
+        [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Sending client an encoded bitmap data which encoded with RLGR3 algorithm.")]
         public void Rdprfx_ImageMode_PositiveTest_RLGR3()
         {
@@ -123,7 +126,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -131,7 +137,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -149,7 +155,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -185,9 +191,9 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             rdprfxAdapter.ExpectTsFrameAcknowledgePdu(frameId, waitTime);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
-            Rectangle compareRect = new Rectangle(destLeft, destTop, image_64X64.Width, image_64X64.Height);
+            SKRect compareRect = new SKRect(destLeft, destTop, destLeft + image_64X64.Width, destTop + image_64X64.Height);
             this.VerifySUTDisplay(true, compareRect);
-           
+
             #endregion
         }
 
@@ -195,6 +201,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when the bitmap should be clipped by rectangular in TS_RFX_REGION.")]
         public void Rdprfx_ImageMode_PositiveTest_ClippedByRegion()
         {
@@ -210,7 +218,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -218,7 +229,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -236,7 +247,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -265,10 +276,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                 opMode, enAlgorithm, destLeft, destTop);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Create rectangles whose height is TileSize/2, this rectangle is used for TS_RFX_REGION structure to clip the bitmap.");
-            Rectangle clipRect = new Rectangle(0, 0, RgbTile.TileSize, RgbTile.TileSize / 2);
-            Rectangle[] rects = new Rectangle[] { clipRect };
+            SKRect clipRect = new SKRect(0, 0, RgbTile.TileSize, RgbTile.TileSize / 2);
+            SKRect[] rects = new SKRect[] { clipRect };
 
-            TileImage[] tileImageArr = RdprfxTileUtils.SplitToTileImage(image_64X64, RdprfxServer.TileSize, RdprfxServer.TileSize);            
+            TileImage[] tileImageArr = RdprfxTileUtils.SplitToTileImage(image_64X64, RdprfxServer.TileSize, RdprfxServer.TileSize);
             for (int idx = 0; idx < tileImageArr.Length; idx++)
             {
                 if (idx == 0)
@@ -292,8 +303,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             rdprfxAdapter.ExpectTsFrameAcknowledgePdu(frameId, waitTime);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
-            Rectangle compareRect = new Rectangle(destLeft, destTop, image_64X64.Width, image_64X64.Height);
-            this.VerifySUTDisplay(true, compareRect); 
+            SKRect compareRect = new SKRect(destLeft, destTop, destLeft + image_64X64.Width, destTop + image_64X64.Height);
+            this.VerifySUTDisplay(true, compareRect);
 
             #endregion
         }
@@ -302,6 +313,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap when each component use different quantization value.")]
         public void Rdprfx_ImageMode_PositiveTest_MultiQuantVals()
         {
@@ -317,7 +330,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -325,7 +341,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -343,7 +359,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -401,16 +417,18 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             rdprfxAdapter.ExpectTsFrameAcknowledgePdu(frameId, waitTime);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
-            Rectangle compareRect = new Rectangle(destLeft, destTop, image_64X64.Width, image_64X64.Height);
+            SKRect compareRect = new SKRect(destLeft, destTop, destLeft + image_64X64.Width, destTop + image_64X64.Height);
             this.VerifySUTDisplay(true, compareRect);
 
             #endregion
         }
-        
+
         [TestMethod]
         [Priority(1)]
         [TestCategory("RDP7.1")]
-        [TestCategory("RDPRFX")]        
+        [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Ensure the client terminates the RDP connection when received a TS_RFX_FRAME_BEGIN with the blockLen field set to an invalid value.")]
         public void Rdprfx_ImageMode_NegativeTest_TsRfxFrameBegin_InvalidBlockLen()
         {
@@ -423,7 +441,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -431,7 +452,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -449,7 +470,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -492,6 +513,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when one rectangular is composed by four tiles in the corner in TS_RFX_REGION and the rectangle has no common boundary with each tile.")]
         public void Rdprfx_ImageMode_PositiveTest_FourTilesComposeOneRectWithoutCommonBoundary()
         {
@@ -505,7 +528,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             FourTilesComposeOneRectWithoutCommonBoundary(OperationalMode.ImageMode);
         }
 
@@ -513,6 +539,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when one rectangular is composed by four tiles in the corner in TS_RFX_REGION and the rectangle has common boundaries with each tile.")]
         public void Rdprfx_ImageMode_PositiveTest_FourTilesComposeOneRectWithCommonBoundary()
         {
@@ -526,7 +554,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             FourTilesComposeOneRectWithCommonBoundary(OperationalMode.ImageMode);
         }
 
@@ -534,6 +565,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can deal with the images without encoding.")]
         public void Rdprfx_PositiveTest_ImageWithoutEncoding()
         {
@@ -549,7 +582,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #endregion
 
             #region Test Sequence
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening.");
             this.rdpbcgrAdapter.StartRDPListening(transportProtocol);
@@ -557,7 +593,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol, true);
+            TriggerClientRDPConnect(transportProtocol, true);
             #endregion
 
             #region RDPBCGR Connection
@@ -575,7 +611,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -591,12 +627,12 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Frame Marker Command (Begin) with frameID: {0}.", frameId);
             rdpbcgrAdapter.SendFrameMarkerCommand(frameAction_Values.SURFACECMD_FRAMEACTION_BEGIN, frameId);
 
-            this.TestSite.Log.Add(LogEntryKind.Comment, "Start to send bitmap data without encoding to client. destLeft = {0}, destTop = {1}.",  destLeft, destTop);
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Start to send bitmap data without encoding to client. destLeft = {0}, destTop = {1}.", destLeft, destTop);
 
             this.rdprfxAdapter.SendImageToClientWithoutEncoding(image_64X64, destLeft, destTop);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
-            Rectangle compareRect = new Rectangle(destLeft, destTop, image_64X64.Width, image_64X64.Height);
+            SKRect compareRect = new SKRect(destLeft, destTop, destLeft + image_64X64.Width, destTop + image_64X64.Height);
             this.VerifySUTDisplay(true, compareRect);
 
             #endregion
@@ -606,6 +642,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when the numRects field of TS_RFX_REGION is set to zero.")]
         public void Rdprfx_ImageMode_PositiveTest_numRectsSetToZero()
         {
@@ -619,7 +657,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             SendNumRectsSetToZero(OperationalMode.ImageMode);
         }
 
@@ -627,6 +668,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when some tiles are out of the rectangle in TS_RFX_REGION.")]
         public void Rdprfx_ImageMode_PositiveTest_OutOfRects()
         {
@@ -640,7 +683,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             SendOutOfRects(OperationalMode.ImageMode);
         }
 
@@ -649,6 +695,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when send a list of rectangle.")]
         public void Rdprfx_ImageMode_PositiveTest_ListOfRects()
         {
@@ -662,7 +710,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             SendListOfRects(OperationalMode.ImageMode);
         }
 
@@ -670,6 +721,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when send a list of rectangles with overlapping.")]
         public void Rdprfx_ImageMode_PositiveTest_ListOfRectsOverlap()
         {
@@ -683,7 +736,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             SendListOfRectsOverlap(OperationalMode.ImageMode);
         }
 
@@ -691,6 +747,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(1)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can decode a RemoteFX encoded bitmap and render correctly when send a list of rectangles with overlapping and duplicated tile.")]
         public void Rdprfx_ImageMode_PositiveTest_ListOfRectsOverlapWithDuplicateTiles()
         {
@@ -704,7 +762,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 6: [RDPRFX] Expect SUT sends a TS_FRAME_ACKNOWLEDGE_PDU.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             SendListOfRectsOverlapWithDuplicateTiles(OperationalMode.ImageMode);
         }
 
@@ -712,6 +773,8 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(2)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Verify the client can handle a duplicated tile correctly.")]
         public void Rdprfx_ImageMode_NegtiveTest_DuplicatedTile()
         {
@@ -724,7 +787,10 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             Step 5: [RDPRFX] Expect the client terminates the RDP connection.
             */
             #endregion
-
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             NegtiveTest_DuplicatedTile(OperationalMode.ImageMode);
         }
 

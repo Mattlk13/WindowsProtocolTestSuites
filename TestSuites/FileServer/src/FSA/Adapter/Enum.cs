@@ -652,7 +652,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
 
         /// <summary>
         /// This bit SHOULD be set to 0 and the server MUST fail the request with 
-        /// a STATUS_INVALID_PARAMETER error if this bit is set.
+        /// a STATUS_NOT_SUPPORTED error if this bit is set.
         /// </summary>
         RESERVE_OPFILTER = 0x00100000,
 
@@ -1017,11 +1017,6 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
         SHARING_VIOLATION = 0xC0000043,
 
         /// <summary>
-        /// The instruction at 0x%08lx referenced memory at 0x%08lx. The memory could not be %s.
-        /// </summary>
-        ACCESS_VIOLATION = 0xC0000005,
-
-        /// <summary>
         /// There are no more files
         /// </summary>
         NO_MORE_FILES = 0x80000006,
@@ -1209,7 +1204,32 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
         /// Encrypted files
         /// File system metadata files
         /// </summary>
-        STATUS_OFFLOAD_WRITE_FILE_NOT_SUPPORTED = 0xC000A2A4
+        STATUS_OFFLOAD_WRITE_FILE_NOT_SUPPORTED = 0xC000A2A4,
+
+        /// <summary>
+        /// This operation is not supported on directory files.
+        /// </summary>
+        STATUS_DIRECTORY_NOT_SUPPORTED = 0xC000047C,
+
+        /// <summary>
+        /// This operation is only supported on redundant media.
+        /// </summary>
+        STATUS_NOT_REDUNDANT_STORAGE = 0xC0000479,
+
+        /// <summary>
+        /// This operation is not supported on a resident file.
+        /// </summary>
+        STATUS_RESIDENT_FILE_NOT_SUPPORTED = 0xC000047A,
+
+        /// <summary>
+        /// This operation is not supported on compressed files.
+        /// </summary>
+        STATUS_COMPRESSED_FILE_NOT_SUPPORTED = 0xC000047B,
+
+        /// <summary>
+        /// An instance of a named pipe cannot be found in the listening state.
+        /// </summary>
+        STATUS_PIPE_NOT_AVAILABLE = 0xC00000AC
     }
 
     /// <summary>
@@ -1307,6 +1327,16 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
         FILE_STANDARD_LINK_INFORMATION = 54,
 
         FileIdInformation = 59,
+
+        FILE_ID_EXTD_DIRECTORY_INFORMATION = 60,
+
+        FILE_ID_64_EXTD_DIRECTORY_INFORMATION = 78,
+
+        FILE_ID_64_EXTD_BOTH_DIRECTORY_INFORMATION = 79,
+
+        FILE_ID_ALL_EXTD_DIRECTORY_INFORMATION = 80,
+
+        FILE_ID_ALL_EXTD_BOTH_DIRECTORY_INFORMATION = 81,
 
         /// <summary>
         /// If FileInformationClass is not defined in [MS-FSCC] section 2.4
@@ -1590,6 +1620,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
         /// for the file or directory associated with the handle on which this FSCTL was invoked.
         /// </summary>
         FSCTL_SET_SHORT_NAME_BEHAVIOR,
+
+        /// <summary>
+        /// Request message requests that the server perform a specific stream snapshot operation 
+        /// on a given data stream contained in a file. The operation performed is dependent on 
+        /// the value defined in REFS_STREAM_SNAPSHOT_OPERATION.
+        /// </summary>
+        FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT = 0x90440,
 
         /// <summary>
         /// Requests a Byte-Range Lock
@@ -2336,9 +2373,9 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
 
         /// <summary>
         /// If set, search ParentFile.DirectoryList for a link where Link.Name or Link.ShortName 
-        //matches FileNamei, If no such link is found
+        /// matches FileName, If no such link is found
         /// </summary>
-        isprefixLinkNotFound,
+        IsPrefixLinkNotFound,
 
         /// <summary>
         /// If set, Open.File is not null.
@@ -2348,7 +2385,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
         /// <summary>
         /// If set, PathName contains a trailing backslash.
         /// </summary>
-        PathNameTraiblack,
+        PathNameTrailBack,
 
         /// <summary>
         /// File name is null

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using System;
 using System.Linq;
@@ -668,7 +669,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             ushort earlyCapabilityFlags = (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_ERRINFO_PDU | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_WANT_32BPP_SESSION
                 | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_STATUSINFO_PDU | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_STRONG_ASYMMETRIC_KEYS | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_UNUSED | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_VALID_CONNECTION_TYPE | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_MONITOR_LAYOUT_PDU
-                | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_NETWORK_AUTODETECT | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_DYNVC_GFX_PROTOCOL | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_DYNAMIC_TIME_ZONE | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_HEARTBEAT_PDU;
+                | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_NETWORK_AUTODETECT | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_DYNVC_GFX_PROTOCOL | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_DYNAMIC_TIME_ZONE | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_HEARTBEAT_PDU | (ushort)earlyCapabilityFlags_Values.RNS_UD_CS_SUPPORT_SKIP_CHANNELJOIN;
             ushort negEarlyCapabilityFlags = (ushort)~earlyCapabilityFlags;
             isValidValue = ((ushort)core.earlyCapabilityFlags.actualData & negEarlyCapabilityFlags) == 0;
 
@@ -837,8 +838,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
                 + @"Unicode format (depending on the presence of the INFO_UNICODE flag)");
             if (info.extraInfo != null)
             {
-
-                if (!this.Site.Properties["RDP.Version"].Equals("8.1"))
+                string rdpVersion;
+                PtfPropUtility.GetPtfPropertyValue(this.Site, "Version", out rdpVersion);
+                if (!"8.1".Equals(rdpVersion))
                 {
                     site.Assert.IsTrue(info.extraInfo.clientAddressFamily == clientAddressFamily_Values.V1 || info.extraInfo.clientAddressFamily == clientAddressFamily_Values.V2,
                         @"[In Extended Info Packet (TS_EXTENDED_INFO_PACKET)]clientAddressFamily (2 bytes):clientAddressFamily can have the "

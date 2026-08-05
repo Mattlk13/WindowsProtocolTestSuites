@@ -1,7 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 Param(
 [String]$scriptsPath  = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition)
@@ -31,6 +29,7 @@ if(Test-Path -Path $settingFile)
     $osVersion          = .\Get-Parameter.ps1 $settingFile osVersion
     $workgroupDomain    = .\Get-Parameter.ps1 $settingFile workgroupDomain
     $compressionInTC    = .\Get-Parameter.ps1 $settingFile compressionInTC
+    $rdpSigningCertSubject = .\Get-Parameter.ps1 $settingFile rdpSigningCertSubject "CN=WPTS RDP Test Signing"
     .\Set-Parameter.ps1 $settingFile LogFile $logFile "If no log file path specified, this value should be used."
 }
 else
@@ -86,10 +85,21 @@ Write-Host "`$compressionInTC    = $compressionInTC"
 Write-Host "Turn off firewall"
 cmd /c netsh advfirewall set allprofile state off 2>&1 | Write-Host
 
+#------------------------------------------------------------------------------------------
+# Add generic credentials
+#------------------------------------------------------------------------------------------
+Write-Host "Add generic credentials"
+cmdkey /generic:"TERMSRV/$driverComputerName" /user:"$credSSPUser" /pass:$credSSPPwd
+
+#-----------------------------------------------------
+# Get IP address of the SUT computer
+#-----------------------------------------------------
+$tcComputerIP = (Test-Connection $tcComputerName -Count 1 | Select -ExpandProperty IPV4Address).IPAddressToString
+
 #-----------------------------------------------------
 # Enable Powershell Remoting
 #-----------------------------------------------------
-if(Test-WSMan -ComputerName $sutSetting.ip){
+if(Test-WSMan -ComputerName $tcComputerIP){
     Write-Host "WinRM is running"
 }else{
     Set-NetConnectionProfile -NetworkCategory Private -ErrorAction Ignore
@@ -142,6 +152,14 @@ if (Test-Path -Path "$dataPath\Base\Negotiate.RDP")
     Copy-Item $dataPath\Negotiate.RDP $dataPath\Base\Negotiate.RDP -Force
 }
 
+if (Test-Path -Path "$dataPath\Base\NegotiateInvalidAccount.RDP")
+{
+    Copy-Item $dataPath\Base\NegotiateInvalidAccount.RDP $dataPath\NegotiateInvalidAccount.RDP -Force
+}else
+{
+    Copy-Item $dataPath\NegotiateInvalidAccount.RDP $dataPath\Base\NegotiateInvalidAccount.RDP -Force
+}
+
 if (Test-Path -Path "$dataPath\Base\NegotiateFullScreen.RDP")
 {
     Copy-Item $dataPath\Base\NegotiateFullScreen.RDP $dataPath\NegotiateFullScreen.RDP -Force
@@ -158,6 +176,14 @@ if (Test-Path -Path "$dataPath\Base\DirectCredSSP.RDP")
     Copy-Item $dataPath\DirectCredSSP.RDP $dataPath\Base\DirectCredSSP.RDP -Force
 }
 
+if (Test-Path -Path "$dataPath\Base\DirectCredSSPInvalidAccount.RDP")
+{
+    Copy-Item $dataPath\Base\DirectCredSSPInvalidAccount.RDP $dataPath\DirectCredSSPInvalidAccount.RDP -Force
+}else
+{
+    Copy-Item $dataPath\DirectCredSSPInvalidAccount.RDP $dataPath\Base\DirectCredSSPInvalidAccount.RDP -Force
+}
+
 if (Test-Path -Path "$dataPath\Base\DirectCredSSPFullScreen.RDP")
 {
     Copy-Item $dataPath\Base\DirectCredSSPFullScreen.RDP $dataPath\DirectCredSSPFullScreen.RDP -Force
@@ -166,20 +192,53 @@ if (Test-Path -Path "$dataPath\Base\DirectCredSSPFullScreen.RDP")
     Copy-Item $dataPath\DirectCredSSPFullScreen.RDP $dataPath\Base\DirectCredSSPFullScreen.RDP -Force
 }
 
+New-Item -Path $dataPath\CredentialManager_InvalidAccount.ps1 -ItemType File  -Force
+New-Item -Path $dataPath\CredentialManager_InvalidAccount_Reverse.ps1 -ItemType File  -Force
+
+"cmd /c cmdkey /add:`"Domain:target=TERMSRV/${driverComputerName}`" /user:`"${driverComputerName}\${credSSPUser}_`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount.ps1" -Append -Encoding UTF8
+"cmd /c cmdkey /add:`"Domain:target=TERMSRV/${driverComputerIP}`" /user:`"${driverComputerName}\${credSSPUser}_`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount.ps1" -Append -Encoding UTF8
+"cmd /c cmdkey /generic:`"TERMSRV/${driverComputerName}`" /user:`"${credSSPUser}_`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount.ps1" -Append -Encoding UTF8
+"cmd /c cmdkey /add:`"Domain:target=TERMSRV/${driverComputerName}`" /user:`"${driverComputerName}\${credSSPUser}`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount_Reverse.ps1" -Append -Encoding UTF8
+"cmd /c cmdkey /add:`"Domain:target=TERMSRV/${driverComputerIP}`" /user:`"${driverComputerName}\${credSSPUser}`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount_Reverse.ps1" -Append -Encoding UTF8
+"cmd /c cmdkey /generic:`"TERMSRV/${driverComputerName}`" /user:`"${credSSPUser}`" /pass:${credSSPPwd}" | out-file "$dataPath\CredentialManager_InvalidAccount_Reverse.ps1" -Append -Encoding UTF8
+
 "`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\Negotiate.RDP" -Append -Encoding Unicode
 "`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\DirectCredSSP.RDP" -Append -Encoding Unicode
 "`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\NegotiateFullScreen.RDP" -Append -Encoding Unicode
 "`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\DirectCredSSPFullScreen.RDP" -Append -Encoding Unicode
+"`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\NegotiateInvalidAccount.RDP" -Append -Encoding Unicode
+"`nfull address:s:${driverComputerName}:${listeningPort}" | out-file "$dataPath\DirectCredSSPInvalidAccount.RDP" -Append -Encoding Unicode
 
 "`n$compressionStr" | out-file "$dataPath\Negotiate.RDP" -Append -Encoding Unicode
 "`n$compressionStr" | out-file "$dataPath\DirectCredSSP.RDP" -Append -Encoding Unicode
 "`n$compressionStr" | out-file "$dataPath\NegotiateFullScreen.RDP" -Append -Encoding Unicode
 "`n$compressionStr" | out-file "$dataPath\DirectCredSSPFullScreen.RDP" -Append -Encoding Unicode
+"`n$compressionStr" | out-file "$dataPath\NegotiateInvalidAccount.RDP" -Append -Encoding Unicode
+"`n$compressionStr" | out-file "$dataPath\DirectCredSSPInvalidAccount.RDP" -Append -Encoding Unicode
 
 "`nusbdevicestoredirect:s:*" | out-file "$dataPath\Negotiate.RDP" -Append -Encoding Unicode
 "`nusbdevicestoredirect:s:*" | out-file "$dataPath\DirectCredSSP.RDP" -Append -Encoding Unicode
 "`nusbdevicestoredirect:s:*" | out-file "$dataPath\NegotiateFullScreen.RDP" -Append -Encoding Unicode
 "`nusbdevicestoredirect:s:*" | out-file "$dataPath\DirectCredSSPFullScreen.RDP" -Append -Encoding Unicode
+"`nusbdevicestoredirect:s:*" | out-file "$dataPath\NegotiateInvalidAccount.RDP" -Append -Encoding Unicode
+"`nusbdevicestoredirect:s:*" | out-file "$dataPath\DirectCredSSPInvalidAccount.RDP" -Append -Encoding Unicode
+
+#----------------------------------------------------------------------------
+# Sign all generated .RDP files and register the cert as a trusted .rdp
+# publisher so the April 2026 RDP security dialog (CVE-2026-26151) does
+# not block unattended task execution. Signing happens here, AFTER all
+# field appends above, because rdpsign signs every field and any later
+# mutation would invalidate the signature.
+#----------------------------------------------------------------------------
+$rdpFilesToSign = @(
+    "Negotiate.RDP",
+    "DirectCredSSP.RDP",
+    "NegotiateFullScreen.RDP",
+    "DirectCredSSPFullScreen.RDP",
+    "NegotiateInvalidAccount.RDP",
+    "DirectCredSSPInvalidAccount.RDP"
+) | ForEach-Object { "$dataPath\$_" }
+.\Set-RdpFileSigning.ps1 -Subject $rdpSigningCertSubject -RdpFiles $rdpFilesToSign
 
 Write-Host "Allow RDP connecting to unkown publisher for $driverComputerName..."
 cmd /c reg add "HKCU\Software\Microsoft\Terminal Server Client\LocalDevices" /v $driverComputerName /t REG_DWORD /d 68 /F
@@ -196,8 +255,20 @@ cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN Negotiate_FullScreen_RDPCon
 Write-Host "Creating task to trigger client to initiate a full screen RDP connection using CredSSP security protocol with Direct Approach..."
 cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN DirectCredSSP_FullScreen_RDPConnect /TR "$dataPath\DirectCredSSPFullScreen.RDP" /IT /F
 
+Write-Host "Creating task to trigger client to initiate a RDP connection with Negotiation Approach for Invalid Account..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN Negotiate_InvalidAccount_RDPConnect /TR "$dataPath\Negotiate.RDP" /IT /F
+
+Write-Host "Creating task to trigger client to initiate a RDP connection using CredSSP security protocol with Direct Approach for Invalid Account..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN DirectCredSSP_InvalidAccount_RDPConnect /TR "$dataPath\DirectCredSSP.RDP" /IT /F
+
 Write-Host "Creating task to maximize mstsc window..."
 cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN MaximizeMstsc /TR "powershell $scriptsPath\MaximizeMstsc.ps1" /IT /F
+
+Write-Host "Creating task to trigger input events..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN TriggerInputEvents /TR "powershell $scriptsPath\TriggerInputEvents.ps1" /IT /F
+
+Write-Host "Creating task to trigger close rdp window..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN TriggerCloseRDPWindow /TR "powershell $scriptsPath\TriggerCloseRDPWindow.ps1" /IT /F
 
 Write-Host "Creating task to trigger RDP client to start a Auto-Reconnect sequence after a network interruption..."
 cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN TriggerNetworkFailure /TR "powershell $dataPath\TriggerNetworkFailure.ps1" /IT /F
@@ -205,8 +276,14 @@ cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN TriggerNetworkFailure /TR "
 Write-Host "Creating task to close all RDP connections of terminal client..."
 cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN DisconnectAll /TR "$dataPath\DisconnectAll.bat" /IT /F
 
+Write-Host "Creating task to change username of Server to an invalid username..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN CredentialManager_Invalid /TR "powershell $dataPath\CredentialManager_InvalidAccount.ps1" /IT /F
+
+Write-Host "Creating task to change username of Server back to a valid username..."
+cmd /c schtasks /Create /RU $taskUser /SC Weekly /TN CredentialManager_InvalidAccount_Reverse /TR "powershell $dataPath\CredentialManager_InvalidAccount_Reverse.ps1" /IT /F
+
 #-----------------------------------------------------
-# Edit registery.
+# Edit registry.
 #-----------------------------------------------------
 Write-Host "Change Registry, Add a default user for Server"
 New-Item -type Directory HKCU:\Software\Microsoft\"Terminal Server Client"\Servers -Force
@@ -230,18 +307,25 @@ if($driverComputerIP -ne $driverComputerName)
 # To avoid warning dialog
 New-ItemProperty HKCU:\Software\Microsoft\"Terminal Server Client"\LocalDevices $driverComputerName -value 588 -PropertyType DWORD -Force
 
-#-----------------------------------------------------
-# Edit registery.
-# Force client to use TLS 1.0, not to use TLS 1.1 and TLS 1.2
-#-----------------------------------------------------
+# Set Maximum Disconnection Timeout
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -Name "MaxDisconnectionTime" -Value 60000 -PropertyType DWord -Force
+
+# Disable TLS 1.0 for client
+Write-Host "Disable TLS 1.0 for client."
+New-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Force | Out-Null
+New-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -name 'Enabled' -value 0 -PropertyType 'DWord' -Force | Out-Null
+New-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -name 'DisabledByDefault' -value '0xffffffff' -PropertyType 'DWord' -Force | Out-Null
+Write-Host 'TLS 1.0 has been disabled.'
+
+# Enable TLS 1.1 and TLS 1.2 for client
 Write-Host "Change Registry, force client to use TLS 1.0"
 New-Item -type Directory HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.1" -Force
 New-Item -type Directory HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.1"\Client -Force
-New-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.1"\Client Enabled -value 0 -PropertyType DWORD -Force
+New-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.1"\Client Enabled -value 1 -PropertyType DWORD -Force
 
 New-Item -type Directory HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.2" -Force
 New-Item -type Directory HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.2"\Client -Force
-New-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.2"\Client Enabled -value 0 -PropertyType DWORD -Force
+New-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\"TLS 1.2"\Client Enabled -value 1 -PropertyType DWORD -Force
 
 #-----------------------------------------------------
 # Save CredSSP credential to Credential Manager

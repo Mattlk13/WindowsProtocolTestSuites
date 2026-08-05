@@ -1,7 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Rdma;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -64,7 +63,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
             uint nInboundEntries,
             uint nOutboundEntries,
             uint inboundReadLimit,
-            uint inboundDataSize
+            uint inboundDataSize,
+            NdspiVersion ndVersion = NdspiVersion.NDv2
             )
         {
             Connection = new SmbdConnection();
@@ -90,7 +90,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
                 inboundReadLimit,
                 OUTBOUND_READLIMIT,
                 inboundDataSize,
-                logEvent
+                logEvent,
+                ndVersion
                 );
             NtStatus ret = (NtStatus)Connection.Endpoint.ConnectToServerOverRdma(
                 clientIp, 
@@ -559,23 +560,39 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
             out SmbdBufferDescriptorV1 descriptor
             )
         {
-            RdmaBufferDescriptorV1 rdmaDescriptor;
-            RdmaOperationReadWriteFlag readWriteFlag;
+            RdmaBufferDescriptor rdmaDescriptor;
+            uint readWriteFlag;
+#if WINDOWS
+            RdmaReadWriteFlag winFlag;
+            if (flag == SmbdBufferReadWrite.RDMA_READ_PERMISSION_FOR_WRITE_FILE)
+                winFlag = RdmaReadWriteFlag.Read;
+            else if (flag == SmbdBufferReadWrite.RDMA_WRITE_PERMISSION_FOR_READ_FILE)
+                winFlag = RdmaReadWriteFlag.Write;
+            else
+                winFlag = RdmaReadWriteFlag.ReadAndWrite;
+
+            readWriteFlag = (uint)winFlag;
+#else
+            const uint IBV_ACCESS_LOCAL_WRITE = 0x01;
+            const uint IBV_ACCESS_REMOTE_WRITE = 0x02;
+            const uint IBV_ACCESS_REMOTE_READ = 0x04;
+
             if (flag == SmbdBufferReadWrite.RDMA_READ_PERMISSION_FOR_WRITE_FILE)
             {
-                readWriteFlag = RdmaOperationReadWriteFlag.Read;
+                readWriteFlag = IBV_ACCESS_REMOTE_READ | IBV_ACCESS_LOCAL_WRITE;
             }
             else if (flag == SmbdBufferReadWrite.RDMA_WRITE_PERMISSION_FOR_READ_FILE)
             {
-                readWriteFlag = RdmaOperationReadWriteFlag.Write;
+                readWriteFlag = IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE;
             }
             else
             {
-                readWriteFlag = RdmaOperationReadWriteFlag.ReadAndWrite;
+                readWriteFlag = IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE;
             }
+#endif
             NtStatus status = (NtStatus)Connection.Endpoint.RegisterMemoryWindow(
                 length, 
-                readWriteFlag,
+                (uint)readWriteFlag,
                 reversed,
                 out rdmaDescriptor
                 );
@@ -599,10 +616,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
         /// <param name="bufferDescriptor">Buffer Descriptor point to registered buffer</param>
         public void DeregisterBuffer(SmbdBufferDescriptorV1 bufferDescriptor)
         {
-            RdmaBufferDescriptorV1 rdmaBufferDescriptor = new RdmaBufferDescriptorV1();
+            RdmaBufferDescriptor rdmaBufferDescriptor = new RdmaBufferDescriptor();
             rdmaBufferDescriptor.Length = bufferDescriptor.Length;
             rdmaBufferDescriptor.Token = bufferDescriptor.Token;
             rdmaBufferDescriptor.Offset = bufferDescriptor.Offset;
+
             Connection.Endpoint.DeregisterMemoryWindow(rdmaBufferDescriptor);
         }
 
@@ -694,7 +712,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
         /// <param name="bufferDescriptor">Buffer Descriptor point to registered buffer</param>
         public NtStatus WriteRegisteredBuffer(byte[] data, SmbdBufferDescriptorV1 bufferDescriptor)
         {
-            RdmaBufferDescriptorV1 rdmaBufferDescriptor = new RdmaBufferDescriptorV1();
+            RdmaBufferDescriptor rdmaBufferDescriptor = new RdmaBufferDescriptor();
             rdmaBufferDescriptor.Length = bufferDescriptor.Length;
             rdmaBufferDescriptor.Token = bufferDescriptor.Token;
             rdmaBufferDescriptor.Offset = bufferDescriptor.Offset;
@@ -708,7 +726,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
         /// <param name="bufferDescriptor">Buffer Descriptor point to registered buffer</param>
         public NtStatus ReadRegisteredBuffer(byte[] data, SmbdBufferDescriptorV1 bufferDescriptor)
         {
-            RdmaBufferDescriptorV1 rdmaBufferDescriptor = new RdmaBufferDescriptorV1();
+            RdmaBufferDescriptor rdmaBufferDescriptor = new RdmaBufferDescriptor();
             rdmaBufferDescriptor.Length = bufferDescriptor.Length;
             rdmaBufferDescriptor.Token = bufferDescriptor.Token;
             rdmaBufferDescriptor.Offset = bufferDescriptor.Offset;

@@ -7,16 +7,50 @@
 Param(
 [string]$computer, # host name or ip address
 [string]$taskName,
-[string]$userName,
-[string]$userPassword
+[string]$userName
 )
 
 # Run Task to start RDP connection remotely
-$pwdConverted = ConvertTo-SecureString $userPassword -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential $userName, $pwdConverted -ErrorAction Stop
-$cmdOutput = Invoke-Command -ComputerName $computer -credential $cred -ScriptBlock {param([string]$taskName) cmd /c schtasks /run /TN $taskName} -ArgumentList $taskName
+$cmdOutput = ""
+$retryCount = 10
 
-$cmdOutput | out-file ".\RunTask_$taskName.log"
+$userPwdInTCEn = ConvertTo-SecureString $ptfprop_SUTUserPassword -AsPlainText -Force
+$Credential = New-Object System.Management.Automation.PSCredential($ptfprop_SUTUserName,$userPwdInTCEn)
+
+$sessionM = $null;
+
+try
+{
+	$sessionM = New-PSSession -ComputerName $ptfprop_SUTName -Credential $Credential
+}
+catch
+{
+}
+
+try
+{
+    while($cmdOutput -eq "" -and ($retryCount -ne 0)) {
+
+        if ($sessionM -eq $null) 
+        {
+            $cmdOutput = Invoke-Command -HostName $ptfprop_SUTName -UserName $ptfprop_SUTUserName -ScriptBlock {param([string]$taskName) cmd /c schtasks /run /TN $taskName} -ArgumentList $taskName
+        }
+        else
+        {
+            $cmdOutput = Invoke-Command -Session $sessionM -ScriptBlock {param([string]$taskName) cmd /c schtasks /run /TN $taskName} -ArgumentList $taskName
+        }
+        
+        $retryCount--
+    }
+}
+catch
+{
+    if ($sessionM -ne $null) {
+        Remove-PSSession $sessionM
+    }
+    return -1 # connect failed
+}
+$cmdOutput | out-file "./RunTask_$taskName.log"
 
 if($cmdOutput -ne $null)
 {
@@ -26,8 +60,16 @@ if($cmdOutput -ne $null)
     }
     if($cmdOutput.ToUpper().Contains("ERROR"))
     {
+        if ($sessionM -ne $null) {
+            Remove-PSSession $sessionM
+        }
+        
         return -1 # operation failed
     }
+}
+
+if ($sessionM -ne $null) {
+    Remove-PSSession $sessionM
 }
 
 return 0  #operation succeed

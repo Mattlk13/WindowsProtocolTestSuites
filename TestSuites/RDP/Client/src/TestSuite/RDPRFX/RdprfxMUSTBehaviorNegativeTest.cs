@@ -18,9 +18,15 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(2)]
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Negative test for MUST statements in message of TS_RFX_CODEC_CHANNELT.")]
         public void Rdprfx_MUST_NegativeTest_TsRfxCodecChannelT()
         {
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Test Type List
             RdprfxNegativeType[] negTestTypeArr = new RdprfxNegativeType[]{
                 RdprfxNegativeType.TsRfxCodecChannelT_InvalidCodecId,
@@ -45,9 +51,15 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(2)]        
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Negative test for MUST statements in message of TS_RFX_SYNC.")]
         public void Rdprfx_MUST_NegativeTest_TsRfxSync()
         {
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Test Type List
             RdprfxNegativeType[] negTestTypeArr = new RdprfxNegativeType[]{
                 RdprfxNegativeType.TsRfxSync_InvalidMagic,
@@ -72,9 +84,15 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         [Priority(2)]        
         [TestCategory("RDP7.1")]
         [TestCategory("RDPRFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"Negative test for MUST statements in message of TS_RFX_CHANNELS.")]
         public void Rdprfx_MUST_NegativeTest_TsRfxChannels()
         {
+            if (SupportRemoteFX == false)
+            {
+                this.Site.Assume.Inconclusive("The SUT does not support RemoteFX, skip this test case.");
+            }
             //Test Type List
             RdprfxNegativeType[] negTestTypeArr = new RdprfxNegativeType[]{
                 RdprfxNegativeType.TsRfxChannels_InvalidChannelId};

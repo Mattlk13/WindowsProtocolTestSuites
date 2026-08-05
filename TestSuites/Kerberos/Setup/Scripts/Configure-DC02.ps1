@@ -1,24 +1,23 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Configure-DC02.ps1
-## Purpose:        Configure the Trust Realm KDC computer for Kerberos Server test suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Configure-DC02.ps1
+# Purpose:        Configure the Trust Realm KDC computer for Kerberos Server test suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
-#------------------------------------------------------------------------------------------
+##############################################################################
 # Parameters:
 # Help: whether to display the help information
 # Step: Current step for configuration
-#------------------------------------------------------------------------------------------
+##############################################################################
+
 Param
 (
     [alias("h")]
@@ -135,7 +134,6 @@ Function Init-Environment()
     Read-ConfigParameters
 }
 
-
 #------------------------------------------------------------------------------------------
 # Function: Complete-Configure
 # Write signal file, stop the transcript logging and remove the scedule task
@@ -155,27 +153,45 @@ Function Complete-Configure
     RestartAndRunFinish.ps1
 }
 
-
 #------------------------------------------------------------------------------------------
 # Function: Config-DC02
 # Configure the environment DC02:
-# Triggered by remote trusted domain: <AP02>
-#  * Change AP02 computer password
+#------------------------------------------------------------------------------------------
 Function Config-DC02()
 {
     Write-ConfigLog "Begin to config DC02 computer"
 	$domainName 	= $KrbParams.Parameters.TrustRealm.RealmName
+	$trustedDomain = $KrbParams.Parameters.LocalRealm.RealmName
 
+	#-----------------------------------------------------------------------------------------------
+	#Ensure $trustedDomain can be accessed
+	#-----------------------------------------------------------------------------------------------
+	$Times = 20
+	while($Times -ge 0)
+	{
+		$domain = Get-ADDomain $trustedDomain
+		If ($domain -ne $null)
+		{
+			Write-ConfigLog "Waiting to be able to access $trustedDomain."
+			$Times = $Times - 1
+			Start-Sleep -s 60
+		}
+		else
+		{
+			Write-ConfigLog "Can access $trustedDomain."
+			break
+		}
+	}
 	#-----------------------------------------------------------------------------------------------
 	#Create forest trust on local side
 	#-----------------------------------------------------------------------------------------------
 	Write-ConfigLog "Create forest trust relationship on local side ..." -ForegroundColor Yellow
-
+	
 	$LocalForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
 	try
 	{
 		# Build trust relationship on local forest only
-		$LocalForest.CreateLocalSideOfTrustRelationship($KrbParams.Parameters.LocalRealm.RealmName, "Bidirectional", $KrbParams.Parameters.TrustPassword)
+		$LocalForest.CreateLocalSideOfTrustRelationship($trustedDomain, "Bidirectional", $KrbParams.Parameters.TrustPassword)
 	}
 	# If trust relationship already exists
 	catch [System.DirectoryServices.ActiveDirectory.ActiveDirectoryObjectExistsException]
@@ -264,7 +280,7 @@ Function Config-DC02()
 	# Define Claims transformation policy
 	#-----------------------------------------------------------------------------------------------
 	New-ADClaimTransformPolicy -Description:"Claims transformation policy to deny all claims except $claim" -Name:"DenyAllClaimsExceptTestedClaimPolicy" -DenyAllExcept:$claim -Server:"$domainName"
-	$trustedDomain = $KrbParams.Parameters.LocalRealm.RealmName
+	
 	Set-ADClaimTransformLink -Identity:"$trustedDomain" -Policy:"DenyAllClaimsExceptTestedClaimPolicy" -TrustRole:Trusting
 
 	#-----------------------------------------------------------------------------------------------
@@ -299,6 +315,15 @@ Function Config-DC02()
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v EnableCbacAndArmor /t REG_DWORD /d 1 /f
 	REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\kerberos\Parameters /v Supportedencryptiontypes /t REG_DWORD /d 0x7fffffff /f
+
+	#-----------------------------------------------------------------------------------------------
+	# Create Tasks for Update SupportedEncryptionTypes
+	#-----------------------------------------------------------------------------------------------
+	$Rc4Task = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x00000004 /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN SetSupportedEncryptionTypesAsRc4 /TR $Rc4Task /IT /F
+
+	$RestoreTask = "REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters /v SupportedEncryptionTypes /t REG_DWORD /d 0x7fffffff /f"
+	schtasks /Create /SC ONCE /ST 00:00 /TN RestoreSupportedEncryptionTypes /TR $RestoreTask /IT /F
 
 	#-----------------------------------------------------------------------------------------------
 	# Change User Account

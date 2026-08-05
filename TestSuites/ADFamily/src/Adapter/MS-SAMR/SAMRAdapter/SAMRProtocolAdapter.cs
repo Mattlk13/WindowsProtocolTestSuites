@@ -11,17 +11,17 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Samr;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestSuites.ActiveDirectory.Common;
 
 using Entry = System.DirectoryServices;
 using System.Collections.Generic;
 using System.DirectoryServices;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Samr
 {

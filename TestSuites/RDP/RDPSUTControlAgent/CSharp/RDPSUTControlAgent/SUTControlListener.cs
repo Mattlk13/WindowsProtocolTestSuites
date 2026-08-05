@@ -15,12 +15,12 @@ namespace RDPSUTControlAgent
     public class SUTControlListener
     {
         int bufferLength = 2000;
-        ushort listenPort = 4488;
+        
         TcpListener listenServer;
         Thread processThread;
         bool processThreadRuning;
         TimeSpan timeout = new TimeSpan(0, 0, 10);
-        public SUTControlListener()
+        public SUTControlListener(ushort listenPort)
         {
             listenServer = new TcpListener(GetLocalIP(), listenPort);
             processThread = new Thread(new ThreadStart(ProcessControlCommandThread));
@@ -44,8 +44,7 @@ namespace RDPSUTControlAgent
 
         private IPAddress GetLocalIP()
         {
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
+            foreach (IPAddress ip in Dns.GetHostAddresses(Dns.GetHostName()))
             {
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
@@ -92,7 +91,15 @@ namespace RDPSUTControlAgent
                         if (requestMessage.Decode(receivedDataList.ToArray(), ref index))
                         {
                             Console.WriteLine("Receive command: " + (RDPSUTControl_CommandId)requestMessage.commandId);
-                            SUT_Control_Response_Message response= RDPClientControl.ProcessCommand(requestMessage);
+
+                            IRDPControl IRDPControlInstance;
+                            
+                            if ((RDPSUTControl_CommandId)requestMessage.commandId < RDPSUTControl_CommandId.COMMAND_DEMACATION)
+                                IRDPControlInstance = new RDPClientControl();
+                            else
+                                IRDPControlInstance = new RDPServerControl();
+
+                            SUT_Control_Response_Message response= IRDPControlInstance.ProcessCommand(requestMessage);
                             byte[] sendData = response.Encode();
                             stream.Write(sendData, 0, sendData.Length);
                             break;

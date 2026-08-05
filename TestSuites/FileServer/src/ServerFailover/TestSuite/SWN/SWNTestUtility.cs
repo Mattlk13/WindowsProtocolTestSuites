@@ -4,7 +4,8 @@
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using Microsoft.Protocols.TestTools.StackSdk.Swn;
 using System;
 using System.Linq;
@@ -463,7 +464,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
         /// <returns></returns>
         public static IPAddress GetCurrentAccessIP(string server)
         {
-            IPAddress[] accessIpList = Dns.GetHostEntry(server).AddressList;
+            IPAddress[] accessIpList = Dns.GetHostAddresses(server);
             IPAddress currentAccessIp = accessIpList[0];
             BaseTestSite.Assume.AreNotEqual(null, currentAccessIp, "Access IP to the file server should NOT be empty.");
             BaseTestSite.Log.Add(LogEntryKind.Debug, "Got IP {0} to access the file server", currentAccessIp.ToString());

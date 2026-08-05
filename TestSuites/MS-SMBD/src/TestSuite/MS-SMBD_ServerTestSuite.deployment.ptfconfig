@@ -1,30 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <TestSite xmlns="http://schemas.microsoft.com/windows/ProtocolsTest/2007/07/TestConfig" 
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://schemas.microsoft.com/windows/ProtocolsTest/2007/07/TestConfig http://schemas.microsoft.com/windows/ProtocolsTest/2007/07/TestConfig.xsd">
 
-  <Properties>
-    <Group name="PTF">
-      <Group name="NetworkCapture">
-        <Property name="Enabled" value="false">
-          <Choice>true,false</Choice>
-          <Description>
-            If it is true, enable the auto-capture feature.
-          </Description>
-        </Property>
-        <Property name="CaptureFileFolder" value="C:\MS-SMBD_CaptureFileDirectory">
-          <Description>
-            The path to put the capture files. Old files will be overwritten.
-          </Description>
-        </Property>
-        <Property name="StopRunningOnError" value="false">
-          <Choice>true,false</Choice>
-          <Description>
-            If it is true, fail the test case when error happens in running network capture commands. Otherwise, ignore the error.
-          </Description>
-        </Property>
-      </Group>
-    </Group>
+  <Properties>    
     <!--Computer name of system under test (SUT)-->
     <Property name="SutComputerName" value="SMBD-SUT01" />
     <!--IP address of R-NIC on SUT-->
@@ -52,11 +31,52 @@
         NonWindows = 0x00000000,
         WindowsServer2012 = 0x10000006,
         WindowsServer2012R2 = 0x10000007,
-        WindowsServer2016 = 0x10000008
+        WindowsServer2016 = 0x10000008,
+        WindowsServerV1803 = 0x1000000A,
+        WindowsServer2019 = 0x1000000B,
+        WindowsServerV1903 = 0x1000000C,
+        WindowsServerV1909 = 0x1000000D,
+        WindowsServerV2004 = 0x1000000E,
+        WindowsServerV20H2 = 0x1000000F,
+        WindowsServer2022 = 0x10000011,
+        WindowsServerV22H2 = 0x10000012,
+        WindowsServer2025 = 0x10000013, 
     -->
-    <Property name="Platform" value="WindowsServer2012R2"/>
+    <Property name="Platform" value="WindowsServer2025"/>
+	  <!--
+        Platform type of the Driver
+        NonWindows = 0x00000000,
+        WindowsServer2012 = 0x10000006,
+        WindowsServer2012R2 = 0x10000007,
+        WindowsServer2016 = 0x10000008,
+        WindowsServerV1803 = 0x1000000A,
+        WindowsServer2019 = 0x1000000B,
+        WindowsServerV1903 = 0x1000000C,
+        WindowsServerV1909 = 0x1000000D,
+        WindowsServerV2004 = 0x1000000E,
+        WindowsServerV20H2 = 0x1000000F,
+        WindowsServer2022 = 0x10000011,
+        WindowsServerV22H2 = 0x10000012,
+        WindowsServer2025 = 0x10000013, 
+    -->
+	  <Property name="DriverPlatform" value="WindowsServer2025"/>
 
-    <!--Name of file which is used in test read large content-->
+	  <!--The transport of RDMA card
+	        InfiniBand,
+			RoCE,
+			iWARP
+	  -->
+	  <Property name="RDMATransport" value="RoCE"/>
+
+	  <!--
+	    The Network Direct Service Provider Interface (NDSPI) version used by the RDMA layer.
+	    Must match the NDVersion the Smbd project (ProtoSDK\MS-SMBD\Smbd.csproj) was built with.
+	        NDv1 - uses the wrapper defined in ProtoSDK\RDMA
+	        NDv2 - uses the wrapper defined in ProtoSDK\RDMANdv2
+	  -->
+	  <Property name="NDVersion" value="NDv2"/>
+
+	  <!--Name of file which is used in test read large content-->
     <Property name="TestFile_ReadLargeFile" value="testFile_ReadLargeFile.txt"/>
     <!--
         Supported value for SmallFileSizeInByte is from 128 bytes to SMBD negotiated MaxSendSize 

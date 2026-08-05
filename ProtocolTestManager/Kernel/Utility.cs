@@ -2,13 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Xml;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Web.Script.Serialization;
+using System.Text;
+using System.Xml;
 
 namespace Microsoft.Protocols.TestManager.Kernel
 {
@@ -24,21 +23,20 @@ namespace Microsoft.Protocols.TestManager.Kernel
         public string LastRuleSelectionFilename;
         private AppConfig appConfig = null;
         private PtfConfig ptfconfig = null;
-        private Detector detector;
-        private PrerequisitView prerequisits;
-        private List<Microsoft.Protocols.TestManager.Detector.DetectingItem> detectSteps;
         private TestCaseFilter filter = null;
         private TestSuite testSuite = null;
         private TestEngine testEngine = null;
         private int targetFilterIndex = -1;
         private int mappingFilterIndex = -1;
         private DateTime sessionStartTime;
+        private string ptfconfigDirectory = null;
+        private static char[] directorySeparators = new char[] { '/', '\\' };
 
         public Utility()
         {
             ptmVersion = Assembly.GetEntryAssembly().GetName().Version;
             string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            installDir = Path.GetFullPath(Path.Combine(exePath, ".."));
+            installDir = Path.GetFullPath(exePath);
             sessionStartTime = DateTime.Now;
         }
 
@@ -63,7 +61,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
             {
                 if (testSuiteFamilies == null)
                 {
-                    string introfile = Path.Combine(installDir, @"etc\TestSuiteIntro.xml");
+                    string introfile = Path.Combine(installDir, "etc", "TestSuiteIntro.xml");
                     if (File.Exists(introfile))
                         testSuiteFamilies = TestSuiteFamilies.Load(introfile);
                     else
@@ -74,23 +72,39 @@ namespace Microsoft.Protocols.TestManager.Kernel
         }
 
         /// <summary>
+        /// Test suite result output folder
+        /// </summary>
+        public string TestResultOutputFolder
+        {
+            get
+            {
+                if(testEngine == null)
+                {
+                    return string.Empty;
+                }
+                return Path.Combine(testEngine.WorkingDirectory, testEngine.ResultOutputFolder);
+            }
+        }
+
+        /// <summary>
         /// Loads test suite configuration.
         /// </summary>
         /// <param name="testSuiteInfo">The information of a test suite</param>
         public void LoadTestSuiteConfig(TestSuiteInfo testSuiteInfo)
         {
+            // TODO: Validate versionCheck Change impact
             // Test suite version must match PTM version
-            Version testSuiteVersion = new Version(testSuiteInfo.TestSuiteVersion);
-            if (ptmVersion < testSuiteVersion)
-            {
-                throw new Exception(String.Format(StringResource.PTMNeedUpgrade, ptmVersion, testSuiteVersion));
-            }
-            else if (ptmVersion > testSuiteVersion)
-            {
-                throw new Exception(String.Format(StringResource.TestSuiteNeedUpgrade, ptmVersion, testSuiteVersion));
-            }
+            //Version testSuiteVersion = new Version(testSuiteInfo.TestSuiteVersion);
+            //if (ptmVersion < testSuiteVersion)
+            //{
+            //    throw new Exception(String.Format(StringResource.PTMNeedUpgrade, ptmVersion, testSuiteVersion));
+            //}
+            //else if (ptmVersion > testSuiteVersion)
+            //{
+            //    throw new Exception(String.Format(StringResource.TestSuiteNeedUpgrade, ptmVersion, testSuiteVersion));
+            //}
 
-            testSuiteDir = testSuiteInfo.TestSuiteFolder + "\\";
+            testSuiteDir = testSuiteInfo.TestSuiteFolder + Path.DirectorySeparatorChar;
             try
             {
                 appConfig = AppConfig.LoadConfig(
@@ -125,31 +139,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
             appConfig.InitDefaultConfigurations();
 
             LastRuleSelectionFilename = testSuiteInfo.LastProfile;
-        }
-
-        private Assembly UnitTestFrameworkResolveHandler(object sender, ResolveEventArgs args)
-        {
-            if (args.Name.Contains("Microsoft.VisualStudio.QualityTools.UnitTestFramework"))
-            {
-                string vstestPath = Path.GetDirectoryName(appConfig.VSTestPath);
-                string publicAssembliesPath = Path.Combine(vstestPath, @"..\..\..\PublicAssemblies");
-                var possiblePaths = new string[]
-                {
-                    vstestPath,
-                    publicAssembliesPath
-                };
-                string assemblyPath = possiblePaths
-                                        .Select(path => Path.Combine(path, "Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll"))
-                                        .Where(path => File.Exists(path))
-                                        .FirstOrDefault(path => path != null);
-                if (assemblyPath == null)
-                {
-                    return null;
-                }
-                var assembly = Assembly.LoadFrom(assemblyPath);
-                return assembly;
-            }
-            return null;
         }
 
         /// <summary>
@@ -188,9 +177,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
             testSuite = new TestSuite();
             try
             {
-                AppDomain.CurrentDomain.AssemblyResolve += UnitTestFrameworkResolveHandler;
-                testSuite.LoadFrom(appConfig.TestSuiteAssembly);
-                AppDomain.CurrentDomain.AssemblyResolve -= UnitTestFrameworkResolveHandler;
+                testSuite.LoadFrom(appConfig.VSTestPath, appConfig.TestSuiteDirectory, appConfig.TestSuiteAssembly);
             }
             catch (Exception e)
             {
@@ -225,240 +212,55 @@ namespace Microsoft.Protocols.TestManager.Kernel
             }
         }
 
-        /// <summary>
-        /// Loads PTF configuration.
-        /// </summary>
-        public void LoadPtfconfig()
+        public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
         {
-            try
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+            if (!dir.Exists)
             {
-                ptfconfig = new PtfConfig(appConfig.PtfConfigFiles, appConfig.DefaultPtfConfigFiles);
+                throw new DirectoryNotFoundException(
+                    "Source directory does not exist or could not be found: "
+                    + sourceDirName);
             }
-            catch (Exception e)
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // If the destination directory doesn't exist, create it.       
+            Directory.CreateDirectory(destDirName);
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach (FileInfo file in files)
             {
-                throw new Exception(string.Format(StringResource.LoadPtfconfigError, e.Message));
+                string tempPath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(tempPath, true);
             }
-        }
 
-        #endregion
-
-        #region Auto-detection
-        /// <summary>
-        /// Initializes the auto-detection plug-in.
-        /// </summary>
-        public void InitializeDetector()
-        {
-            Microsoft.Protocols.TestManager.Detector.UtilCallBackFunctions.GetPropertyValue = (string name) =>
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirs)
             {
-                var property = ptfconfig.GetPropertyNodeByName(name);
-                if (property != null) return property.Value;
-                return null;
-            };
-
-            Microsoft.Protocols.TestManager.Detector.UtilCallBackFunctions.GetPropertiesByFile = (filename) =>
+                foreach (DirectoryInfo subdir in dirs)
                 {
-                    if (!ptfconfig.FileProperties.ContainsKey(filename))
-                        return null;
-                    return ptfconfig.FileProperties[filename];
-                };
-            detector = new Detector();
-            detector.Load(appConfig.DetectorAssemblyPath);
-        }
-
-        /// <summary>
-        /// Gets properties required for auto-detection.
-        /// </summary>
-        /// <returns>A PrerequisitView object</returns>
-        public PrerequisitView GetPrerequisits()
-        {
-            Microsoft.Protocols.TestManager.Detector.Prerequisites p = detector.GetPrerequisits();
-            prerequisits = new PrerequisitView()
-            {
-                Summary = p.Summary,
-                Title = p.Title,
-                Properties = new List<PrerequisitProperty>()
-            };
-            foreach (var i in p.Properties)
-            {
-                prerequisits.Properties.Add(new PrerequisitProperty()
-                {
-                    PropertyName = i.Key,
-                    PropertyValues = i.Value
-                });
-            }
-            return prerequisits;
-        }
-        /// <summary>
-        /// Gets the auto-detection steps.
-        /// </summary>
-        /// <returns>A list of the steps</returns>
-        public List<Microsoft.Protocols.TestManager.Detector.DetectingItem> GetDetectSteps()
-        {
-            detectSteps = detector.GetDetectSteps();
-            return detectSteps;
-        }
-
-        /// <summary>
-        /// Sets the property values required for auto-detection.
-        /// </summary>
-        /// <returns>Returns true if succeeded, otherwise false.</returns>
-        public bool SetPrerequisits()
-        {
-            Dictionary<string, string> properties = new Dictionary<string, string>();
-            foreach (var p in prerequisits.Properties)
-            {
-                properties.Add(p.PropertyName, p.Value);
-            };
-            return detector.SetPrerequisits(properties);
-
-        }
-
-
-        private StreamWriter logWriter;
-        private int stepIndex;
-        private string detectorLog;
-        /// <summary>
-        /// Start the auto-detection
-        /// </summary>
-        /// <param name="callback">The call back function when the detection finished.</param>
-        public void StartDetection(DetectionCallback callback)
-        {
-            stepIndex = 0;
-            detectorLog = Path.Combine(appConfig.AppDataDirectory, "Detector_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff") + ".log");
-            logWriter = new StreamWriter(detectorLog);
-            detector.DetectLogCallback = (msg, style) =>
-                {
-                    if (stepIndex == detectSteps.Count) return;
-                    var item = detectSteps[stepIndex];
-                    item.Style = style;
-                    switch (style)
-                    {
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.Default:
-                            detectSteps[stepIndex].DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Detecting;
-                            break;
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.Error:
-                            stepIndex++;
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Error;
-                            break;
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.StepFailed:
-                            stepIndex++;
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Failed;
-                            break;
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.StepSkipped:
-                            stepIndex++;
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Skipped;
-                            break;
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.StepNotFound:
-                            stepIndex++;
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.NotFound;
-                            break;
-                        case Microsoft.Protocols.TestManager.Detector.LogStyle.StepPassed:
-                            stepIndex++;
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Finished;
-                            break;
-                        default:
-                            item.DetectingStatus = Microsoft.Protocols.TestManager.Detector.DetectingStatus.Pending;
-                            break;
-                    }
-                    logWriter.WriteLine("[{0}] {1}", DateTime.Now.ToString(), msg);
-                    logWriter.Flush();
-                };
-            detector.BeginDetection((outcome) =>
-                {
-                    if (stepIndex < detectSteps.Count) detectSteps[stepIndex].DetectingStatus = TestManager.Detector.DetectingStatus.Pending;
-                    callback(outcome);
-                    logWriter.Close();
-                    logWriter = null;
-                });
-        }
-
-        /// <summary>
-        /// Stop the auto-detection
-        /// </summary>
-        public void StopDetection(Action callback)
-        {
-            detector.DetectLogCallback = null;
-            detectSteps[stepIndex].DetectingStatus = TestManager.Detector.DetectingStatus.Canceling;
-            detector.StopDetection(callback);
-            if (stepIndex < detectSteps.Count) detectSteps[stepIndex].DetectingStatus = TestManager.Detector.DetectingStatus.Pending;
-            if (logWriter != null)
-            {
-                logWriter.Close();
-                logWriter.Dispose();
-                logWriter = null;
-            }
-            stepIndex = 0;
-        }
-
-        /// <summary>
-        /// Get a object to show on the UI as the detection summary.
-        /// </summary>
-        /// <returns>A object to show in the content control.</returns>
-        public object GetDetectionSummary()
-        {
-            return detector.GetDetectionSummary();
-        }
-
-        /// <summary>
-        /// Apply the test case selection rules detected by the plug-in.
-        /// </summary>
-        public void ApplyDetectedRules()
-        {
-            foreach (var rule in detector.GetRules())
-            {
-                Rule r = filter.FindRuleByName(rule.Name);
-                if (r == null) throw new Exception(string.Format("Cannot find rule by name {0}.", rule.Name));
-                switch (rule.Status)
-                {
-                    case Microsoft.Protocols.TestManager.Detector.RuleStatus.Selected:
-                        r.SelectStatus = RuleSelectStatus.Selected;
-                        r.Status = RuleSupportStatus.Selected;
-                        break;
-                    case Microsoft.Protocols.TestManager.Detector.RuleStatus.NotSupported:
-                        r.SelectStatus = RuleSelectStatus.UnSelected;
-                        r.Status = RuleSupportStatus.NotSupported;
-                        break;
-                    case Microsoft.Protocols.TestManager.Detector.RuleStatus.Unknown:
-                        r.SelectStatus = RuleSelectStatus.UnSelected;
-                        r.Status = RuleSupportStatus.Unknown;
-                        break;
-                    default:
-                        r.SelectStatus = RuleSelectStatus.UnSelected;
-                        r.Status = RuleSupportStatus.Default;
-                        break;
+                    string tempPath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
                 }
             }
         }
 
-        /// <summary>
-        /// Opens the auto-detection log
-        /// </summary>
-        public void OpenDetectionLog()
+        public static string CombineToNormalizedPath(string basePath, params string[] pathsToAppend)
         {
-            Process p = new Process();
-            p.StartInfo = new ProcessStartInfo(detectorLog);
-            p.Start();
-        }
-
-        /// <summary>
-        /// Apply the property values detected by the plug-in.
-        /// </summary>
-        public void ApplyDetectedValues()
-        {
-            var properties = detector.GetDetectedProperty();
-            foreach (var property in properties)
+            var splits = pathsToAppend.SelectMany(s => s.Split(directorySeparators)).ToArray();
+            var totalLength = splits.Length;
+            var segments = new string[totalLength + 1];
+            segments[0] = basePath;
+            var i = 0;
+            foreach (var split in splits)
             {
-                PtfProperty p = ptfconfig.GetPropertyNodeByName(property.Key);
-                if (p == null) throw new Exception(string.Format("Cannot find property by name {0}.", property.Key));
-
-                if (property.Value == null || property.Value.Count == 0) p.Value = null;
-                else if (property.Value.Count == 1) p.Value = property.Value[0];
-                else
-                {
-                    p.ChoiceItems = property.Value;
-                    p.Value = property.Value[0];
-                }
+                i++;
+                segments[i] = split;
             }
+            return Path.Combine(segments);
         }
 
         #endregion
@@ -480,8 +282,34 @@ namespace Microsoft.Protocols.TestManager.Kernel
         /// <returns>Test case list</returns>
         public List<TestCase> GetSelectedCaseList()
         {
-            selectedCases = filter.FilterTestCaseList(testSuite.TestCaseList);
             return selectedCases;
+        }
+
+        /// <summary>
+        /// Set selected case list.
+        /// </summary>
+        /// <param name="list">The list to set.</param>
+        public void SetSelectedCaseList(List<TestCase> list)
+        {
+            selectedCases = list;
+        }
+
+        /// <summary>
+        /// Get test case list by filter.
+        /// </summary>
+        /// <param name="filterExpression">The filter expression.</param>
+        /// <returns>The test case list.</returns>
+        public List<TestCase> GetTestCasesByFilter(string filterExpression)
+        {
+            var testEngine = new TestEngine(appConfig.VSTestPath)
+            {
+                TestAssemblies = appConfig.TestSuiteAssembly,
+                WorkingDirectory = appConfig.TestSuiteDirectory,
+            };
+
+            var result = testEngine.LoadTestCases(filterExpression);
+
+            return result;
         }
 
         /// <summary>
@@ -518,33 +346,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 featureMappingConfigTable.Add(config.Attributes[0].Value, Convert.ToInt32(config.Attributes[1].Value));
             }
             return featureMappingConfigTable;
-        }
-
-        /// <summary>
-        /// Load feature mapping config from given xml node
-        /// </summary>
-        /// <param name="featureMappingNode"></param>
-        private void LoadFeatureMappingFromXml(XmlNode featureMappingNode)
-        {
-            if (featureMappingNode == null)
-            {
-                targetFilterIndex = -1;
-                mappingFilterIndex = -1;
-                return;
-            }
-
-            // Parse Config section
-            var featureMappingConfig = featureMappingNode.SelectSingleNode("Config");
-            Dictionary<string, int> configTable = GetFeatureMappingConfigFromXmlNode(featureMappingConfig);
-            int _targetFilterIndex = configTable["targetFilterIndex"];
-            int _mappingFilterIndex = configTable["mappingFilterIndex"];
-            if ((_targetFilterIndex == _mappingFilterIndex) ||
-                (_targetFilterIndex >= filter.Count || _mappingFilterIndex >= filter.Count))
-            {
-                return;
-            }
-            targetFilterIndex = _targetFilterIndex;
-            mappingFilterIndex = _mappingFilterIndex;
         }
 
         /// <summary>
@@ -638,75 +439,43 @@ namespace Microsoft.Protocols.TestManager.Kernel
             }
             return ruleTable;
         }
+
+        /// <summary>
+        /// Load feature mapping config from given xml node
+        /// </summary>
+        /// <param name="featureMappingNode"></param>
+        private void LoadFeatureMappingFromXml(XmlNode featureMappingNode)
+        {
+            if (featureMappingNode == null)
+            {
+                targetFilterIndex = -1;
+                mappingFilterIndex = -1;
+                return;
+            }
+
+            // Parse Config section
+            var featureMappingConfig = featureMappingNode.SelectSingleNode("Config");
+            Dictionary<string, int> configTable = GetFeatureMappingConfigFromXmlNode(featureMappingConfig);
+            if (!configTable.ContainsKey("targetFilterIndex") || !configTable.ContainsKey("mappingFilterIndex"))
+            {
+                throw new Exception(StringResource.ConfigNotRight);
+            }
+            int _targetFilterIndex = configTable["targetFilterIndex"];
+            int _mappingFilterIndex = configTable["mappingFilterIndex"];
+            if ((_targetFilterIndex == _mappingFilterIndex) ||
+                (_targetFilterIndex >= filter.Count || _mappingFilterIndex >= filter.Count))
+            {
+                return;
+            }
+            targetFilterIndex = _targetFilterIndex;
+            mappingFilterIndex = _mappingFilterIndex;
+        }
+
+
         #endregion
 
         #region PTF Properties
-        List<string> hiddenProperties = null;
 
-        /// <summary>
-        /// Gets the properties to hide from the plug-in.
-        /// </summary>
-        public void HideProperties()
-        {
-            List<Microsoft.Protocols.TestManager.Detector.CaseSelectRule> selectedRules = new List<Microsoft.Protocols.TestManager.Detector.CaseSelectRule>();
-            foreach (string rule in filter.GetRuleList(true))
-            {
-                selectedRules.Add(new Microsoft.Protocols.TestManager.Detector.CaseSelectRule()
-                {
-                    Name = rule,
-                    Status = Microsoft.Protocols.TestManager.Detector.RuleStatus.Selected
-                });
-
-            }
-            foreach (string rule in filter.GetRuleList(false))
-            {
-                selectedRules.Add(new Microsoft.Protocols.TestManager.Detector.CaseSelectRule()
-                {
-                    Name = rule,
-                    Status = Microsoft.Protocols.TestManager.Detector.RuleStatus.NotSupported
-                });
-            }
-            hiddenProperties = detector.GetHiddenProperties(selectedRules);
-        }
-
-        private PtfPropertyView ptfPropertyView;
-
-        /// <summary>
-        /// Creates a PtfPropertyView for the UI.
-        /// </summary>
-        /// <returns>A PtfPropertyView object</returns>
-        public PtfPropertyView CreatePtfPropertyView()
-        {
-            ptfPropertyView = ptfconfig.CreatePtfPropertyView(hiddenProperties);
-            if (appConfig.PropertyGroupOrder != null) ptfPropertyView.SortItems(appConfig.PropertyGroupOrder);
-            return ptfPropertyView;
-        }
-
-        /// <summary>
-        /// The number of the properties whos value is different from the default.
-        /// </summary>
-        public int ChangedPropertyCount
-        {
-            get
-            {
-                int count = 0;
-                Stack<PtfPropertyView> propertyStack = new Stack<PtfPropertyView>();
-                propertyStack.Push(ptfPropertyView);
-                while (propertyStack.Count > 0)
-                {
-                    PtfPropertyView p = propertyStack.Pop();
-                    if (p.Count > 0)
-                    {
-                        foreach (var child in p) propertyStack.Push(child);
-                    }
-                    else
-                    {
-                        if (p.Value != p.DefaultValue) count++;
-                    }
-                }
-                return count;
-            }
-        }
 
         /// <summary>
         /// Saves the ptfconfig file back to the bin folder.
@@ -740,75 +509,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
 
         #region Adapter
 
-        /// <summary>
-        /// Gets PtfAdapterView for the UI.
-        /// </summary>
-        /// <returns></returns>
-        public List<PtfAdapterView> GetAdaptersView()
-        {
-            SetAdapterConfig();
-            return appConfig.PredefinedAdapters;
-        }
-
-
-        public event ContentModifiedEventHandler AdapterConfigurationChanged;
-
-        /// <summary>
-        /// Applies the changes in the PtfAdapterView in the ptfconfig XML Documents.
-        /// </summary>
-        public void ApplyAdaptersConfig()
-        {
-            foreach (PtfAdapterView adapter in appConfig.PredefinedAdapters)
-            {
-                ptfconfig.ApplyAdapterConfig(adapter.AdapterConfig);
-            }
-        }
-
-
-        private void SetAdapterConfig()
-        {
-            foreach (var item in ptfconfig.adapterTable)
-            {
-                string name = item.Key;
-                XmlNode xmlNode = item.Value;
-                string type = xmlNode.Attributes["xsi:type"].Value;
-                PtfAdapterView adapter;
-                adapter = appConfig.PredefinedAdapters.FirstOrDefault(i => i.Name == name);
-                if (adapter == null) continue;
-
-                adapter.ContentModified += AdapterConfigurationChanged;
-                switch (type)
-                {
-                    case "powershell":
-                        {
-                            string scriptDir = xmlNode.Attributes["scriptdir"].Value;
-                            adapter.PowerShellAdapter = new PowerShellAdapterNode(name, adapter.FriendlyName, scriptDir);
-                            adapter.Type = AdapterType.PowerShell;
-                        }
-                        break;
-                    case "interactive":
-                        {
-                            adapter.InteractiveAdapter = new InteractiveAdapterNode(name, adapter.FriendlyName);
-                            adapter.Type = AdapterType.Interactive;
-                        }
-                        break;
-                    case "managed":
-                        {
-                            string adaptertype = xmlNode.Attributes["adaptertype"].Value;
-                            adapter.ManagedAdapter = new ManagedAdapterNode(name, adapter.FriendlyName, adaptertype);
-                            adapter.Type = AdapterType.Managed;
-                        }
-                        break;
-                    case "shell":
-                        {
-                            string scriptDir = xmlNode.Attributes["scriptdir"].Value;
-                            adapter.ShellAdapter = new ShellAdapterNode(name, adapter.FriendlyName, scriptDir);
-                            adapter.Type = AdapterType.Shell;
-                        }
-                        break;
-                }
-            }
-        }
 
         #endregion
 
@@ -817,9 +517,10 @@ namespace Microsoft.Protocols.TestManager.Kernel
         /// Upgrade the saved profile if needed.
         /// </summary>
         /// <param name="filename">File name of the saved profile</param>
+        /// <param name="testSuiteFolderBin">Test Suite Bin Folder</param>
         /// <param name="newFilename">File name of the newly upgraded profile</param>
         /// <returns>Return true when the file is upgraded, false when no need to upgrade the profile.</returns>
-        public bool TryUpgradeProfileSettings(string filename, out string newFilename)
+        public bool TryUpgradeProfileSettings(string filename, string testSuiteFolderBin, out string newFilename)
         {
             newFilename = null;
 
@@ -843,7 +544,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 // Create a temp folder to save ptfconfig files
                 string tmpDir = Path.Combine(Path.GetTempPath(), $"PTM-{Guid.NewGuid()}");
                 Directory.CreateDirectory(tmpDir);
-                oldProfile.SavePtfCfgTo(tmpDir);
+                oldProfile.SavePtfCfgTo(tmpDir, testSuiteFolderBin, appConfig.PipeName);
 
                 MergeWithDefaultPtfConfig(tmpDir);
                 foreach (string ptfconfig in Directory.GetFiles(tmpDir))
@@ -880,7 +581,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 }
                 else if (profileVersion < testSuiteVersion)
                 {
-                    return true;
+                    throw new ArgumentException(StringResource.TestSuiteNewerThanProfile);
                 }
                 else
                 {
@@ -1137,7 +838,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
         /// Loads the configurations from a saved profile.
         /// </summary>
         /// <param name="filename">File name</param>
-        public void LoadProfileSettings(string filename)
+        public void LoadProfileSettings(string filename, string testSuiteFolderBin)
         {
             using (ProfileUtil profile = ProfileUtil.LoadProfile(filename))
             {
@@ -1156,11 +857,14 @@ namespace Microsoft.Protocols.TestManager.Kernel
                         throw new InvalidDataException(StringResource.InvalidProfile);
                     }
                 }
-                string desCfgDir = System.IO.Path.Combine(appConfig.TestSuiteDirectory, "Bin");
-                profile.SavePtfCfgTo(desCfgDir);
+
+                ptfconfigDirectory = Path.Combine("PtfConfigDirectory", $"{appConfig.TestSuiteName}-{sessionStartTime.ToString("yyyy-MM-dd-HH-mm-ss")}");
+                string desCfgDir = ptfconfigDirectory;
+                profile.SavePtfCfgTo(desCfgDir, testSuiteFolderBin, appConfig.PipeName);
                 filter.LoadProfile(profile.ProfileStream);
                 ImportPlaylist(profile.PlaylistStream);
-                GetSelectedCaseList();
+
+                SetSelectedCaseList(filter.FilterTestCaseList(testSuite.TestCaseList));
 
                 int sel, notfound;
                 ApplyPlaylist(out sel, out notfound);
@@ -1195,6 +899,24 @@ namespace Microsoft.Protocols.TestManager.Kernel
             SaveProfileSettings(LastRuleSelectionFilename);
         }
 
+        /// <summary>
+        /// Update the ptfconfig files by configuration items.
+        /// </summary>
+        /// <param name="config">The configuration items which will override the values in ptfconfigDirectory.</param>
+        public void UpdatePtfConfig(IDictionary<string, string> config)
+        {
+            var files = Directory.GetFiles(ptfconfigDirectory, "*.ptfconfig", SearchOption.TopDirectoryOnly);
+
+            var ptfConfig = new PtfConfig(files.ToList());
+
+            foreach (var kvp in config)
+            {
+                ptfConfig.SetPropertyValue(kvp.Key, kvp.Value);
+            }
+
+            ptfConfig.Save();
+        }
+
         #endregion
 
         #region Run test cases
@@ -1207,11 +929,20 @@ namespace Microsoft.Protocols.TestManager.Kernel
             {
                 WorkingDirectory = testSuiteDir,
                 TestAssemblies = appConfig.TestSuiteAssembly,
-                TestSetting = appConfig.TestSetting,
+                ResultOutputFolder = "HtmlTestResults",
+                PtfConfigDirectory = ptfconfigDirectory,
+                RunSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), $"{appConfig.TestSuiteName}-{sessionStartTime.ToString("yyyy-MM-dd-HH-mm-ss")}.runsettings"),
                 PipeName = appConfig.PipeName,
-                ResultOutputFolder = String.Format("{0}-{1}", appConfig.TestSuiteName, sessionStartTime.ToString("yyyy-MM-dd-HH-mm-ss")),
             };
             testEngine.InitializeLogger(selectedCases);
+        }
+
+        /// <summary>
+        /// Get the test engine result path
+        /// </summary>
+        public string GetTestEngineResultPath()
+        {
+            return testEngine.ResultOutputFolder;
         }
 
         /// <summary>
@@ -1224,12 +955,12 @@ namespace Microsoft.Protocols.TestManager.Kernel
         }
 
         /// <summary>
-        /// Retrives the object of the logger.
+        /// Retrives the object of the TestSuiteLogManager.
         /// </summary>
-        /// <returns>Logger object.</returns>
-        public Logger GetLogger()
+        /// <returns>TestSuiteLogManager object.</returns>
+        public TestSuiteLogManager GetTestSuiteLogManager()
         {
-            return testEngine.GetLogger();
+            return testEngine.GetTestSuiteLogManager();
         }
 
         /// <summary>
@@ -1243,6 +974,8 @@ namespace Microsoft.Protocols.TestManager.Kernel
             }
             else
             {
+                SetSelectedCaseList(filter.FilterTestCaseList(testSuite.TestCaseList));
+
                 RunByCases(GetSelectedCaseList());
             }
         }
@@ -1474,7 +1207,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 {
                     return File.ReadAllText(filePath);
                 }
-                catch (IOException e)
+                catch (IOException)
                 {
                 }
             }
@@ -1483,52 +1216,26 @@ namespace Microsoft.Protocols.TestManager.Kernel
         }
 
         /// <summary>
-        /// Parse the file content to get the case status and detail
+        /// get version info from dll
         /// </summary>
-        public static bool ParseFileGetStatus(string filePath, out TestCaseStatus status, out TestCaseDetail detail)
+        public static FileVersionInfo GetInfoFromDll(string dllpath)
         {
-            status = TestCaseStatus.NotRun;
-            detail = null;
-
-            // The file may be opened exclusively by vstest.console.exe. Retry opening here
-            // to wait for vstest.console.exe writing logs.
-            string content = ReadFileWithRetry(filePath);
-
-            var detailLine = content.Split(new char[] { '\r', '\n' }).Where(l => l.StartsWith(AppConfig.DetailKeyword));
-            string detailStr;
-            if (detailLine.Count() == 0)
+            try
             {
-                return false;
+
+                FileVersionInfo s = FileVersionInfo.GetVersionInfo(dllpath);
+                return s;
             }
-            else
+            catch
             {
-                detailStr = detailLine.First();
+                return null;
             }
+        }
 
-            int startIndex = AppConfig.DetailKeyword.Length;
-            int endIndex = detailStr.Length - 1;
-            string detailJson = detailStr.Substring(startIndex, endIndex - startIndex);
-
-            JavaScriptSerializer serializer = new JavaScriptSerializer() { MaxJsonLength = 32 * 1024 * 1024 };
-            detail = serializer.Deserialize<TestCaseDetail>(detailJson);
-
-            switch (detail.Result)
-            {
-                case AppConfig.HtmlLogStatusPassed:
-                    status = TestCaseStatus.Passed;
-                    break;
-                case AppConfig.HtmlLogStatusFailed:
-                    status = TestCaseStatus.Failed;
-                    break;
-                case AppConfig.HtmlLogStatusInconclusive:
-                    status = TestCaseStatus.Other;
-                    break;
-                default:
-                    // The file name format is not correct
-                    return false;
-            }
-
-            return true;
+        public static string RelativePath2AbsolutePath(string path)
+        {
+            string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            return absolutePath;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Novell.Directory.Ldap;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +9,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -20,20 +20,29 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
     public static class DtypUtility
     {
         /// <summary>
+        /// The minimum length of security identifier
+        /// </summary>
+        public const int MinLengthOfSecurityIdentifier = 8;
+        /// <summary>
         /// The length of _ACL header, including _ACL.AclRevision, _ACL.Sbz1 ,_ACL.AclSize,
         /// _ACL.AceCount and _ACL.Sbz2, in bytes.
         /// </summary>
-        private const ushort ACL_HEADER_LENGTH = 8;
+        public const ushort ACL_HEADER_LENGTH = 8;
 
         /// <summary>
         /// The length of _ACE_HEADER in bytes.
         /// </summary>
-        private const ushort ACE_HEADER_LENGTH = 4;
+        public const ushort ACE_HEADER_LENGTH = 4;
+
+        /// <summary>
+        /// The length of ace flags in bytes.
+        /// </summary>
+        public const ushort ACE_FLAGS_LENGTH = 4;
 
         //The short fixed ace length in bytes contains the following parts:
         //_ACE_HEADER Header; (4 bytes)
         //uint Mask; (4 bytes)
-        private const ushort SHORT_FIXED_ACE_LENGTH = 8;
+        public const ushort SHORT_FIXED_ACE_LENGTH = 8;
 
         //The long fixed ace length in bytes contains the following parts:
         //_ACE_HEADER Header; (4 bytes)
@@ -41,10 +50,17 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
         //ACCESS_OBJECT_ACE_Flags Flags;(4 bytes)
         //Guid ObjectType;(16 bytes)
         //Guid InheritedObjectType;(16 bytes)
-        private const ushort LONG_FIXED_ACE_LENGTH = 44;
+        public const ushort LONG_FIXED_ACE_LENGTH = 44;
 
         // Length of SID authority byte array.
-        private const int SID_AUTHORITY_LENGTH = 6;
+        public const int SID_AUTHORITY_LENGTH = 6;
+
+        /// <summary>
+        /// The fixed length of security descriptor
+        /// including Revision(1 byte), Sbz1(1 byte), Control(2 bytes)
+        /// OffsetOwner(4 bytes), OffsetGroup(4 bytes), OffsetSacl(4 bytes), OffsetDacl(4 bytes)
+        /// </summary>
+        public const int SECURITY_DESCRIPTOR_FIXED_LENGTH = 20;
 
         /// <summary>
         /// Specifies access to delete an object.
@@ -835,7 +851,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
         public static string ToSddlString(_SECURITY_DESCRIPTOR securityDescriptor)
         {
             byte[] securityDescriptorBytes = DtypUtility.EncodeSecurityDescriptor(securityDescriptor);
-            RawSecurityDescriptor rawSecurityDescriptor = new RawSecurityDescriptor(securityDescriptorBytes, 0);
+            _RawSecurityDescriptor rawSecurityDescriptor = new _RawSecurityDescriptor(securityDescriptorBytes, 0);
 
             return rawSecurityDescriptor.GetSddlForm(AccessControlSections.All);
         }
@@ -857,7 +873,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
             Match match = regex.Match(sddlString);
             if (!match.Success)
             {
-                throw new ArgumentException("The given sddl string is invalid.", "sddlString");
+                throw new ArgumentException(string.Format("The given sddl string {0} is invalid.", sddlString), "sddlString");
             }
             if (match.Groups["identifierAuthorityDec"].Success)
             {
@@ -1775,33 +1791,33 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
             _ACL? sacl,
             _ACL? dacl)
         {
-            RawAcl sRawAcl = null;
-            RawAcl dRawAcl = null;
-            SecurityIdentifier rawOwnerSid = null;
-            SecurityIdentifier rawGroupSid = null;
+            _RawAcl sRawAcl = null;
+            _RawAcl dRawAcl = null;
+            _SID? rawOwnerSid = null;
+            _SID? rawGroupSid = null;
             if (ownerSid != null)
             {
-                rawOwnerSid = new SecurityIdentifier(TypeMarshal.ToBytes(ownerSid.Value), 0);
+                rawOwnerSid = new _SID(TypeMarshal.ToBytes(ownerSid.Value), 0);
             }
             if (groupSid != null)
             {
-                rawGroupSid = new SecurityIdentifier(TypeMarshal.ToBytes(groupSid.Value), 0);
+                rawGroupSid = new _SID(TypeMarshal.ToBytes(groupSid.Value), 0);
             }
             if (sacl != null)
             {
-                sRawAcl = new RawAcl(DtypUtility.EncodeAcl(sacl.Value), 0);
+                sRawAcl = new _RawAcl(DtypUtility.EncodeAcl(sacl.Value), 0);
             }
             if (dacl != null)
             {
-                dRawAcl = new RawAcl(DtypUtility.EncodeAcl(dacl.Value), 0);
+                dRawAcl = new _RawAcl(DtypUtility.EncodeAcl(dacl.Value), 0);
             }
-            RawSecurityDescriptor rawSecurityDescriptor = new RawSecurityDescriptor(
-                (ControlFlags)control,
+            _RawSecurityDescriptor rawSecurityDescriptor = new _RawSecurityDescriptor(
+                (SECURITY_DESCRIPTOR_Control)control,
                 rawOwnerSid,
                 rawGroupSid,
                 sRawAcl,
                 dRawAcl);
-            byte[] rawSecurityDescriptorBytes = new byte[rawSecurityDescriptor.BinaryLength];
+            byte[] rawSecurityDescriptorBytes = new byte[rawSecurityDescriptor.Size];
             rawSecurityDescriptor.GetBinaryForm(rawSecurityDescriptorBytes, 0);
 
             return DtypUtility.DecodeSecurityDescriptor(rawSecurityDescriptorBytes);
@@ -3565,15 +3581,177 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
         /// </summary>
         /// <param name="domainName">The name of the domain. </param>
         /// <param name="accountName">The name of the account.</param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
         /// <returns>The SID of the user</returns>
-        public static _SID GetSidFromAccount(string domainName, string accountName)
+        public static _SID GetSidFromAccount(string domainName, string accountName, string adminName, string adminPassword)
         {
-            NTAccount account = new NTAccount(domainName, accountName);
-            SecurityIdentifier securityId = (SecurityIdentifier)account.Translate(typeof(SecurityIdentifier));
-            byte[] sidBinary = new byte[securityId.BinaryLength];
-            securityId.GetBinaryForm(sidBinary, 0);
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string searchBase = $"CN={accountName},CN=Users,DC=" + domainName.Replace(".", ",DC=");
+            string searchFilter = "(objectclass=*)";
+
+            LdapConnection conn = new LdapConnection();
+
+            conn.Connect(domainName, ldapPort);
+            conn.Bind(admin, adminPassword);
+
+            var results = conn.Search(searchBase, LdapConnection.ScopeSub, searchFilter, null, false);
+
+            if (!results.HasMore())
+            {
+                throw new InvalidOperationException($"User {accountName} is not found on DC.");
+            }
+
+            LdapEntry resultEntry = results.Next();
+            byte[] sidBinary = resultEntry.GetAttribute("objectSid").ByteValue;
+
             _SID sid = TypeMarshal.ToStruct<_SID>(sidBinary);
             return sid;
+        }
+
+        /// <summary>
+        /// Get LdapEntry list from Ldap query
+        /// </summary>
+        /// <param name="domainName">domain name</param>
+        /// <param name="ldapPort">ldap port</param>
+        /// <param name="admin">admin name with domainn name</param>
+        /// <param name="adminPassword">admin password</param>
+        /// <param name="ldapSearchBase">Ldap search base</param>
+        /// <param name="ldapSearchFilter">Ldap search filter</param>
+        /// <returns></returns>
+        private static List<LdapEntry> GetLdapEntryList(string domainName, int ldapPort, string admin, string adminPassword, string ldapSearchBase, string ldapSearchFilter)
+        {
+            LdapConnection conn = new LdapConnection();
+
+            conn.Connect(domainName, ldapPort);
+            conn.Bind(admin, adminPassword);
+
+            var ldapSearchQueue = conn.Search(ldapSearchBase, LdapConnection.ScopeSub, ldapSearchFilter, null, false, null, null);
+
+            List<LdapEntry> ldapEntryList = new List<LdapEntry>();
+
+            LdapMessage userSearchMessage = null;
+            while ((userSearchMessage = ldapSearchQueue.GetResponse()) != null)
+            {
+                if (userSearchMessage is LdapSearchResult userSearchResult)
+                {
+                    LdapEntry ldapEntry = userSearchResult.Entry;
+                    ldapEntryList.Add(ldapEntry);
+                }
+            }
+            return ldapEntryList;
+        }
+
+        /// <summary>
+        /// Get the SID from the group's domain name and group name.
+        /// </summary>
+        /// <param name="domainName">The name of the domain. </param>
+        /// <param name="groupName">The name of the group.</param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
+        /// <returns>The SID of the group</returns>
+        public static _SID GetSidFromGroupName(string domainName, string groupName, string adminName, string adminPassword)
+        {
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string domainFqn = "DC=" + domainName.Replace(".", ",DC=");
+            string groupFqn = $"CN={groupName},CN=Users,{domainFqn}";
+            var groupSearchBase = domainFqn;
+            var groupSearchFilter = $"(distinguishedName={groupFqn})";
+
+            var groups = GetLdapEntryList(domainName, ldapPort, admin, adminPassword, groupSearchBase, groupSearchFilter);
+            if (groups.Count == 1)
+            {
+                LdapEntry groupEntry = groups[0];
+                byte[] groupMemberSidBinary = groupEntry.GetAttribute("objectSid").ByteValue;
+                _SID groupSid = TypeMarshal.ToStruct<_SID>(groupMemberSidBinary);
+                return groupSid;
+            }
+
+            throw new InvalidOperationException($"Group {groupName} is not found on DC.");
+        }
+
+        /// <summary>
+        /// Get all users' LdapEntry from the domain name.
+        /// </summary>
+        /// <param name="domainName">The name of the domain. </param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
+        /// <returns>The LdapEntry list of all users</returns>
+        public static List<LdapEntry> GetUsers(string domainName, string adminName, string adminPassword)
+        {
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string domainFqn = "DC=" + domainName.Replace(".", ",DC=");
+            var userSearchBase = domainFqn;
+            var userSearchFilter = $"(objectClass=user)";
+
+            return GetLdapEntryList(domainName, ldapPort, admin, adminPassword, userSearchBase, userSearchFilter);
+        }
+
+        /// <summary>
+        /// Get all groups' LdapEntry list from the domain name.
+        /// </summary>
+        /// <param name="domainName">The name of the domain. </param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
+        /// <returns>The LdapEntry list of all groups</returns>
+        public static List<LdapEntry> GetGroups(string domainName, string adminName, string adminPassword)
+        {
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string domainFqn = "DC=" + domainName.Replace(".", ",DC=");
+            var groupSearchBase = domainFqn;
+            var groupSearchFilter = $"(objectClass=group)";
+
+            return GetLdapEntryList(domainName, ldapPort, admin, adminPassword, groupSearchBase, groupSearchFilter);
+        }
+
+        /// <summary>
+        /// Get the group's group members LdapEntry list from the group's domain name and group name.
+        /// </summary>
+        /// <param name="domainName">The name of the domain. </param>
+        /// <param name="groupName">The name of group.</param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
+        /// <returns>The group members LdapEntry list of the group</returns>
+        public static List<LdapEntry> GetGroupMembers(string domainName, string groupName, string adminName, string adminPassword)
+        {
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string domainFqn = "DC=" + domainName.Replace(".", ",DC=");
+            string groupFqn = $"CN={groupName},CN=Users,{domainFqn}";
+            var memberSearchBase = domainFqn;
+            var memberSearchFilter = $"(memberOf={groupFqn})";
+
+            return GetLdapEntryList(domainName, ldapPort, admin, adminPassword, memberSearchBase, memberSearchFilter);
+        }
+
+        /// <summary>
+        /// Get the user's memberships LdapEntry list from user's the domain name and user name.
+        /// </summary>
+        /// <param name="domainName">The name of the domain. </param>
+        /// <param name="userName">The name of user.</param>
+        /// <param name="adminName">The name of admin.</param>
+        /// <param name="adminPassword">The password of admin.</param>
+        /// <returns>The memberships LdapEntry list of the user</returns>
+        public static List<LdapEntry> GetUserMemberships(string domainName, string userName, string adminName, string adminPassword)
+        {
+            int ldapPort = 389;
+            string domainNetbios = domainName.Split('.')[0];
+            string admin = string.Format("{0}\\{1}", domainNetbios.ToUpper(), adminName);
+            string domainFqn = "DC=" + domainName.Replace(".", ",DC=");
+            string userFqn = $"CN={userName},CN=Users,{domainFqn}";
+            var groupSearchBase = domainFqn;
+            var groupSearchFilter = $"(&(objectClass=group)(member={userFqn}))";
+
+            return GetLdapEntryList(domainName, ldapPort, admin, adminPassword, groupSearchBase, groupSearchFilter);
         }
 
         /// <summary>
@@ -3601,6 +3779,40 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
                 Sid = sid,
             };
             return ace;
+        }
+
+        /// <summary>
+        /// Return the SDDL string of ace type
+        /// </summary>
+        /// <param name="type">ace type</param>
+        /// <returns>the sddl string format</returns>
+        public static string ConvertAceTypeToSDDL(ACE_TYPE type)
+        {
+            switch (type)
+            {
+                case ACE_TYPE.ACCESS_ALLOWED_ACE_TYPE:
+                    return "A";
+                case ACE_TYPE.ACCESS_DENIED_ACE_TYPE:
+                    return "D";
+                case ACE_TYPE.ACCESS_ALLOWED_OBJECT_ACE_TYPE:
+                    return "OA";
+                case ACE_TYPE.ACCESS_DENIED_OBJECT_ACE_TYPE:
+                    return "OD";
+                case ACE_TYPE.SYSTEM_AUDIT_ACE_TYPE:
+                    return "AU";
+                case ACE_TYPE.SYSTEM_ALARM_ACE_TYPE:
+                    return "AL";
+                case ACE_TYPE.SYSTEM_AUDIT_OBJECT_ACE_TYPE:
+                    return "OU";
+                case ACE_TYPE.SYSTEM_ALARM_OBJECT_ACE_TYPE:
+                    return "OL";
+                case ACE_TYPE.ACCESS_ALLOWED_CALLBACK_ACE_TYPE:
+                    return "XA";
+                case ACE_TYPE.ACCESS_DENIED_CALLBACK_ACE_TYPE:
+                    return "XD";
+                default:
+                    throw new ArgumentException(nameof(type));
+            }
         }
 
         /// <summary>
@@ -3751,6 +3963,90 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
         }
 
         /// <summary>
+        /// Return the SDDL string of ace flag
+        /// </summary>
+        /// <param name="flags">ace flag</param>
+        /// <returns>the sddl string format of ace flag</returns>
+        public static string ConvertAceFlagToSDDL(ACE_FLAGS flags)
+        {
+            StringBuilder result = new StringBuilder();
+            if (flags.HasFlag(ACE_FLAGS.OBJECT_INHERIT_ACE))
+                result.Append("OI");
+            if (flags.HasFlag(ACE_FLAGS.CONTAINER_INHERIT_ACE))
+                result.Append("CI");
+            if (flags.HasFlag(ACE_FLAGS.NO_PROPAGATE_INHERIT_ACE))
+                result.Append("NP");
+            if (flags.HasFlag(ACE_FLAGS.INHERIT_ONLY_ACE))
+                result.Append("IO");
+            if (flags.HasFlag(ACE_FLAGS.INHERITED_ACE))
+                result.Append("ID");
+            if (flags.HasFlag(ACE_FLAGS.SUCCESSFUL_ACCESS_ACE_FALG))
+                result.Append("SA");
+            if (flags.HasFlag(ACE_FLAGS.FAILED_ACCESS_ACE_FLAG))
+                result.Append("FA");
+
+            return result.ToString();
+        }
+
+
+        public static string ConvertAccessMaskToSDDL(int accessMask)
+        {
+            switch (accessMask)
+            {
+                case 0x00000001:
+                    return "CC";
+                case 0x00000002:
+                    return "DC";
+                case 0x00000004:
+                    return "LC";
+                case 0x00000008:
+                    return "SW";
+                case 0x00000010:
+                    return "RP";
+                case 0x00000020:
+                    return "WP";
+                case 0x00000040:
+                    return "DT";
+                case 0x00000080:
+                    return "LO";
+                case 0x00000100:
+                    return "CR";
+                case 0x00010000:
+                    return "SD";
+                case 0x00020000:
+                    return "RC";
+                case 0x00040000:
+                    return "WD";
+                case 0x00080000:
+                    return "WO";
+                case 0x10000000:
+                    return "GA";
+                case 0x20000000:
+                    return "GX";
+                case 0x40000000:
+                    return "GW";
+                case unchecked((int)0x80000000):
+                    return "GR";
+                case 0x001F01FF:
+                    return "FA";
+                case 0x00120089:
+                    return "FR";
+                case 0x00120116:
+                    return "FW";
+                case 0x001200A0:
+                    return "FX";
+                case 0x000F003F:
+                    return "KA";
+                case 0x00020019:
+                    return "KR";
+                case 0x00020006:
+                    return "KW";
+                default:
+                    return string.Format(CultureInfo.InvariantCulture, "0x{0:x}", accessMask);
+            }           
+        }
+
+        /// <summary>
         /// Create an ACL with provided ACE(s). 
         /// </summary>
         /// <param name="isDACL">Whether it is DACL or SACL</param>
@@ -3774,6 +4070,74 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
                 AddAceToAcl(ref acl, isDACL, aces);
             }
             return acl;
+        }
+
+        /// <summary>
+        /// read guid from the buffer
+        /// </summary>
+        /// <param name="buffer">the buffer to be read</param>
+        /// <param name="offset">the offset in the buffer</param>
+        /// <returns></returns>
+        public static Guid ReadGuid(byte[] buffer, int offset)
+        {
+            byte[] temp = new byte[16];
+            Array.Copy(buffer, offset, temp, 0, 16);
+
+            Guid result = new Guid(temp);
+            return result;
+        }
+
+        /// <summary>
+        /// write int into the buffer
+        /// </summary>
+        /// <param name="val">the value to be written</param>
+        /// <param name="buffer">the buffer to be written in</param>
+        /// <param name="offset">the offset in the buffer</param>
+        public static void WriteInt32ToByteArray(int val, byte[] buffer, int offset)
+        {
+            byte[] result = BitConverter.GetBytes(val);//should be 4 bytes here
+            result.CopyTo(buffer, offset);
+        }
+
+        /// <summary>
+        /// write ushort into the buffer
+        /// </summary>
+        /// <param name="val">the value to be written</param>
+        /// <param name="buffer">the buffer to be written in</param>
+        /// <param name="offset">the offset in the buffer</param>
+        public static void WriteUInt16ToByteArray(ushort val, byte[] buffer, int offset)
+        {
+            byte[] result = BitConverter.GetBytes(val);//should be 2 bytes here
+            result.CopyTo(buffer, offset);
+        }
+
+        /// <summary>
+        /// write guid into the buffer
+        /// </summary>
+        /// <param name="val">the value to be written</param>
+        /// <param name="buffer">the buffer to be written in</param>
+        /// <param name="offset">the offset in the buffer</param>
+        public static void WriteGuid(Guid val, byte[] buffer, int offset)
+        {
+            byte[] guidData = val.ToByteArray();
+            Array.Copy(guidData, 0, buffer, offset, 16);
+        }       
+
+        /// <summary>
+        /// return true if the aceobject type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsObjectAce(ACE_TYPE type)
+        {
+            return type == ACE_TYPE.ACCESS_ALLOWED_CALLBACK_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.ACCESS_ALLOWED_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.ACCESS_DENIED_CALLBACK_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.ACCESS_DENIED_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.SYSTEM_ALARM_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE
+                || type == ACE_TYPE.SYSTEM_AUDIT_OBJECT_ACE_TYPE;
         }
     }
 
@@ -4257,5 +4621,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Dtyp
         /// A combination of two of the bits shown above for the purposes of this specification.
         /// </summary>
         GROUP_TYPE_SECURITY_UNIVERSAL = 0x80000008
+    }
+
+    [Flags]
+    public enum _ObjectAceFlags
+    {
+        None = 0,
+        ObjectAceTypePresent = 1,
+        InheritedObjectAceTypePresent = 2,
     }
 }

@@ -18,6 +18,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to verify the uncompressed Static Virtual Channel PDU.")]
         public void BVT_StaticVirtualChannel_PositiveTest_CompressionNotSupported()
         {
@@ -42,7 +43,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -58,7 +59,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -77,6 +78,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to verify the Static Virtual Channel PDUs when VCChunkSizeField is not present in server-to-client Virtual Channel Capability Set.")]
         public void BVT_StaticVirtualChannel_PositiveTest_VCChunkSizeNotPresent()
         {
@@ -103,7 +105,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -119,7 +121,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -137,6 +139,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to verify the compressed Static Virtual Channel PDU.")]
         public void S7_StaticVirtualChannel_PositiveTest_CompressionSupported()
         {
@@ -159,7 +162,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -174,7 +177,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -192,6 +195,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to verify the Static Virtual Channel PDUs when VCChunkSizeField is present in server-to-client Virtual Channel Capability Set.")]
         public void S7_StaticVirtualChannel_PositiveTest_VCChunkSizePresent()
         {
@@ -213,7 +217,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -229,7 +233,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -247,6 +251,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT drops the connection when the length field of tpktHeader is invalid.")]
         public void S7_StaticVirtualChannel_NegativeTest_InvalidTPKTLength()
         {
@@ -269,7 +274,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -285,7 +290,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -308,6 +313,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT drops the connection when the length field of mcsPdu is invalid.")]
         public void S7_StaticVirtualChannel_NegativeTest_InvalidMCSLength()
         {
@@ -330,7 +336,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -346,7 +352,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)
@@ -366,6 +372,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("StaticVirtualChannel")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT drops the connection when the length field of x224Data is invalid.")]
         public void S7_StaticVirtualChannel_NegativeTest_InvalidSignature()
         {
@@ -393,7 +400,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -409,7 +416,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             //Check whether 'rdpdr' channel has been created
             if (this.rdpbcgrAdapter.GetStaticVirtualChannelId("RDPDR") == 0)

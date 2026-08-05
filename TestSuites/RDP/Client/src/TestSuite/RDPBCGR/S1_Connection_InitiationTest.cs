@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Text;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -16,6 +13,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(0)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case verifies that SUT drops the connection once receiving Server X.224 Connection confirm PDU with rdpNegData field of a valid RDP Negotiation Failure structure from RDP server.")]
         public void S1_ConnectionTest_ConnectionInitiation_NegativeTest_RDPNegotiationFailure()
         {
@@ -33,7 +32,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -56,6 +55,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case verifies that SUT drops the connection once receiving a Server X.224 Connection confirm PDU with an invalid TPKT header from RDP server.")]
         public void S1_ConnectionTest_ConnectionInitiation_NegativeTest_InvalidTPKTHeader()
         {
@@ -73,7 +74,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -96,6 +97,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case ensures SUT drop the connection when received a Server X.224 Connection Confirm PDU with an invalid RDP Negotiation Data..")]
         public void S1_ConnectionTest_ConnectionInitiation_NegativeTest_InvalidRDPNegData()
         {
@@ -113,7 +116,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -136,6 +139,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case verifies that SUT support PROTOCOL_HYBRID_EX security protocol.")]
         public void S1_ConnectionTest_ConnectionInitiation_PositiveTest_HybridEXSelected()
         {
@@ -150,7 +155,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Test Implementation
             if (transportProtocol != EncryptedProtocol.NegotiationCredSsp && transportProtocol != EncryptedProtocol.DirectCredSsp)
             {
-                this.TestSite.Assert.Inconclusive("This case requires using CredSSP encrypted protocol");
+                this.TestSite.Assume.Inconclusive("This case requires using CredSSP encrypted protocol");
             }
             this.selectedProtocol = selectedProtocols_Values.PROTOCOL_HYBRID_EX;
             
@@ -162,7 +167,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -278,7 +283,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.ServerControlGrantedControl();
 
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -302,6 +307,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case verifies that SUT can process the valid RDP_NEG_RSP with supporting all protocols correctly.")]
         public void S1_ConnectionTest_ConnectionInitiation_PositiveTest_FlagsOfRdpNegRsp_SupportAllProtocols()
         {
@@ -330,7 +337,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -356,6 +363,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case verifies that SUT can process the valid RDP_NEG_FAILURE correctly.")]
         public void S1_ConnectionTest_ConnectionInitiation_PositiveTest_RDPNegotiationFailure()
         {
@@ -375,7 +384,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request

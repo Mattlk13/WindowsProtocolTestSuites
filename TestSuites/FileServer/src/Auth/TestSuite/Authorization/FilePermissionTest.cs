@@ -7,8 +7,10 @@ using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 {
@@ -24,7 +26,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         /// <summary>
         /// Indicates if the FilePermissionTestShare exists or not.
         /// </summary>
-        private bool FilePermissionTestShareExist; 
+        private bool FilePermissionTestShareExist;
         private string tempFileName;
         private _SECURITY_DESCRIPTOR baseSD;
 
@@ -44,6 +46,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         protected override void TestInitialize()
         {
             base.TestInitialize();
+
+            // valid domain name matching, for example: contoso.com, local.contoso.com
+            if (!Regex.IsMatch(TestConfig.DomainName, @"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$", RegexOptions.IgnoreCase))
+            {
+                BaseTestSite.Assert.Inconclusive("Authentication test cases are not applicable in non-domain environment");
+            }
+
             if (FilePermissionTestShareUncPath == null)
             {
                 FilePermissionTestShareUncPath = Smb2Utility.GetUncPath(testConfig.SutComputerName, TestConfig.FilePermissionTestShare);
@@ -68,8 +77,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 
         protected override void TestCleanup()
         {
-            client.Disconnect();
-            DeleteExistingFile(FilePermissionTestShareUncPath, tempFileName);
+            client?.Disconnect();
+            if (FilePermissionTestShareUncPath != null)
+            {
+                DeleteExistingFile(FilePermissionTestShareUncPath, tempFileName);
+            }
             base.TestCleanup();
         }
         #endregion
@@ -78,18 +90,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [Description("This test case is designed to test whether a user can read a file when " +
             "ACCESS_ALLOWED_ACE with user SID exists in file Security Descriptor.")]
         public void BVT_FilePermission_AccessAllow_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnFile(ace);
 
             BaseTestSite.Assert.IsTrue(
-                TryReadFile(), 
-                "ACCESS_ALLOWED_ACE with user SID ({0}) exists in file Security Descriptor. User should be able to read the file.", 
+                TryReadFile(),
+                "ACCESS_ALLOWED_ACE with user SID ({0}) exists in file Security Descriptor. User should be able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -97,18 +110,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.Positive)]
         [Description("This test case is designed to test whether a user can read a file when " +
             "ACCESS_ALLOWED_ACE with user's group SID exists in file Security Descriptor.")]
         public void FilePermission_AccessAllow_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnFile(ace);
 
             BaseTestSite.Assert.IsTrue(
-                TryReadFile(), 
-                "ACCESS_ALLOWED_ACE with user's group SID ({0}) exists in file Security Descriptor. User should be able to read the file.", 
+                TryReadFile(),
+                "ACCESS_ALLOWED_ACE with user's group SID ({0}) exists in file Security Descriptor. User should be able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -116,18 +130,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.Positive)]
         [Description("This test case is designed to test whether a user is denied to read a file when " +
             "ACCESS_DENIED_ACE with user SID exists in file Security Descriptor.")]
         public void FilePermission_AccessDeny_UserSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessDeniedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnFile(ace);
 
             BaseTestSite.Assert.IsFalse(
-                TryReadFile(), 
-                "ACCESS_DENIED_ACE with user SID ({0}) exists in folder Security Descriptor. User should not be able to read the file.", 
+                TryReadFile(),
+                "ACCESS_DENIED_ACE with user SID ({0}) exists in folder Security Descriptor. User should not be able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -135,18 +150,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.Positive)]
         [Description("This test case is designed to test whether a user is denied to read a file when " +
             "ACCESS_DENIED_ACE with user's group SID exists in file Security Descriptor.")]
         public void FilePermission_AccessDeny_GroupSid()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azGroup01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetGroupSid(azGroup01Name);
             object ace = DtypUtility.CreateAccessDeniedAce(sid, DtypUtility.ACCESS_MASK_GENERIC_READ, ACE_FLAGS.None);
             SetSecurityDescriptorOnFile(ace);
 
             BaseTestSite.Assert.IsFalse(
-                TryReadFile(), 
-                "ACCESS_DENIED_ACE with user's group SID ({0}) exists in file Security Descriptor. User should be not able to read the file.", 
+                TryReadFile(),
+                "ACCESS_DENIED_ACE with user's group SID ({0}) exists in file Security Descriptor. User should be not able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -154,16 +170,17 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.Positive)]
         [Description("This test case is designed to test whether a user is denied to read a file when " +
             "user SID does not exist in file Security Descriptor.")]
         public void FilePermission_AccessDeny_SidNoInclude()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
 
             BaseTestSite.Assert.IsFalse(
-                TryReadFile(), 
-                "User SID ({0}) is not in file Security Descriptor. User should not be able to read the file.", 
+                TryReadFile(),
+                "User SID ({0}) is not in file Security Descriptor. User should not be able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -171,18 +188,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
         [TestCategory(TestCategories.Auth)]
         [TestCategory(TestCategories.FileAccessCheck)]
         [TestCategory(TestCategories.NonSmb)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.Positive)]
         [Description("This test case is designed to test whether a user is denied to read a file when " +
             "ACCESS_ALLOWED_ACE associated with the user does not have READ permission in file Security Descriptor.")]
         public void FilePermission_AccessDeny_UserSidWithoutReadPermission()
         {
-            _SID sid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, azUser01Name);
+            _SID sid = sutCommonControlAdapterAccessor.GetUserSid(azUser01Name);
             object ace = DtypUtility.CreateAccessAllowedAce(sid, 0, ACE_FLAGS.None); // 0 stands for non access mask flag set
             SetSecurityDescriptorOnFile(ace);
 
             BaseTestSite.Assert.IsFalse(
-                TryReadFile(), 
-                "ACCESS_ALLOWED_ACE with user SID ({0}) without READ permission in folder Security Descriptor. User should not be able to read the file.", 
+                TryReadFile(),
+                "ACCESS_ALLOWED_ACE with user SID ({0}) without READ permission in folder Security Descriptor. User should not be able to read the file.",
                 DtypUtility.ToSddlString(sid));
         }
 
@@ -197,10 +215,10 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Auth.TestSuite
 
         private bool TryReadFile()
         {
-            BaseTestSite.Log.Add(LogEntryKind.TestStep, 
-                "Try read the file {0} using account: {1}@{2}.", 
-                Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.FilePermissionTestShare, tempFileName), 
-                azUser01Name, 
+            BaseTestSite.Log.Add(LogEntryKind.TestStep,
+                "Try read the file {0} using account: {1}@{2}.",
+                Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.FilePermissionTestShare, tempFileName),
+                azUser01Name,
                 TestConfig.DomainName);
             bool result = TryReadFile(client, new AccountCredential(TestConfig.DomainName, azUser01Name, TestConfig.UserPassword), FilePermissionTestShareUncPath, tempFileName);
             return result;

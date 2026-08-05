@@ -1,9 +1,9 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
-
 
 // ReSharper disable once CheckNamespace
 namespace CodecToolSet.Core.RFXEncode
@@ -54,15 +54,15 @@ namespace CodecToolSet.Core.RFXEncode
         {
             get
             {
-                var parameter = Parameters[Constants.PARAM_NAME_QUANT_FACTORS_ARRAY];
-                if (parameter is QuantizationFactorsArray)
+                if (Parameters.ContainsKey(Constants.PARAM_NAME_QUANT_FACTORS_ARRAY))
                 {
-                    return (QuantizationFactorsArray)parameter;
+                    var parameter = Parameters[Constants.PARAM_NAME_QUANT_FACTORS_ARRAY];
+                    if (parameter is QuantizationFactorsArray)
+                    {
+                        return (QuantizationFactorsArray)parameter;
+                    }
                 }
-                else
-                {
-                    return RFXEncodeBase.DEFAULT_QUANT_ARRAY;
-                }
+                return RFXEncodeBase.DEFAULT_QUANT_ARRAY;
             }
         }
 
@@ -70,15 +70,15 @@ namespace CodecToolSet.Core.RFXEncode
         {
             get
             {
-                var parameter = Parameters[Constants.PARAM_NAME_ENTROPY_ALGORITHM];
-                if (parameter is EntropyAlgorithm)
+                if (Parameters.ContainsKey(Constants.PARAM_NAME_ENTROPY_ALGORITHM))
                 {
-                    return (EntropyAlgorithm)parameter;
+                    var parameter = Parameters[Constants.PARAM_NAME_ENTROPY_ALGORITHM];
+                    if (parameter is EntropyAlgorithm)
+                    {
+                        return (EntropyAlgorithm)parameter;
+                    }
                 }
-                else
-                {
-                    return RFXEncodeBase.ENTROPY_ALG;
-                }
+                return RFXEncodeBase.ENTROPY_ALG;
             }
         }
 

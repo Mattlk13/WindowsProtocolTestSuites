@@ -1,18 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Net;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
+
 using Microsoft.Protocols.TestTools.StackSdk.Transport;
-using Microsoft.Protocols.TestTools.ExtendedLogging;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading;
+// using Microsoft.Protocols.TestTools.ExtendedLogging;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
 {
-
     /// <summary>
     /// Structure of packet information.
     /// </summary>
@@ -21,30 +18,24 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// <summary>
         /// Identity of local endpoint
         /// </summary>
-        public object localEndPoint;
+        public object LocalEndPoint;
         /// <summary>
         /// Identity of remote endpoint
         /// </summary>
-        public object remoteEndpoint;
+        public object RemoteEndPoint;
 
         /// <summary>
         /// The packet received
         /// </summary>
-        public StackPacket packet;
+        public StackPacket Packet;
 
         public StackPacketInfo(object localEp, object remoteEp, StackPacket pkt)
         {
-            localEndPoint = localEp;
-            remoteEndpoint = remoteEp;
-            packet = pkt;
+            LocalEndPoint = localEp;
+            RemoteEndPoint = remoteEp;
+            Packet = pkt;
         }
     }
-
-    /// <summary>
-    /// Delegate for unhandled exception received.
-    /// </summary>
-    /// <param name="ex">The unhandled exception received.</param>
-    public delegate void UnhandledExceptionReceivedDelegate(Exception ex);
 
     /// <summary>
     /// RDPEUDP Server
@@ -65,11 +56,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         // Dictionary of server sockets created by this server
         private Dictionary<IPEndPoint, RdpeudpServerSocket> serverSocketDic;
 
-        // Whether the server the running, this mean the server can receive and send normally
-        private bool running = false;
-
         // Thread handle for receiving thread
         private Thread receiveThread;
+
+        // Cancellation token source for receiving thread.
+        private CancellationTokenSource receiveThreadCancellationTokenSource;
+
+        // Indicating the client is started successfully.
+        private bool started;
 
         #endregion Private variables
 
@@ -78,17 +72,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// This value decides whether the RdpeudpServerSocket is autohandle
         /// </summary>
         public bool AutoHandle { get; set; }
-
-        /// <summary>
-        /// Whether the RdpeudpServer is running
-        /// </summary>
-        public bool Running
-        {
-            get
-            {
-                return running;
-            }
-        }
 
         #endregion Properties
 
@@ -122,10 +105,20 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// </summary>
         public void Start()
         {
+            if (started)
+            {
+                return;
+            }
+
             udpTransport.Start();
-            running = true;
+
             receiveThread = new Thread(ReceiveLoop);
+
+            receiveThreadCancellationTokenSource = new CancellationTokenSource();
+
             receiveThread.Start();
+
+            started = true;
         }
 
         /// <summary>
@@ -133,17 +126,29 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// </summary>
         public void Stop()
         {
-            running = false;
+            if (!started)
+            {
+                return;
+            }
+
+            receiveThreadCancellationTokenSource.Cancel();
+
             if (receiveThread.IsAlive)
             {
-                receiveThread.Abort();
                 receiveThread.Join();
             }
             foreach (IPEndPoint ep in serverSocketDic.Keys)
             {
                 serverSocketDic[ep].Close();
             }
+
+            serverSocketDic.Clear();
+
             udpTransport.Stop();
+
+            unprocessedPacketBuffer.Clear();
+
+            started = false;
         }
 
         public RdpeudpServerSocket Accept(IPAddress remoteIP, TransportMode mode, TimeSpan timeout)
@@ -178,13 +183,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         public RdpeudpServerSocket CreateSocket(IPAddress remoteIP, TransportMode mode, TimeSpan timeout)
         {
             IPEndPoint remoteEndPoint;
-            RdpeudpPacket synPacket = ExpectSyncPacket(remoteIP, mode, timeout, out remoteEndPoint);
+            RdpeudpPacket synPacket = ExpectSynPacket(remoteIP, mode, timeout, out remoteEndPoint);
             if (synPacket == null)
             {
                 return null;
             }
 
-            RdpeudpServerSocket serverSock = new RdpeudpServerSocket(mode, remoteEndPoint, AutoHandle, packetsender, this);
+            RdpeudpServerSocket serverSock = new RdpeudpServerSocket(mode, remoteEndPoint, AutoHandle, PacketSender, this);
             serverSock.ReceivePacket(synPacket);
 
             serverSocketDic[remoteEndPoint] = serverSock;
@@ -198,7 +203,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// <param name="mode">connection mode</param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public RdpeudpPacket ExpectSyncPacket(IPAddress remoteIP, TransportMode mode, TimeSpan timeout, out IPEndPoint remoteEndPoint)
+        public RdpeudpPacket ExpectSynPacket(IPAddress remoteIP, TransportMode mode, TimeSpan timeout, out IPEndPoint remoteEndPoint)
         {
             remoteEndPoint = null;
             DateTime endtime = DateTime.Now + timeout;
@@ -214,13 +219,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
                     for (int i = 0; i < unprocessedPacketBuffer.Count; i++)
                     {
                         StackPacketInfo spInfo = unprocessedPacketBuffer[i];
-                        remoteEndPoint = spInfo.remoteEndpoint as IPEndPoint;
+                        remoteEndPoint = spInfo.RemoteEndPoint as IPEndPoint;
                         if (remoteEndPoint.Address.Equals(remoteIP))
                         {
                             RdpeudpPacket eudpPacket = new RdpeudpPacket();
-                            if (PduMarshaler.Unmarshal(spInfo.packet.ToBytes(), eudpPacket, false))
+                            if (PduMarshaler.Unmarshal(spInfo.Packet.ToBytes(), eudpPacket, false))
                             {
-                                if (eudpPacket.fecHeader.uFlags.HasFlag(expectFlag))
+                                if (eudpPacket.FecHeader.uFlags.HasFlag(expectFlag))
                                 {
                                     unprocessedPacketBuffer.RemoveAt(i);
                                     return eudpPacket;
@@ -228,7 +233,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
                             }
                         }
                     }
-
                 }
                 // If not receive a Packet, wait a while 
                 Thread.Sleep(RdpeudpSocketConfig.ReceivingInterval);
@@ -256,7 +260,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
         /// </summary>
         public void Dispose()
         {
-            if (running)
+            if (started)
             {
                 this.Stop();
             }
@@ -274,17 +278,20 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
                 TimeSpan timeout;
                 object remoteEndpoint;
                 StackPacket receivedPacket;
-                timeout = new TimeSpan(0, 0, 10);// 100 milliseconds.
-                while (running)
-                {                   // An infinite loop to receive packet from transport stack.
+                timeout = new TimeSpan(0, 0, 0, 0, 100); // 100 milliseconds.
+
+                // Check whether cancellation is requested before entering each receive loop.
+                while (!receiveThreadCancellationTokenSource.IsCancellationRequested)
+                {
                     try
                     {
                         receivedPacket = udpTransport.ExpectPacket(timeout, localEndPoint, out remoteEndpoint);
+
                         if (serverSocketDic.ContainsKey(remoteEndpoint as IPEndPoint))
                         {
                             serverSocketDic[remoteEndpoint as IPEndPoint].ReceivePacket(receivedPacket);
                         }
-                        else                // If the packet belong to no RDPEUDP socket, try to Accept as a new RDPEUDP socket.
+                        else // If the packet belong to no RDPEUDP socket, try to Accept as a new RDPEUDP socket.
                         {
                             StackPacketInfo packetinfo = new StackPacketInfo(localEndPoint, remoteEndpoint, receivedPacket);
                             lock (this.unprocessedPacketBuffer)
@@ -293,15 +300,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
                             }
 
                             // ETW Provider Dump Message
-                            byte[] packetBytes = receivedPacket.ToBytes();
-                            string messageName = "RDPEUDP:ReceivedPDU";
-                            ExtendedLogger.DumpMessage(messageName, RdpeudpSocket.DumpLevel_LayerTLS, typeof(RdpeudpPacket).Name, packetBytes);
-
+                            // byte[] packetBytes = receivedPacket.ToBytes();
+                            // string messageName = "RDPEUDP:ReceivedPDU";
+                            // ExtendedLogger.DumpMessage(messageName, RdpeudpSocket.DumpLevel_LayerTLS, typeof(RdpeudpPacket).Name, packetBytes);
                         }
                     }
                     catch (TimeoutException)
                     { }
-                    Thread.Sleep(RdpeudpSocketConfig.ReceivingInterval);
                 }
             }
             catch (Exception ex)
@@ -310,16 +315,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp
             }
         }
 
-
-
         /// <summary>
         /// Method provided to socket, which can use it to send packet
         /// </summary>
         /// <param name="remoteEP">Remote endpoint</param>
         /// <param name="packet"></param>
-        private void packetsender(IPEndPoint remoteEP, StackPacket packet)
+        private void PacketSender(IPEndPoint remoteEP, StackPacket packet)
         {
-            if (running)
+            if (started)
             {
                 udpTransport.SendPacket(localEndPoint, remoteEP, packet);
             }

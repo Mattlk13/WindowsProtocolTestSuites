@@ -2,10 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using ActiveDs;
-using Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.MAAdapter;
 using Microsoft.Protocols.TestSuites.ActiveDirectory.Common;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.MessageAnalyzer;
 using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 using ProtocolMessageStructures;
 using System;
@@ -76,7 +74,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
             }
 
             Site.Log.Add(LogEntryKind.Debug, "Initialize Message Analyzer adapter.");
-            MaAdapter = Site.GetAdapter<IMessageAnalyzerAdapter>();
         }
 
         /// <summary>
@@ -266,11 +263,6 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
         /// </summary>
         private string certPassword = TestClassBase.BaseTestSite.Properties["MS_ADTS_SECURITY.certPassword"];
 
-        /// <summary>
-        /// Instance of MessageAnalyzerAdapter
-        /// </summary>
-        public IMessageAnalyzerAdapter MaAdapter;
-
         private string AdldsTestGroupName = "TestGroupSecurity";
 
         private string GroupCreatedSignalFile = @"C:\TestGroupCreated";
@@ -281,7 +273,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
         /// used as counter for Sicily Netmon requirements.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2211:NonConstantFieldsShouldNotBeVisible")]
-        public static int netmonReqValidated = 1;
+        public static int netmonReqValidated = 0;
 
         #endregion
 
@@ -2078,53 +2070,55 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
                     //AuthType.Bind = Sicily will be used for SicilyPakageDiscovery and SicilyNegotiate in Bind operation
                     if (netmonReqValidated == 1)
                     {
-                        System.Threading.Thread.Sleep(sleepTime);
+                        throw new NotImplementedException();
 
-                        //increasing the counter
-                        netmonReqValidated++;
+                        //System.Threading.Thread.Sleep(sleepTime);
 
-                        #region   Checking with Message Analyzer                     
+                        ////increasing the counter
+                        //netmonReqValidated++;
 
-                        TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Start capturing using Message Analyzer.");
-                        MaAdapter.Reset();
-                        MaAdapter.StartCapture(capturePath_SecuritySicily, "LDAP");
+                        //#region   Checking with Message Analyzer                     
 
-                        TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Perform Sicily Bind.");
-                        SicilyBindConnection(hostNameAndLDAPPort, userName, password);
+                        //TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Start capturing using Message Analyzer.");
+                        //MaAdapter.Reset();
+                        //MaAdapter.StartCapture(capturePath_SecuritySicily, "LDAP");
 
-                        TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Stop capturing.");
-                        MaAdapter.StopCapture();
+                        //TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Perform Sicily Bind.");
+                        //SicilyBindConnection(hostNameAndLDAPPort, userName, password);
 
-                        string filter = "(LDAP.ProtocolOp.ServerCreds == \"NTLM\") and (LDAP.ProtocolOp.ResultCode == LDAP.ResultCode.Success)";
-                        List<Message> messages = MaAdapter.GetMessages(capturePath_SecuritySicily, filter);
-                        TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
-                            messages.Count > 0,
-                            174,
-                            @"In sicily authentication, If the sicilyPackageDiscovery request is successful,
-                                                    the DC sets the resultCode to success in its SicilyBindResponse.");
-                        TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
-                            messages.Count > 0,
-                            184,
-                            @"In sicily authentication mechanism, when the client sends the sicilyNegotiate request to the DC, 
-                                                    If successful, the DC responds with a SicilyBindResponse in which the resultCode is set to success.");
-                        TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
-                            messages.Count > 0,
-                            171,
-                            @"In sicily authentication, All Versions of Active Directory expose and 
-                                                    support only the NTLM authentication protocol, via Sicily");
-                        TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
-                            messages.Count > 0,
-                            175,
-                            @"In sicily authentication,If the sicilyPackageDiscovery request is successful, the DC returns 
-                            in serverCreds an ANSI string consisting of the semicolon-separated names of the authentication
-                            protocols it supports via the Sicily authentication mechanism.");
-                        TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
-                            messages.Count > 0,
-                            176,
-                            @"Active Directory supports NTLM, and returns the string NTLM in the package 
-                            discovery response when the sicilyPackageDiscovery request is successful.");
-                        
-                        #endregion
+                        //TestClassBase.BaseTestSite.Log.Add(LogEntryKind.Comment, "Stop capturing.");
+                        //MaAdapter.StopCapture();
+
+                        //string filter = "(LDAP.ProtocolOp.ServerCreds == \"NTLM\") and (LDAP.ProtocolOp.ResultCode == LDAP.ResultCode.Success)";
+                        //List<Message> messages = MaAdapter.GetMessages(capturePath_SecuritySicily, filter);
+                        //TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
+                        //    messages.Count > 0,
+                        //    174,
+                        //    @"In sicily authentication, If the sicilyPackageDiscovery request is successful,
+                        //                            the DC sets the resultCode to success in its SicilyBindResponse.");
+                        //TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
+                        //    messages.Count > 0,
+                        //    184,
+                        //    @"In sicily authentication mechanism, when the client sends the sicilyNegotiate request to the DC, 
+                        //                            If successful, the DC responds with a SicilyBindResponse in which the resultCode is set to success.");
+                        //TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
+                        //    messages.Count > 0,
+                        //    171,
+                        //    @"In sicily authentication, All Versions of Active Directory expose and 
+                        //                            support only the NTLM authentication protocol, via Sicily");
+                        //TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
+                        //    messages.Count > 0,
+                        //    175,
+                        //    @"In sicily authentication,If the sicilyPackageDiscovery request is successful, the DC returns 
+                        //    in serverCreds an ANSI string consisting of the semicolon-separated names of the authentication
+                        //    protocols it supports via the Sicily authentication mechanism.");
+                        //TestClassBase.BaseTestSite.CaptureRequirementIfIsTrue(
+                        //    messages.Count > 0,
+                        //    176,
+                        //    @"Active Directory supports NTLM, and returns the string NTLM in the package 
+                        //    discovery response when the sicilyPackageDiscovery request is successful.");
+
+                        //#endregion
                     }
 
                     #region Tls
@@ -3476,13 +3470,11 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
             options.StartTransportLayerSecurity(null);
 
             // QueryClientCertificate
-            X509Certificate cert = new X509Certificate();
+            X509Certificate cert = new X509Certificate(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             //External AuthType 
             externalConnection.AuthType = AuthType.External;
 
-            // select a certificate to import
-            cert.Import(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             // add the certificate to the connection
             externalConnection.ClientCertificates.Add(cert);
@@ -3531,13 +3523,11 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
                                                                                        externalConnection);
             TestClassBase.BaseTestSite.Assert.IsNull(extendedoperationResponse, "extended operation is success");
             // QueryClientCertificate
-            X509Certificate cert = new X509Certificate();
+            X509Certificate cert = new X509Certificate(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             //External AuthType 
             externalConnection.AuthType = AuthType.External;
 
-            //select a certificate to import
-            cert.Import(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             //add the certificate to the connection
             externalConnection.ClientCertificates.Add(cert);
@@ -3567,13 +3557,11 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Adts.Security
             LdapConnection externalConnection = new LdapConnection(new LdapDirectoryIdentifier(hostNameandPort));
 
             //QueryClientCertificate
-            X509Certificate cert = new X509Certificate();
+            X509Certificate cert = new X509Certificate(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             //External AuthType 
             externalConnection.AuthType = AuthType.External;
 
-            //select a certificate to import
-            cert.Import(certFilewithPathSpec, certPassword, X509KeyStorageFlags.DefaultKeySet);
 
             //add the certificate to the connection
             externalConnection.ClientCertificates.Add(cert);

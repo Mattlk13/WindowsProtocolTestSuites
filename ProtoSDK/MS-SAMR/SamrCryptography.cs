@@ -64,7 +64,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Samr
             // SAMR DES(ECB mode) encrypted data size
             const int samrDesEncryptedDataSize = 8;
 
-            DESCryptoServiceProvider desCSP = DES.Create() as DESCryptoServiceProvider;
+            DESCryptoServiceProvider desCSP = new DESCryptoServiceProvider();
             desCSP.Mode = CipherMode.ECB;
             desCSP.Key = key;
 
@@ -220,7 +220,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Samr
         /// <param name="key">The encryption key</param>
         private static byte[] RC4Encrypt(byte[] input, int inputOffset, int inputLength, byte[] key)
         {
-            RC4CryptoServiceProvider rc4 = new RC4CryptoServiceProvider();
+            RC4 rc4 = RC4.Create();
             ICryptoTransform crypto = rc4.CreateEncryptor(key, null);
             byte[] output = crypto.TransformFinalBlock(input, inputOffset, inputLength);
 
@@ -579,14 +579,16 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Samr
                 throw new ArgumentNullException("password");
             }
 
-            // Get MD4 CSP
-            MD4 md4 = MD4CryptoServiceProvider.Create();
-            md4.Initialize();
+            byte[] hash;
 
-            // Get password byte array
-            byte[] passwordBuffer = Encoding.Unicode.GetBytes(password);
+            using (MD4 md4 = MD4.Create())
+            {
+                // Get password byte array
+                byte[] passwordBuffer = Encoding.Unicode.GetBytes(password);
+                hash = md4.ComputeHash(passwordBuffer);
+            }
 
-            return md4.ComputeHash(passwordBuffer);
+            return hash;
         }
 
 
@@ -802,20 +804,23 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Samr
             _SAMPR_ENCRYPTED_USER_PASSWORD_NEW encryptedPwd = new _SAMPR_ENCRYPTED_USER_PASSWORD_NEW();
             encryptedPwd.Buffer = new byte[encryptedPwdSize + pwdLenSize + pwdEncryptionKeySize];
 
+            var tempBuffer = new byte[encryptedPwdSize + pwdLenSize];
+
             // Copy password bytes to the tail of the encryptedPwdSize bytes of buffer
             byte[] existingPwdBuffer = Encoding.Unicode.GetBytes(existingPwd);
-            Array.Copy(existingPwdBuffer, 0, encryptedPwd.Buffer,
-                encryptedPwdSize - existingPwdBuffer.Length, existingPwdBuffer.Length);
+            Array.Copy(existingPwdBuffer, 0, tempBuffer,
+                encryptedPwdSize - existingPwdBuffer.Length - pwdLenSize, existingPwdBuffer.Length);
 
             // Set password length for the last pwdLenSize bytes of (the encryptedPwdSize + pwdLenSize) bytes
             byte[] lengthBuffer = BitConverter.GetBytes(existingPwdBuffer.Length);
-            Array.Copy(lengthBuffer, 0, encryptedPwd.Buffer, encryptedPwdSize, lengthBuffer.Length);
+            Array.Copy(lengthBuffer, 0, tempBuffer, encryptedPwdSize, lengthBuffer.Length);
+
+            // Do RC4 encryption, the last pwdEncryptionKeySize bytes are intact
+            byte[] rc4Result = RC4Encrypt(tempBuffer, 0,
+                tempBuffer.Length, digest);
+            Array.Copy(rc4Result, encryptedPwd.Buffer, rc4Result.Length);
             // Copy clear salt to the last pwdEncryptionKeySize bytes of the buffer
             Array.Copy(clearSalt, 0, encryptedPwd.Buffer, encryptedPwdSize + pwdLenSize, clearSalt.Length);
-            // Do RC4 encryption, the last pwdEncryptionKeySize bytes are intact
-            byte[] rc4Result = RC4Encrypt(encryptedPwd.Buffer, 0,
-                encryptedPwd.Buffer.Length - pwdEncryptionKeySize, digest);
-            Array.Copy(rc4Result, encryptedPwd.Buffer, rc4Result.Length);
 
             return encryptedPwd;
         }

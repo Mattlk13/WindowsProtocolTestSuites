@@ -6,7 +6,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Text;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
@@ -192,7 +191,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// since the last successful replication attempt or since the source was added as a neighbor, if no previous
         /// attempt succeeded.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_NEIGHBORW_BLOB(
             string szNamingContext,
             string szSourceDsaDN,
@@ -254,7 +252,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="offset">The offset to the start of this instance</param>
         /// <returns>A DS_REPL_NEIGHBORW_BLOB instance</returns>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_NEIGHBORW_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -380,7 +377,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// A 32-bit unsigned integer specifying the error code associated with the most recent failure, orERROR_SUCCESS
         /// if the specific error is unavailable.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_KCC_DSA_FAILUREW_BLOB(
             string szDsaDN,
             Guid uuidDsaObjGuid,
@@ -412,7 +408,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_KCC_DSA_FAILUREW_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_KCC_DSA_FAILUREW_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_KCC_DSA_FAILUREW_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -573,7 +568,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// A GUID structure, as defined in [MS-DTYP] section 2.3.2, specifying the objectGUID of the directory system 
         /// agent object identified by oszDsaDN.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_OPW_BLOB(
             _FILETIME ftimeEnqueued,
             uint ulSerialNumber,
@@ -618,7 +612,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_OPW_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_OPW_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_OPW_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -769,7 +762,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_QUEUE_STATISTICSW_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_QUEUE_STATISTICSW_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_QUEUE_STATISTICSW_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -868,7 +860,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// A null-terminated Unicode string. The string contains the distinguished name of the directory service agent
         /// (DSA) that corresponds to the source server to which this replication state data applies.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_CURSOR_BLOB(
             Guid uuidSourceDsaInvocationID,
             long usnAttributeFilter,
@@ -900,7 +891,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_CURSOR_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_CURSOR_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_CURSOR_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -1019,7 +1009,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// A null-terminated Unicode string that contains the DN of the nTDSDSA object of the server that originated 
         /// the last replication.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_ATTR_META_DATA_BLOB(
             string szAttributeName,
             uint dwVersion,
@@ -1058,7 +1047,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_ATTR_META_DATA_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_ATTR_META_DATA_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_ATTR_META_DATA_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -1222,7 +1210,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// Contains a 32-bit offset, in bytes, from the address of this structure to a null-terminated Unicode
         /// string that contains the DN of the nTDSDSA object of the server that originated the last replication.
         /// </param>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public DS_REPL_VALUE_META_DATA_BLOB(
             string szAttributeName,
             string szObjectDn,
@@ -1273,7 +1260,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <param name="inputBuffer">A buffer that contains the DS_REPL_VALUE_META_DATA_BLOB</param>
         /// <param name="offset">The offset to the start of DS_REPL_VALUE_META_DATA_BLOB</param>
         /// <exception cref="System.ArgumentNullException">thrown if inputBuffer is null</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static DS_REPL_VALUE_META_DATA_BLOB FromBytes(byte[] inputBuffer, ref uint offset)
         {
             if (inputBuffer == null)
@@ -1910,7 +1896,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts
         /// <summary>
         /// The SID of the domain, specified as a SID structure, which is defined in [MS-DTYP] section 2.4.2.
         /// </summary>
-        public SecurityIdentifier DomainSid;
+        public _SID DomainSid;
 
         /// <summary>
         /// NETLOGON_NT_VERSION Options

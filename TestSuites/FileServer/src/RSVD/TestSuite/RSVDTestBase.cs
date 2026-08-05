@@ -55,21 +55,23 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.RSVD.TestSuite
             RequestIdentifier = 0; // Follow windows client behaviour. Initialize it to zero.
 
             // Copy the data used in test cases to the share of the SUT, e.g. the shared virtual disk files.
-            sutProtocolController.CopyFile(TestConfig.FullPathShareContainingSharedVHD, @"data\*.*");
+            sutProtocolController.CopyFile(TestConfig.FullPathShareContainingSharedVHD, @"Data\*.*");
         }
 
         protected override void TestCleanup()
         {
-            try
+            if (client != null)
             {
-                client.Disconnect();
+                try
+                {
+                    client.Disconnect();
+                }
+                catch (Exception ex)
+                {
+                    BaseTestSite.Log.Add(LogEntryKind.Debug, "Unexpected exception when disconnect client: {0}", ex.ToString());
+                }
+                client.Dispose();
             }
-            catch (Exception ex)
-            {
-                BaseTestSite.Log.Add(LogEntryKind.Debug, "Unexpected exception when disconnect client: {0}", ex.ToString());
-            }
-            client.Dispose();
-
             base.TestCleanup();
         }
 

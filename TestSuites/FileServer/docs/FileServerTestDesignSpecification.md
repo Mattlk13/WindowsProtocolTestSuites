@@ -1,4 +1,4 @@
-﻿#File Server Protocol Family Server Test Design Specification 
+﻿# File Server Protocol Family Server Test Design Specification 
 
 ## Content
 
@@ -68,8 +68,12 @@
 		* [ QueryDir\_Reopen\_OnDir](#3.1.53)
 		* [ QueryDir\_Reopen\_OnFile](#3.1.54)
 		* [ Query\_Quota\_Info](#3.1.55)
-		* [ BVT\_SMB2Basic\_Query\_FileAllInformation](#3.1.56)
-        * [ Compression](#3.1.57)
+		* [ SMB2Basic\_Query\_FileAllInformation](#3.1.56)
+		* [ SMB2Basic\_Query\_FileNormalizedNameInformation\_DataFile](#3.1.57)
+		* [ SMB2Basic\_Query\_FileNormalizedNameInformation\_DirectoryFile](#3.1.58)
+        * [ Compression](#3.1.59)
+        * [ NetworkInterfaceInfo](#3.1.60)
+		* [ SMB2Basic\_QuicTransport\_OpenNamedPipe](#3.1.61)
 	* [SMB2 Feature Test](#3.2)
 		* [ AppInstanceId](#3.2.1)
 		* [ AppInstanceVersion](#3.2.2)
@@ -93,6 +97,7 @@
 		* [ OperateOneFileFromTwoNodes](#3.2.20)
 		* [ MixedOplockLease](#3.2.21)
 		* [ Compression](#3.2.22)
+		* [ NetworkInterfaceInfo](#3.2.23)
 	* [SMB2 Feature Combination](#3.3)
 		* [ MultipleChannelWithReplay](#3.3.1)
 		* [ MultipleChannelWithEncryption](#3.3.2)
@@ -215,13 +220,13 @@ Test scenarios are categorized as below table and will be described in following
 
 | Category                 | Test Cases | Comments                                                                                                          |
 |--------------------------|------------|-------------------------------------------------------------------------------------------------------------------|
-| SMB2 BVT                 | 87         | SMB2 common scenarios.                                                                                            |
-| SMB2 Feature Test        | 2609       | This test is divided by features. It contains both Model-Based test cases and traditional cases. The traditional cases are used to cover the statements which are not suitable to cover by Model-Based test cases.  About Model-Based Testing, please see [Spec Explorer](http://msdn.microsoft.com/en-us/library/ee620411.aspx)       |
+| SMB2 BVT                 | 101         | SMB2 common scenarios.                                                                                            |
+| SMB2 Feature Test        | 2664       | This test is divided by features. It contains both Model-Based test cases and traditional cases. The traditional cases are used to cover the statements which are not suitable to cover by Model-Based test cases.  About Model-Based Testing, please see [Spec Explorer](http://msdn.microsoft.com/en-us/library/ee620411.aspx)       |
 | SMB2 Feature Combination | 12         | Extended test with more complex message sequence for new features in SMB 3.0 dialect and later.                   |
 | FSRVP Test               | 14         | Test for MS-FSRVP                                                                                                 |
 | Server Failover Test     | 48         | Test server failover for MS-SMB2, MS-SWN and MS-FSRVP                                                             |
 | RSVD Test                | 29         | Test for MS-RSVD                                                                                                  |
-| DFSC Test                | 43         | Test for MS-DFSC                                                                                                  |
+| DFSC Test                | 41         | Test for MS-DFSC                                                                                                  |
 | HVRS Test                | 8          | Test for MS-HVRS                                                                                                  |
 
 ### <a name="3.1">SMB2 BVT
@@ -542,10 +547,30 @@ This is used to test SMB2 common user scenarios.
 
 |                          |                                                                                                                                                       |
 |--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT\_Negotiate\_SMB311\_Preauthentication\_Encryption\_AES\_256\_CCM                                                                                                                                |
+| **Description**         | This test case is designed to test whether server can handle NEGOTIATE with Smb 3.11 dialect and SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-256-CCM preferred. |
+| **Prerequisites**        | The server implements dialect 3.11.                                                                                                                                                       |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-256-CCM preferred.            |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with dialect 3.11 and the correct Ciphers in SMB2\_ENCRYPTION\_CAPABILITIES context.                                                           |
+| **Cleanup**              |                                                                                                                                                                                           |
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Test ID**              | BVT\_Negotiate\_SMB311\_Preauthentication\_Encryption\_GCM                                                                                                                                |
 | **Description**         | This test case is designed to test whether server can handle NEGOTIATE with Smb 3.11 dialect and SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-128-GCM preferred. |
 | **Prerequisites**        | The server implements dialect 3.11.                                                                                                                                                       |
 | **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-128-GCM preferred.            |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with dialect 3.11 and the correct Ciphers in SMB2\_ENCRYPTION\_CAPABILITIES  context.                                                          |
+| **Cleanup**              |                                                                                                                                                                                           |
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT\_Negotiate\_SMB311\_Preauthentication\_Encryption\_AES\_256\_GCM                                                                                                                                |
+| **Description**         | This test case is designed to test whether server can handle NEGOTIATE with Smb 3.11 dialect and SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-256-GCM preferred. |
+| **Prerequisites**        | The server implements dialect 3.11.                                                                                                                                                       |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES context and SMB2\_ENCRYPTION\_CAPABILITIES context with AES-256-GCM preferred.            |
 |                          | 2.  Server returns SMB2 NEGOTIATE response with dialect 3.11 and the correct Ciphers in SMB2\_ENCRYPTION\_CAPABILITIES  context.                                                          |
 | **Cleanup**              |                                                                                                                                                                                           |
 
@@ -557,9 +582,56 @@ This is used to test SMB2 common user scenarios.
 | **Prerequisites**        | The server implements dialect 3.11 and compression feature. |
 | **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and SMB2_COMPRESSION_CAPABILITIES context with all supported compression algorithms. |
 |                          | 2.  Server returns SMB2 NEGOTIATE response with the expected SMB2_COMPRESSION_CAPABILITIES, if it supports the compression feature, as below: |
-|                          |     a.  If server is Windows, CompressionAlgorithms is set to the first common algorithm supported by the client and server. |
+|                          |     a.  If server is Windows, CompressionAlgorithms is set to the first common compression algorithm and the first common pattern scanning algorithm supported by the client and server. |
 |                          |     b.  If server is non-Windows, CompressionAlgorithms is set to all the algorithms in the CompressionAlgorithms field of Negotiate request, in the order they are received. |
 | **Cleanup**              |                                                                                                                                                                                           |
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT_Negotiate_SMB311_Compression_IsChainedCompressionSupported |
+| **Description**          | This test case is designed to test whether server can handle NEGOTIATE with SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED set in Flags field of SMB2_COMPRESSION_CAPABILITIES context when chained compression is supported. |
+| **Prerequisites**        | The server implements dialect 3.11, compression and chained compression feature. |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and SMB2_COMPRESSION_CAPABILITIES context with all supported compression algorithms and SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED set in Flags field. |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with the expected SMB2_COMPRESSION_CAPABILITIES, if it supports the compression feature, as below: |
+|                          |     a.  If server is Windows, CompressionAlgorithms is set to the first common compression algorithm and the first common pattern scanning algorithm supported by the client and server. |
+|                          |     b.  If server is non-Windows, CompressionAlgorithms is set to all the algorithms in the CompressionAlgorithms field of Negotiate request, in the order they are received. |
+|                          |     c.  SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED set in Flags field. |
+| **Cleanup**              |                                                                                                                                                                                           |
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT_Negotiate_SMB311_RdmaTransformCapabilities_IsSupported |
+| **Description**          | This test case is designed to test whether server that supports RDMA transform can handle NEGOTIATE with SMB2_RDMA_TRANSFORM_CAPABILITIES context. |
+| **Prerequisites**        | The server implements dialect 3.11 |
+|						   | Minimum required windows version is Windows 10 v20H2 and later and Windows Server v20H2 and later. |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and SMB2_RDMA_TRANSFORM_CAPABILITIES context with all supported transform Ids. |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with the supported rdma transform IDs in the SMB2_RDMA_TRANSFORM_CAPABILITIES context if rdma transform feature is supported |
+| **Cleanup**              
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | Negotiate_SMB311_RdmaTransformCapabilities_EmptyTransformIds |
+| **Description**          | This test case is designed to test whether server that supports RDMA transform can handle NEGOTIATE with empty SMB2_RDMA_TRANSFORM_CAPABILITIES context. |
+| **Prerequisites**        | The server implements dialect 3.11 |
+|						   | Minimum required windows version is Windows 10 v20H2 and later and Windows Server v20H2 and later. |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and SMB2_RDMA_TRANSFORM_CAPABILITIES context with empty list of transform ids. |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with STATUS_INVALID_PARAMETER and fails the request. |
+| **Cleanup**              
+
+
+|                          |                                                                                                                                                       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | Negotiate_SMB311_RdmaTransformCapabilities_InvalidDataLength |
+| **Description**          | This test case is designed to test whether server that supports RDMA transform can handle NEGOTIATE with invalid data length for SMB2_RDMA_TRANSFORM_CAPABILITIES context. |
+| **Prerequisites**        | The server implements dialect 3.11 |
+|						   | Minimum required windows version is Windows 10 v20H2 and later and Windows Server v20H2 and later. |
+| **Test Execution Steps** | 1.  Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and SMB2_RDMA_TRANSFORM_CAPABILITIES with an invalid data length. |
+|                          | 2.  Server returns SMB2 NEGOTIATE response with STATUS_INVALID_PARAMETER |
+| **Cleanup**              
+
 
 
 #### <a name="3.1.7"> MultipleChannel
@@ -945,7 +1017,17 @@ This is used to test SMB2 common user scenarios.
 | **Test ID**              | BVT_Encryption_SMB311_CCM                                                                                                                                    |
 | **Description**         | This case is to ensure server could handle encrypted requests correctly with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-CCM as encryption algorithm.  | 
 | **Prerequisites**        | The server implement dialect 3.11.                                                                                                                                           |
-| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-128-CCM is as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-CCM as cipher algorithm.                                                                                                                         |
+| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-128-CCM is sent as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-CCM as cipher algorithm.                                                                                                                         |
+|                          | 2.  Client sends SESSION\_SETUP request and gets response.                                                                                                                   |
+|                          | 3.  Client sends encrypted TREE\_CONNECT, Create, Write, Read, Close, TREE\_DISCONNECT and Logoff request and gets successful responses.                                     |
+| **Cleanup**              |                                                                                                                                                                               |
+
+|||
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT_Encryption_SMB311_AES_256_CCM                                                                                                                                    |
+| **Description**         | This case is to ensure server could handle encrypted requests correctly with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-256-CCM as encryption algorithm.  | 
+| **Prerequisites**        | The server implement dialect 3.11.                                                                                                                                           |
+| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-256-CCM is sent as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-256-CCM as cipher algorithm.                                                                                                                         |
 |                          | 2.  Client sends SESSION\_SETUP request and gets response.                                                                                                                   |
 |                          | 3.  Client sends encrypted TREE\_CONNECT, Create, Write, Read, Close, TREE\_DISCONNECT and Logoff request and gets successful responses.                                     |
 | **Cleanup**              |                                                                                                                                                                               |
@@ -955,7 +1037,17 @@ This is used to test SMB2 common user scenarios.
 | **Test ID**              | BVT_Encryption_SMB311_GCM                                                                                                                                                 |
 | **Description**         | This case is to ensure server could handle encrypted requests correctly with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-GCM as encryption algorithm.   |
 | **Prerequisites**        | The server implement dialect 3.11.                                                                                                                                           |
-| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-128-GCM is as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-GCM as cipher algorithm.            | 
+| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-128-GCM is sent as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-128-GCM as cipher algorithm.            | 
+|                          | 2.  Client sends SESSION\_SETUP request and gets response.                                                                                                                   |
+|                          | 3.  Client sends encrypted TREE\_CONNECT, Create, Write, Read, Close, TREE\_DISCONNECT and Logoff request, and gets successful  responses.                                   |
+| **Cleanup**              |                                                                                                                                                                              |
+
+|||
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | BVT_Encryption_SMB311_AES_256_GCM                                                                                                                                                 |
+| **Description**         | This case is to ensure server could handle encrypted requests correctly with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-256-GCM as encryption algorithm.   |
+| **Prerequisites**        | The server implement dialect 3.11.                                                                                                                                           |
+| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context. AES-256-GCM is sent as the preferred cipher algorithm. Server should reply NEGOTIATE response with dialect 3.11, SMB2\_ENCRYPTION\_CAPABILITIES context and AES-256-GCM as cipher algorithm.            | 
 |                          | 2.  Client sends SESSION\_SETUP request and gets response.                                                                                                                   |
 |                          | 3.  Client sends encrypted TREE\_CONNECT, Create, Write, Read, Close, TREE\_DISCONNECT and Logoff request, and gets successful  responses.                                   |
 | **Cleanup**              |                                                                                                                                                                              |
@@ -1353,6 +1445,42 @@ This is used to test SMB2 common user scenarios.
 |**Cleanup**||
 
 
+|||
+|---|---|
+|**Test ID**|BVT_OpLockBreak_Lease |
+|**Description**|This test case is designed to test whether sever can handle OplockBreak correctly for lease level.|
+|**Prerequisites**||
+|**Test Execution Steps**|Via NIC1|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request with BatchOpLock|
+||Server sends CREATE response|
+||Via NIC2|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request on the same file|
+||Via NIC1|
+||Server sends OPLOCK_BREAK_NOTIFICATION response|
+||Client sends OPLOCK_BREAK_ACKNOWLEDGEMENT request|
+||Server sends OPLOCK_BREAK_RESPONSE response|
+||Via NIC2|
+||Server sends CREATE response|
+||Via NIC1|
+||Tear down the client by sending CLOSE, TREE_DISCONNECT and LOG_OFF.|
+||Via NIC2|
+||Tear down the client by sending CLOSE, TREE-CONNECT and LOG_OFF.|
+|**Cleanup**||
+
+
 #### <a name="3.1.17">FileLeasing
 
 ##### <a name="3.1.17.1"> Scenario
@@ -1485,6 +1613,97 @@ This is used to test SMB2 common user scenarios.
 |**Cleanup**||
 
 
+|||
+|---|---|
+|**Test ID**|BVT_Leasing_FileLeasingV1_SameLeaseKey|
+|**Description**|This test case is designed to test whether server can handle LeaseV1 context with the same lease key.|
+|**Prerequisites**||
+|**Test Execution Steps**|Via NIC1|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request with LeaseV1|
+||Server sends CREATE response|
+||Via NIC2|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request with LeaseV1 including the same lease key on the same file|
+||Via NIC1|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Via NIC2|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Via NIC1|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+||Via NIC2|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|BVT_Leasing_FileLeasingV2_SameLeaseKey|
+|**Description**|This test case is designed to test whether server can handle LeaseV2 context with the same lease key.|
+|**Prerequisites**||
+|**Test Execution Steps**|Via NIC1|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request with LeaseV2|
+||Server sends CREATE response|
+||Via NIC2|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request with LeaseV2 including the same lease key on the same file|
+||Via NIC1|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Via NIC2|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Via NIC1|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+||Via NIC2|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
 #### <a name="3.1.18">Replay
 
 ##### <a name="3.1.18.1"> Test Case
@@ -1528,6 +1747,278 @@ This is used to test SMB2 common user scenarios.
 |**Cleanup**||
 
 
+##### <a name="3.1.18.2"> Replay IsReplayEligible
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_Write_ReplayEligibleCleared|
+|**Description**|Verify that after a successful replay of SMB2 WRITE on a persistent handle over SMB 3.x, Open.IsReplayEligible is set to FALSE (MS-SMB2 section 3.3.5.13).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends WRITE request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of WRITE.|
+||The client sends a subsequent WRITE request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_Read_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 READ on a persistent handle over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.12).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends READ request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of READ.|
+||The client sends a subsequent READ request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_Flush_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 FLUSH on a persistent handle over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.11).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends FLUSH request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of FLUSH.|
+||The client sends a subsequent FLUSH request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_IoCtl_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 IOCTL on a persistent handle over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.15).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends IOCTL request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of IOCTL.|
+||The client sends a subsequent IOCTL request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_SetInfo_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 SET_INFO on a persistent handle over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.21).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends SET_INFO request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of SET_INFO.|
+||The client sends a subsequent SET_INFO request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_Lock_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 LOCK on a persistent handle over SMB 3.x clears Open.IsReplayEligible and the lock sequence idempotency mechanism works correctly (MS-SMB2 section 3.3.5.14).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends LOCK request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of LOCK.|
+||The client sends a subsequent LOCK request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully using the lock sequence idempotency mechanism.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_QueryDirectory_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 QUERY_DIRECTORY on a persistent handle over SMB 3.x clears Open.IsReplayEligible and subsequent queries work correctly (MS-SMB2 section 3.3.5.18).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set to open a directory.|
+||The client sends QUERY_DIRECTORY request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of QUERY_DIRECTORY.|
+||The client sends a subsequent QUERY_DIRECTORY request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_QueryInfo_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 QUERY_INFO on a persistent handle over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.20).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends QUERY_INFO request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of QUERY_INFO.|
+||The client sends a subsequent QUERY_INFO request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_PersistentHandle_ChangeNotify_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 CHANGE_NOTIFY on a persistent handle over SMB 3.x clears Open.IsReplayEligible and subsequent watches work correctly (MS-SMB2 section 3.3.5.19).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set to open a directory.|
+||The client sends CHANGE_NOTIFY request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of CHANGE_NOTIFY.|
+||The client sends a subsequent CHANGE_NOTIFY request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_Write_ReplayEligibleCleared|
+|**Description**|Verify that after a successful replay of SMB2 WRITE on a non-persistent DurableHandleV2 over SMB 3.x, Open.IsReplayEligible is set to FALSE (MS-SMB2 section 3.3.5.13).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends WRITE request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of WRITE.|
+||The client sends a subsequent WRITE request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_Read_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 READ on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.12).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends READ request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of READ.|
+||The client sends a subsequent READ request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_Flush_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 FLUSH on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.11).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends FLUSH request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of FLUSH.|
+||The client sends a subsequent FLUSH request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_IoCtl_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 IOCTL on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.15).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends IOCTL request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of IOCTL.|
+||The client sends a subsequent IOCTL request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_SetInfo_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 SET_INFO on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.21).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends SET_INFO request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of SET_INFO.|
+||The client sends a subsequent SET_INFO request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_Lock_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 LOCK on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible and the lock sequence idempotency mechanism works correctly (MS-SMB2 section 3.3.5.14).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends LOCK request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of LOCK.|
+||The client sends a subsequent LOCK request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully using the lock sequence idempotency mechanism.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_QueryDirectory_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 QUERY_DIRECTORY on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible and subsequent queries work correctly (MS-SMB2 section 3.3.5.18).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set to open a directory.|
+||The client sends QUERY_DIRECTORY request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of QUERY_DIRECTORY.|
+||The client sends a subsequent QUERY_DIRECTORY request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_QueryInfo_ReplayEligibleCleared|
+|**Description**|Verify that replay of SMB2 QUERY_INFO on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible (MS-SMB2 section 3.3.5.20).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||The client sends QUERY_INFO request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of QUERY_INFO.|
+||The client sends a subsequent QUERY_INFO request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Replay_NonPersistentHandle_ChangeNotify_ReplayEligibleCleared|
+|**Description**|Verify that SMB2 CHANGE_NOTIFY on a non-persistent DurableHandleV2 over SMB 3.x clears Open.IsReplayEligible and subsequent watches work correctly (MS-SMB2 section 3.3.5.19).|
+|**Prerequisites**||
+|**Test Execution Steps**|Start a client by sending the following requests: 1. NEGOTIATE (SMB 3.x dialect); 2. SESSION_SETUP; 3. TREE_CONNECT to a non-CA share.|
+||The client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2 (non-persistent) create context and SMB2_FLAGS_REPLAY_OPERATION flag set to open a directory.|
+||The client sends CHANGE_NOTIFY request with SMB2_FLAGS_REPLAY_OPERATION flag set.|
+||Verify that Open.IsReplayEligible is set to FALSE after the replay of CHANGE_NOTIFY.|
+||The client sends a subsequent CHANGE_NOTIFY request without SMB2_FLAGS_REPLAY_OPERATION flag.|
+||Verify the server processes the subsequent request successfully.|
+||Tear down the client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF.|
+|**Cleanup**||
+
+
 #### <a name="3.1.19"> ResilientHandle
 
 ##### <a name="3.1.19.1"> Test Case
@@ -1548,8 +2039,37 @@ This is used to test SMB2 common user scenarios.
 
 |||
 |---|---|
+|**Test ID**|BVT_ResilientHandle_Reconnect_Lease|
+|**Description**|Test whether server can request a durable open when receiving FSCTL_LMR_REQUEST_RESILLIENNCY successfully for lease level.|
+|**Prerequisites**||
+|**Test Execution Steps**|Start the first client to create a file by sending the following requests: 1. NEGOTIATE; 2. SESSION_SETUP; 3. TREE_CONNECT|
+||The first client sends an IOCTL FSCTL_LMR_REQUEST_RESILLIENCY request.|
+||Tear down the first client by sending DISCONNECT request.|
+||Start a second client by sending the following requests: 1. NEGOTIATE; 2. SESSION_SETUP; 3. TREE_CONNECT|
+||The second client sends CREATE request with SMB2_CREATE_DURABLE_HANDLE_RECONNECT create context to open the same file created by the first client.|
+||Tear down the second client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF|
+|**Cleanup**||
+
+
+|||
+|---|---|
 |**Test ID**|BVT_ResilientHandle_LockSequence|
 |**Description**|This test case is designed to test whether server can handle Lock request with specified LockSequence.|
+|**Prerequisites**||
+|**Test Execution Steps**|Start the first client to create a file by sending the following requests: 1. NEGOTIATE; 2. SESSION_SETUP; 3. TREE_CONNECT; 4. CREATE. The first client sends an IOCTL FSCTL_LMR_REQUEST_RESILLIENCY request|
+||The first client sends WRITE request.|
+||The first client sends Flush request.|
+||The first client sends LOCK request with LockSequence set to (BucketNumber<< 4) + BucketSequence"|
+||Start the second client to reconnect to the file created by the first client by sending the following requests: 1. NEGOTIATE; 2. SESSION_SETUP; 3. TREE_CONNECT; 4.CREATE (with SMB2_CREATE_DURABLE_HANDLE_RECONNECT Create Context).|
+||The second client sends LOCK request with the same LockSequence with the first client.|
+||Tear down the second client by sending the following requests: 1. CLOSE; 2. TREE_DISCONNECT; 3. LOG_OFF|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|BVT_ResilientHandle_LockSequence_Lease|
+|**Description**|This test case is designed to test whether server can handle Lock request with specified LockSequence for lease level.|
 |**Prerequisites**||
 |**Test Execution Steps**|Start the first client to create a file by sending the following requests: 1. NEGOTIATE; 2. SESSION_SETUP; 3. TREE_CONNECT; 4. CREATE. The first client sends an IOCTL FSCTL_LMR_REQUEST_RESILLIENCY request|
 ||The first client sends WRITE request.|
@@ -1595,8 +2115,24 @@ This is used to test SMB2 common user scenarios.
 |                          | 13. Server sends encrypted TREE\_DISCONNECT response                                                         |
 |                          | 14. Client sends LOGOFF request                                                                              |
 |                          | 15. Server sends LOGOFF response                                                                             |
-| **Cleanup**              |                                                                                                              |
+| **Cleanup**              ||
 
+|--------------------------|--------------------------------------------------------------------------------------------------------------|
+| **Test ID**              | Signing_VerifyAesGmacSigning																												   |
+| **Description**          | This test case is designed to test whether outgoing and incoming messages are correctly signed and verified using aes-gmac signing algorithm. |
+| **Prerequisites**        |																																			   |
+| **Test Execution Steps** | 1.  Client sends NEGOTIATE request with SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES and SMB2\_SIGNING\_CAPABILITIES								   |
+|                          | 2.  Server sends NEGOTIATE response with SMB2\_PREAUTH\_INTEGRITY\_CAPABILITIES and SMB2\_SIGNING\_CAPABILITIES							   |
+|                          | 3.  Client sends SESSION\_SETUP request																								       |
+|                          | 4.  Server sends SESSION\_SETUP response																							           |
+|                          | 5.  According to response header from above step, server responds with a signed flag														   |
+|                          | 6.  Client sends TREE\_CONNECT request to connect to a share																				   |
+|                          | 7.  Server sends TREE\_CONNECT response with a signing flag																			       |
+|                          | 12. Client sends TREE\_DISCONNECT request																									   |
+|                          | 13. Server sends TREE\_DISCONNECT response																									   |
+|                          | 14. Client sends LOGOFF request																											   |
+|                          | 15. Server sends LOGOFF response																											   |
+| **Cleanup**              ||
 
 #### <a name="3.1.21"> TreeMgmt
 
@@ -1637,8 +2173,20 @@ This is used to test SMB2 common user scenarios.
 ||This test case is designed to test server can handle a TreeConnect request with flag SMB2_SHAREFLAG_EXTENSION_PRESENT successfully.|
 |**Prerequisites**|The server implements dialect 3.11 and the server supports infrastructure share (for windows)|
 |**Test Execution Steps**|Start a client by sending the following requests: NEGOTIATE (dialect 3.11); SESSION_SETUP (with domain credential).|
-||Client sends TREE_CONNECT request with flag SMB2_SHAREFLAG_EXTENSION_PRESENT and SMB2_REMOTED_IDENTITY_TREE_CONNECT context (with local administrator account passed in the context) and expects STATUS_SUCCESS.|
+||Client sends TREE_CONNECT request with flag SMB2_SHAREFLAG_EXTENSION_PRESENT and SMB2_REMOTED_IDENTITY_TREE_CONNECT context (with another domain account passed in the context) and expects STATUS_SUCCESS.|
 ||Client sends CREATE request and expects STATUS_SUCCESS.|
+||Tear down the client.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|TreeMgmt_SMB311_COMPRESS_DATA|
+|**Description**|This test case is designed to test server can handle a TreeConnect request with flag SMB2_SHAREFLAG_COMPRESS_DATA successfully. It is required that the server has a share with SMB compression enabled |
+|**Prerequisites**|The server implements dialect 3.11 and the share has SMB Compression enabled|
+|**Test Execution Steps**|Start a client by sending the following requests: NEGOTIATE (dialect 3.11); SESSION_SETUP (with domain credential).|
+||Client sends TREE_CONNECT request and expects server response with share flag SHAREFLAG_COMPRESS_DATA enabled.|
+||Client sends CREATE request and expects share flag SHAREFLAG_COMPRESS_DATA enabled.|
 ||Tear down the client.|
 |**Cleanup**||
 
@@ -2918,7 +3466,7 @@ This is used to test SMB2 common user scenarios.
 |                          | LOGOFF |
 | **Cleanup**              ||
 
-#### <a name="3.1.56"> BVT\_SMB2Basic\_Query\_FileAllInformation
+#### <a name="3.1.56"> SMB2Basic\_Query\_FileAllInformation
 
 ##### <a name="3.1.56.1"> Scenario
 
@@ -2948,10 +3496,70 @@ This is used to test SMB2 common user scenarios.
 |                          | LOGOFF |
 | **Cleanup**              ||
 
-
-#### <a name="3.1.57"> Compression
+#### <a name="3.1.57"> SMB2Basic\_Query\_FileNormalizedNameInformation\_DataFile
 
 ##### <a name="3.1.57.1"> Scenario
+
+|||
+|---|---|
+| **Description**               | Test whether server can handle QUERY requests to a data file for FileNormalizedNameInformation correctly. |
+| **Message Sequence**          | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                               | 2.  Client queries FileNormalizedNameInformation by sending QUERY\_INFO request. |
+|                               | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cluster Involved Scenario** | **NO** |
+
+##### <a name="3.1.57.2"> Test Case
+
+|||
+|---|---|
+| **Test ID** | BVT\_SMB2Basic\_Query\_FileNormalizedNameInformation\_DataFile |
+| **Description** | Verify whether server can handle QUERY requests to a file for FileNormalizedNameInformation correctly. |
+| **Prerequisites** ||
+| **Test Execution Steps** | Create Client |
+|                          | NEGOTIATE |
+|                          | SESSION\_SETUP |
+|                          | TREE\_CONNECT|
+|                          | CREATE (File)|
+|                          | QUERY\_INFO(SMB2\_0\_INFO\_FILE) |
+|                          | CLOSE |
+|                          | TREE\_DISCONNECT |
+|                          | LOGOFF |
+| **Cleanup**              ||
+
+#### <a name="3.1.58"> SMB2Basic\_Query\_FileNormalizedNameInformation\_DirectoryFile
+
+##### <a name="3.1.58.1"> Scenario
+
+|||
+|---|---|
+| **Description**               | Test whether server can handle QUERY requests to a directory file for FileNormalizedNameInformation correctly. |
+| **Message Sequence**          | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                               | 2.  Client queries FileNormalizedNameInformation by sending QUERY\_INFO request. |
+|                               | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cluster Involved Scenario** | **NO** |
+
+##### <a name="3.1.58.2"> Test Case
+
+|||
+|---|---|
+| **Test ID** | BVT\_SMB2Basic\_Query\_FileNormalizedNameInformation\_DirectoryFile |
+| **Description** | Verify whether server can handle QUERY requests to a file for FileNormalizedNameInformation correctly. |
+| **Prerequisites** ||
+| **Test Execution Steps** | Create Client |
+|                          | NEGOTIATE |
+|                          | SESSION\_SETUP |
+|                          | TREE\_CONNECT|
+|                          | CREATE (File)|
+|                          | QUERY\_INFO(SMB2\_0\_INFO\_FILE) |
+|                          | CLOSE |
+|                          | TREE\_DISCONNECT |
+|                          | LOGOFF |
+| **Cleanup**              ||
+
+
+#### <a name="3.1.59"> Compression
+
+##### <a name="3.1.59.1"> Scenario
 
 |||
 |---|---|
@@ -2963,7 +3571,7 @@ This is used to test SMB2 common user scenarios.
 |                               | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
 | **Cluster Involved Scenario** | **NO** |
 
-##### <a name="3.1.57.2"> Test Case
+##### <a name="3.1.59.2"> Test Case
 
 |||
 |---|---|
@@ -3003,6 +3611,18 @@ This is used to test SMB2 common user scenarios.
 
 |||
 |---|---|
+| **Test ID** | BVT_SMB2Compression_Chained_PatternV1 |
+| **Description** | This test case is designed to test whether server can decompress WRITE request and compress READ response correctly using chained compression and PatternV1. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to PatternV1 and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write compressible data to server by sending WRITE request chained and compressed with PatternV1. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          | 4.  Verifies the READ response is chained and compressed with PatternV1 and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
 | **Test ID** | BVT_SMB2Compression_LZNT1_Encrypted |
 | **Description** | This test case is designed to test whether server can decompress WRITE request and compress read response correctly using LZNT1 when encryption is enabled. |
 | **Prerequisites** | The server implements dialect 3.11, encryption and compression feature. |
@@ -3035,6 +3655,100 @@ This is used to test SMB2 common user scenarios.
 |                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
 |                          | 4.  Verifies the READ reponse is compressed with LZ77 Huffman and data read out are equal to the written one. | 
 |                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | BVT_SMB2Compression_Chained_PatternV1_Encrypted |
+| **Description** | This test case is designed to test whether server can decompress WRITE request and compress READ response correctly using chained compression and PatternV1 when encryption is enabled. |
+| **Prerequisites** | The server implements dialect 3.11, encryption and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with global encryption enabled, compression algorithms set to PatternV1 and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write compressible data to server by sending WRITE request chained and compressed with PatternV1. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          | 4.  Verifies the READ response is chained and compressed with PatternV1 and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | BVT_SMB2Compression_Unchained |
+| **Description** | This test case is designed to test whether server can compress WRITE request and READ response using unchained compression. |
+| **Prerequisites** | The server implements dialect 3.11 and unchained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with unchained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write unchained compressible data to server by sending WRITE request compressed with supported server compression. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          | 4.  Verifies the READ response is unchained and compressed with supported SUT compression and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | BVT_SMB2Compression_Unchained_LargeFile |
+| **Description** | This test case is designed to test whether server can compress WRITE request and READ response using unchained compression for large file. |
+| **Prerequisites** | The server implements dialect 3.11 and unchained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with unchained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte unchained compressible data to server by sending WRITE request compressed with supported server compression multiple times to generate a large file.|
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file.| 
+|                          | 4.  Verifies the READ response is unchained and compressed with supported SUT compression and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+
+#### <a name="3.1.60"> NetworkInterfaceInfo
+
+##### <a name="3.1.60.1"> Scenario
+
+|||
+|---|---|
+| **Description**               | Verify whether server can return available network interfaces. |
+| **Message Sequence**          | 1.  Start a client by sending the following requests: 1. NEGOTIATE; 2. SESSION\_SETUP; 3. TREE\_CONNECT|
+|                               | 2.  Client sends IOCTL request with FSCTL_QUERY_NETWORK_INTERFACE_INFO. |
+|                               | 4.  Verifies the IOCTL response has appropriate NETWORK_INTERFACE_INFO structure| 
+|                               | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cluster Involved Scenario** | **NO** |
+
+##### <a name="3.1.60.2"> Test Case
+
+|||
+|---|---|
+| **Test ID** | BVT_NetworkInterfaceInfo_QuerySuccessful |
+| **Description** | Test that quering network interface returns NETWORK_INTERFACE_INFO structure. |
+| **Prerequisites** | The server implements dialect 3.11 and FSCTL_QUERY_NETWORK_INTERFACE_INFO. |
+| **Test Execution Steps** | 1.  Start a client by sending the following requests: 1. NEGOTIATE; 2. SESSION\_SETUP; 3. TREE\_CONNECT;|
+|                          | 2.  Client sends IOCTL request with FSCTL_QUERY_NETWORK_INTERFACE_INFO. |
+|                          | 3.  Verifies the IOCTL response contains NETWORK_INTERFACE_INFO_Response. |
+|                          | 4.  Tear down the client by sending the following requests: TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+
+#### <a name="3.1.61"> SMB2Basic\_QuicTransport\_OpenNamedPipe
+
+##### <a name="3.1.61.1"> Scenario
+
+|||
+|---|---|
+| **Description**               | Verify open named pipe over QUIC is handled correctly.|
+| **Message Sequence**          | 1.  Start a client to create a named pipe by sending the following requests: 1. NEGOTIATE; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE. |
+|                               | 2.  Client starts to create a named pipe by sending CREATE request. |
+|                               | 3.  Tear down the client by sending the following requests: 1. CLOSE; 2. TREE\_DISCONNECT; 3. LOG\_OFF |
+| **Cluster Involved Scenario** | **NO** |
+
+##### <a name="3.1.61.2"> Test Case
+
+|||
+|---|---|
+| **Test ID** | BVT\_SMB2Basic\_QuicTransport\_OpenNamedPipe |
+| **Description** | Test if the connection is over QUIC, server sends correct response when a named pipe is opened. |
+| **Prerequisites** |The server implements dialect 3.11 and underlying transport is QUIC|
+| **Test Execution Steps** | Create Client |
+|                          | NEGOTIATE |
+|                          | SESSION\_SETUP |
+|                          | TREE\_CONNECT|
+|                          | CREATE (NamedPipe)|
+|                          | if AllowNamedPipeAccessOverQUIC is TRUE expect STATUS\_SUCCESS else expect STATUS\_ACCESS\_DENIED in CREATE response |
+|                          | CLOSE |
+|                          | TREE\_DISCONNECT |
+|                          | LOGOFF |
 | **Cleanup**              ||
 
 ### <a name="3.2">SMB2 Feature Test
@@ -3134,6 +3848,28 @@ Scenario see [Scenario](#3.1.13.1)
 ||Server responses successfully.|
 ||Client2 sends CREATE request to the same file with client1, and same AppInstanceId, and without DH2Q create context. Client2 should create the open successfully.|
 ||The first client sends another WRITE request and gets failure because the open is closed.|
+||Tear down client1.|
+||Tear down client2.|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|AppInstanceId_Smb302|
+|**Description**|The case is designed to test if the server implements dialect 3.02, and when client fails over to a new client, check if the Open is closed.|
+|**Prerequisites**|The server implements dialect 3.02.|
+|**Test Execution Steps**|Client1 sends NEGOTIATE request with dialect 3.02 and gets NEGOTIATE response also with dialect 3.02.|
+||Client1 sends the following requests: SESSION_SETUP; TREE_CONNECT.|
+||Server responds successfully.|
+||Client1 sends CREATE request with the context SMB2_CREATE_APP_INSTANCE_ID, without DH2Q create context.|
+||Server responds successfully.|
+||Client2 sends the following requests: |
+||NEGOTIATE; SESSION_SETUP; TREE_CONNECT.|
+||Server responds successfully.|
+||Client2 sends CREATE request to the same file with client1, and same AppInstanceId, and without DH2Q create context.|
+||Client2 create fails with SHARING_VIOLATION for Windows Server 2012 and Windows Server 2012 R2, but opens successfully for all others.|
+||Client sends another WRITE request.|
+||Client1 gets SUCCESS for Windows Server 2012 and Windows Server 2012 R2, but fails with FILE_CLOSED for all others.|
 ||Tear down client1.|
 ||Tear down client2.|
 |**Cleanup**||
@@ -3289,6 +4025,88 @@ The feature has 34 model-based test cases and several traditional test cases.
 ||CREATE (CreateOption: FILE_DIRECTORY_FILE; CreateDisposition: FILE_CREATE, file name contains symbolic link in the middle.)|
 ||Expect server failed with specific error code according to server's implementation.|
 ||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+
+
+|||
+|---|---|
+|**Test ID**|CreateClose_CreateAndCloseFileWithDotDir|
+|**Description**|This case is designed to test whether server can handle Create and Delete operations on file with dot directory name correctly.|
+|**Message Sequence**|NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE; CreateDisposition: FILE_CREATE)|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+||NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_NON_DIRECTORY_FILE &#124;  FILE_DELETE_ON_CLOSE; CreateDisposition: FILE_CREATE, file name contains dot directory name)|
+||Expect server responds successfully.|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+
+
+|||
+|---|---|
+|**Test ID**|CreateClose_CreateAndCloseDirWithDotDir|
+|**Description**|This case is designed to test whether server can handle Create and Delete operations on directory with dot directory name correctly.|
+|**Message Sequence**|NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE; CreateDisposition: FILE_CREATE)|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+||NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE &#124;  FILE_DELETE_ON_CLOSE; CreateDisposition: FILE_CREATE, file name contains dot directory name)|
+||Expect server responds successfully.|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+
+
+|||
+|---|---|
+|**Test ID**|CreateClose_CreateAndCloseFileWithDoubleDotDir|
+|**Description**|This case is designed to test whether server can handle Create operations on file with double dot directory name correctly.|
+|**Message Sequence**|NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE; CreateDisposition: FILE_CREATE)|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+||NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_NON_DIRECTORY_FILE &#124;  FILE_DELETE_ON_CLOSE; CreateDisposition: FILE_CREATE, file name contains double dot directory name)|
+||Expect server failed with STATUS_INVALID_PARAMETER according to server's implementation.|
+||TREE_DISCONNECT|
+||LOGOFF|
+
+
+|||
+|---|---|
+|**Test ID**|CreateClose_CreateAndCloseDirWithDoubleDotDir|
+|**Description**|This case is designed to test whether server can handle Create operations on directory with double dot directory name correctly.|
+|**Message Sequence**|NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE; CreateDisposition: FILE_CREATE)|
+||CLOSE|
+||TREE_DISCONNECT|
+||LOGOFF|
+||NEGOTIATE|
+||SESSION_SETUP|
+||TREE_CONNECT|
+||CREATE (CreateOption: FILE_DIRECTORY_FILE &#124;  FILE_DELETE_ON_CLOSE; CreateDisposition: FILE_CREATE, file name contains double dot directory name)|
+||Expect server failed with STATUS_INVALID_PARAMETER according to server's implementation.|
 ||TREE_DISCONNECT|
 ||LOGOFF|
 
@@ -3571,7 +4389,6 @@ See [Scenario](#3.1.11.1.1)
 | R                            | ChildDeleted            |
 | R                            | ChildModified           |
 | RH                           | ConflictOpen            |
-| RH                           | ParentDeleted           |
 | RH                           | ParentRenamed           |
 
 ###### <a name="3.2.5.2.1"> Scenario
@@ -3745,41 +4562,6 @@ See [Scenario](#3.1.11.1.1)
 ||SESSION_SETUP|
 ||TREE_CONNECT|
 ||CREATE (File in the directory, with WRITE access mask)|
-||**From client1**|
-||Receive LEASE_BREAK|
-||Send LEASE_BREAK_ACK if server requires|
-||CLOSE|
-||TREE_DISCONNECT|
-||LOGOFF|
-||**From client2**|
-||TREE_DISCONNECT|
-||LOGOFF|
-|**Cleanup**||
-
-
-|||
-|---|---|
-|**Test ID**|DirectoryLeasing_BreakHandleCachingByParentDeleted|
-|**Description**|Test whether server can handle HANDLE lease break notification triggered by deleting parent directory.|
-|**Prerequisites**||
-|**Test Execution Steps**|**Test preparation**|
-||Create a parent directory on a share|
-||Create a test directory in the parent directory|
-||**From client1**|
-||NEGOTIATE|
-||SESSION_SETUP|
-||TREE_CONNECT|
-||CREATE (on test directory, with SMB2_CREATE_REQUEST_LEASE_V2 with LeaseState SMB2_LEASE_HANDLE_CACHING | SMB2_LEASE_READ_CACHING)|
-||**From client2 to trigger lease break by deleting the parent directory**|
-||NEGOTIATE|
-||SESSION_SETUP|
-||TREE_CONNECT|
-||CREATE (on the parent directory, with DELETE access mask and FILE_DELETE_ON_CLOSE create option)|
-||SetInfo (FileDispositionInformation with DeletePending = 1)|
-||CLOSE to commit the delete|
-||// Additional CREATE to open the parent directory to trigger the lease break|
-||// It's the same way for Windows attempt to delete the parent directory when //child is opened by others|
-||CREATE (on the parent directory, with DELETE access mask and FILE_DELETE_ON_CLOSE create option)|
 ||**From client1**|
 ||Receive LEASE_BREAK|
 ||Send LEASE_BREAK_ACK if server requires|
@@ -4258,6 +5040,37 @@ If the server disconnect the connection, the reconnect will be successful.
 ||LOGOFF|
 |**Cluster Involved Scenario**|**NO**|
 
+|||
+|---|---|
+|**Test ID**|DurableHandleV2_Reconnect_WithLeaseV1_WithDifferentFileName|
+|**Description**|Test reconnect with DurableHandleV2 and LeaseV1 context, but the file name is different will fail with STATUS_INVALID_PARAMETER.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV2 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV2 and LeaseV1 create context but to with a different filename|
+||Server sends STATUS_INVALID_PARAMETER response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
 
 |||
 |---|---|
@@ -4356,6 +5169,84 @@ If the server disconnect the connection, the reconnect will be successful.
 ||Server sends LOGOFF response|
 |**Cleanup**||
 
+|||
+|---|---|
+|**Test ID**|DurableHandleV2_WithLeaseV2_WithoutHandleCaching|
+|**Description**|Test no durable handle is granted if requesting with DurableHandleV2 and LeaseV2 context, but SMB2_LEASE_HANDLE_CACHING bit is not set in LeaseState.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV2 and LeaseV2 create context but without SMB2_LEASE_HANDLE_CACHING|
+||Server sends CREATE response|
+||Verify that DurableHandle is not granted|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithLeaseV1_WithDifferentFileName|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context, but the file name is different. |
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_INVALID_PARAMETER|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_WithLeaseV1_WithoutHandleCaching|
+|**Description**|Test no durable handle is granted if requesting with DurableHandleV1 and LeaseV1 context, but SMB2_LEASE_HANDLE_CACHING bit is not set in LeaseState.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context but without SMB2_LEASE_HANDLE_CACHING|
+||Server sends CREATE response|
+||Verify that DurableHandle is not granted|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
 
 |||
 |---|---|
@@ -4372,6 +5263,402 @@ If the server disconnect the connection, the reconnect will be successful.
 ||SMB2 Tree Connect to the same Share|
 ||SMB2 Create with same file name|
 ||Verify the Create Response with Status STATUS_FILE_NOT_AVAILABLE |
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV2_WithLeaseV1AndV2_WithDifferentLeaseKey|
+|**Description**|Test reconnect with DurableHandleV2, LeaseV1 and LeaseV2 context, but with different LeaseKey|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request with CREATE_DURABLE_HANDLE_REQUEST_V2 create context|
+||Client sends WRITE request|
+||Server sends WRITE response|
+|||
+||**Disconnect the client to simulate network failure**|
+|||
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request with same file name and different LeaseKey (with CREATE_DURABLE_HANDLE_RECONNECT_V2) |
+||Server sends CREATE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_IncludeCreateDurableHandle|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context and include create durable request. |
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 create context and include create durable request.|
+||Server sends CREATE response with status STATUS_SUCCESS|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request| 
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_IncludeRequestV2|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context including SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 create context including Smb2CreateDurableHandleRequestV2|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_INVALID_PARAMETER|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_IncludeReconnectV2|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context including SMB2_CREATE_DURABLE_HANDLE_RECONNECT_V2.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 create context including SMB2_CREATE_DURABLE_HANDLE_RECONNECT_V2|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_INVALID_PARAMETER|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithoutFileIdPersistent|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context without FileId.Persistent.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 create without FileId.Persistent|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithDifferentLeaseKey|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context but with a different LeaseKey|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1 but different lease key|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_LeaseIsNull|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context when Open.Lease is Null|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_SessionIsNotNull|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context when Open.Session is not NULL|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client does not disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 and LeaseV1|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithoutRequestLease|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context without SMB2_CREATE_REQUEST_LEASE|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client does not disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 without SMB2_CREATE_REQUEST_LEASE|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithDifferentClientGuid|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context and different client guid.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client does not disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleReconnectV1 with different client GUID|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithoutDurableHandle|
+|**Description**|Test reconnect with LeaseV1 context without DurableHandleV1|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with LeaseV1 create context excluding DurableHandleV1|
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client does not disconnect|
+||Create another client and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with LeaseV1 excluding DurableHandleReconnectV1|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_OBJECT_NAME_NOT_FOUND|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|DurableHandleV1_Reconnect_WithDifferentDurableOwner|
+|**Description**|Test reconnect with DurableHandleV1 and LeaseV1 context and different client credential account.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1 create context |
+||Server sends CREATE response|
+||Client sends WRITE request|
+||Server sends WRITE response|
+||Client does not disconnect|
+||Create another client with different credential account and the following requests are sent via this client|
+||Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends CREATE request for exclusive open with DurableHandleV1 and LeaseV1|
+||Server sends CREATE response|
+||Verify that the server fail request with STATUS_ACCESS_DENIED|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
 
 
 #### <a name="3.2.8">Leasing
@@ -5100,13 +6387,22 @@ Scenario see section [Scenario](#3.1.6.1).
 
 |||
 |---|---|
+|**Test ID**|Negotiate_SMB311_SigningCapability|
+|**Description**|This test case is designed to test whether server can handle NEGOTIATE with Smb 3.11 dialect, with SMB2_SIGNING_CAPABILITIES context and with SMB2_PREAUTH_INTEGRITY_CAPABILITIES context.|
+|**Prerequisites**|The server implements dialect 3.11.|
+|**Test Execution Steps**|Client sends Negotiate request with dialect SMB 3.11, SMB2_SIGNING_CAPABILITIES context and SMB2_PREAUTH_INTEGRITY_CAPABILITIES context and set SigningAlgorithmId to value: 0x0000.|
+||Verify that server sets Connection.SigningAlgorithmCount to 1 from the response.|
+|**Cleanup**||
+
+
+|||
+|---|---|
 |**Test ID**|Negotiate_SMB311_Compression_CompressionAlgorithmNotSupported|
 |**Description**|This test case is designed to test whether server can handle NEGOTIATE with unsupported compression algorithms in SMB2_COMPRESSION_CAPABILITIES context.|
 |**Prerequisites**|The server implements dialect 3.11 and compression feature.|
 |**Test Execution Steps**|Client sends Negotiate request with dialect SMB 3.11, SMB2_COMPRESSION_CAPABILITIES context and set CompressionAlgorithms to a unsupported value: 0x0004.|
 ||Verify that server returns a Negotiate response, setting SMB2_COMPRESSION_CAPABILITIES negotiate response context with CompressionAlgorithmCount set to 1 and CompressionAlgorithms set to "NONE".|
 |**Cleanup**||
-
 
 |||
 |---|---|
@@ -5145,6 +6441,45 @@ Scenario see section [Scenario](#3.1.6.1).
 |**Test Execution Steps**|Client sends Negotiate request with dialect SMB 3.11, SMB2_PREAUTH_INTEGRITY_CAPABILITIES context, SMB2_ENCRYPTION_CAPABILITIES context and SMB2_NETNAME_NEGOTIATE_CONTEXT_ID context.|
 ||Verify that server returns a Negotiate response with Status set to STATUS_SUCCESS and ignore the SMB2_NETNAME_NEGOTIATE_CONTEXT_ID.|
 |**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Negotiate_SMB311_Compression_FlagChainedNotSet|
+|**Description**|This test case is designed to test whether server can handle NEGOTIATE with SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED not set in Flags field of SMB2_COMPRESSION_CAPABILITIES context.|
+|**Prerequisites**|The server implements dialect 3.11 and compression feature.|
+|**Test Execution Steps**|Client sends Negotiate request with dialect SMB 3.11, SMB2_COMPRESSION_CAPABILITIES context and set Flags field to SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE.|
+||Verify that server returns a Negotiate response with Status set to STATUS_SUCCESS as below,|
+|                          |     a.  If server is Windows, CompressionAlgorithms is set to the first common algorithm and the first common pattern scanning algorithm supported by the client and server. |
+|                          |     b.  If server is non-Windows, CompressionAlgorithms is set to all the algorithms in the CompressionAlgorithms field of Negotiate request, in the order they are received. |
+|                          |     c.  SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED is not set in Flags field. |
+|**Cleanup**||
+
+
+|||
+|---|---|
+|**Test ID**|Negotiate_SMB311_Compression_ChainedCompressionNotSupported|
+|**Description**|This test case is designed to test whether server can handle NEGOTIATE with SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED set in Flags field of SMB2_COMPRESSION_CAPABILITIES context when chained compression is not supported.|
+|**Prerequisites**|The server implements dialect 3.11 and compression feature.|
+|**Test Execution Steps**|Client sends Negotiate request with dialect SMB 3.11, SMB2_COMPRESSION_CAPABILITIES context and set Flags field to SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED.|
+||Verify that server returns a Negotiate response with Status set to STATUS_SUCCESS as below,|
+|                          |     a.  If server is Windows, CompressionAlgorithms is set to the first common algorithm and the first common pattern scanning algorithm supported by the client and server. |
+|                          |     b.  If server is non-Windows, CompressionAlgorithms is set to all the algorithms in the CompressionAlgorithms field of Negotiate request, in the order they are received. |
+|                          |     c.  SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED is not set in Flags field. |
+|**Cleanup**||
+
+
+|||  
+|---|---|  
+|**Test ID**|Negotiate_SMB311_IsTransportCapabilitiesSupported|  
+|**Description**|This test case verifies whether the server can handle a NEGOTIATE request with the SMB2_TRANSPORT_CAPABILITIES context.|  
+|**Prerequisites**|The server must support dialect 3.11 and be running Server 2025 or later.|  
+|**Test Execution Steps**|1. The client sends a NEGOTIATE request with dialect SMB 3.11, without including the SMB2_TRANSPORT_CAPABILITIES context.  
+|                         |   Verify that the server responds with a NEGOTIATE response that does not include the SMB2_TRANSPORT_CAPABILITIES context.  
+|                         |2. The client sends another NEGOTIATE request with dialect SMB 3.11, this time including the SMB2_TRANSPORT_CAPABILITIES context.  
+|                         |   Verify that the server responds with a NEGOTIATE response that includes the SMB2_TRANSPORT_CAPABILITIES context.|  
+|**Cleanup**|No specific cleanup steps are required.|  
+
 
 #### <a name="3.2.10">Oplock
 
@@ -6269,6 +7604,193 @@ Scenario see [Scenario](#3.1.57).
 
 |||
 |---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtFront|
+|**Description**| This test case is designed to test whether server can handle chained and compressed WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at front. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below: 
+|                          |         a.  Client write compressible data to server by sending WRITE request chained and compressed with the given compression algorithm. The PatternV1 compressible data appear at front. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          |         c.  Verifies the data read out are equal to the written one. | 
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtEnd|
+|**Description**| This test case is designed to test whether server can handle chained and compressed WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at end. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below: 
+|                          |         a.  Client write compressible data to server by sending WRITE request chained and compressed with the given compression algorithm. The PatternV1 compressible data appear at end. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          |         c.  Verifies the data read out are equal to the written one. | 
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtFrontAndEnd|
+|**Description**| This test case is designed to test whether server can handle chained and compressed WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at both front and end. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below: 
+|                          |         a.  Client write compressible data to server by sending WRITE request chained and compressed with the given compression algorithm. The PatternV1 compressible data appear at both front and end. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          |         c.  Verifies the data read out are equal to the written one. | 
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressibleReadResponse |
+|**Description**| This test case is designed to test whether server can chain and compress read request correctly if SMB2_READFLAG_REQUEST_COMPRESSED is specified in request and response is compressible. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write compressible data to server by sending uncompressed WRITE request. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          | 4.  Verifies the READ response is chained and compressed with supported algorithm and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | SMB2Compression_LZNT1_LargeFile |
+| **Description** | This test case is designed to test whether server can decompress large file WRITE request and compress read response correctly using LZNT1. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to LZNT1; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte copmressible data to server by sending WRITE request compressed with LZNT1 for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ reponse is compressed with LZNT1 and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | SMB2Compression_LZ77_LargeFile |
+| **Description** | This test case is designed to test whether server can decompress large file WRITE request and compress read response correctly using LZ77. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to LZ77; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte copmressible data to server by sending WRITE request compressed with LZ77 for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ reponse is compressed with LZ77 and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+| **Test ID** | SMB2Compression_LZ77Huffman_LargeFile |
+| **Description** | This test case is designed to test whether server can decompress large file WRITE request and compress read response correctly using LZ77 Huffman. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to LZ77 Huffman; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write copmressible data to server by sending WRITE request compressed with LZ77 Huffman for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ reponse is compressed with LZ77 Huffman and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_CompressedWriteRequest_LargeFile|
+|**Description**| This test case is designed to test whether server can handle compressed large file WRITE request correctly using supported compression algorithms. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all comression algorithm supported by SUT as below:
+|                          |         a.  Client write 1 megabyte copmressible data to server by sending WRITE request compressed with the given compression algorithm for multiple times to generate a large file. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          |         c.  Verifies each READ reponse is compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_CompressibleReadResponse_LargeFile |
+|**Description**| This test case is designed to test whether server can compress large file read request correctly if SMB2_READFLAG_REQUEST_COMPRESSED is specified in request and response is compressible. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte copmressible data to server by sending uncompressed WRITE request for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ reponse is compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_LargeFile|
+|**Description**| This test case is designed to test whether server can decompress large file WRITE request and compress READ response correctly using chained compression and PatternV1. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to PatternV1 and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte compressible data to server by sending WRITE request chained and compressed with PatternV1 for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ response is chained and compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtFront_LargeFile|
+|**Description**| This test case is designed to test whether server can handle chained and compressed large file WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at front. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below:
+|                          |         a.  Client write 1 megabyte compressible data to server by sending WRITE request chained and compressed with the given compression algorithm for multiple times to generate a large file. The PatternV1 compressible data appear at front. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          |         c.  Verifies each READ response is chained and compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtEnd_LargeFile|
+|**Description**| This test case is designed to test whether server can handle chained and compressed large file WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at end. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below:
+|                          |         a.  Client write 1 megabyte compressible data to server by sending WRITE request chained and compressed with the given compression algorithm for multiple times to generate a large file. The PatternV1 compressible data appear at end. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          |         c.  Verifies each READ response is chained and compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressedWriteRequest_PatternV1AtFrontAndEnd_LargeFile|
+|**Description**| This test case is designed to test whether server can handle chained and compressed large file WRITE request correctly using supported compression algorithms. The PatternV1 compressible data appear at both front and end. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client iterates through all compression algorithm supported by SUT as below:
+|                          |         a.  Client write 1 megabyte compressible data to server by sending WRITE request chained and compressed with the given compression algorithm for multiple times to generate a large file. The PatternV1 compressible data appear at both front and end. |
+|                          |         b.  Client read the data just written by sending READ request without SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          |         c.  Verifies each READ response is chained and compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 3.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_CompressibleReadResponse_LargeFile |
+|**Description**| This test case is designed to test whether server can chain and compress large file read request correctly if SMB2_READFLAG_REQUEST_COMPRESSED is specified in request and response is compressible. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write 1 megabyte compressible data to server by sending uncompressed WRITE request for multiple times to generate a large file. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified for multiple times until the end of the file. |
+|                          | 4.  Verifies each READ response is chained and compressed with supported algorithm and data read out are equal to the written ones. |
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_IncompressibleReadResponse |
+|**Description**| This test case is designed to test whether server will not chain or compress read request if SMB2_READFLAG_REQUEST_COMPRESSED is specified in request and response is incompressible. |
+| **Prerequisites** | The server implements dialect 3.11 and chained compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client write incompressible data to server by sending uncompressed WRITE request. |
+|                          | 3.  Client read the data just written by sending READ request with SMB2_READFLAG_REQUEST_COMPRESSED specified. | 
+|                          | 4.  Verifies the READ response is not chained or compressed with supported algorithm and data read out are equal to the written one. | 
+|                          | 5.  Tear down the client by sending the following requests: CLOSE; TREE\_DISCONNECT; LOG\_OFF. |
+| **Cleanup**              ||
+
+|||
+|---|---|
 |**Test ID**| SMB2Compression_InvalidCompressedPacketLength |
 |**Description**| This test case is designed to test whether server will disconnect the connection if it received a compressed message with invalid length. |
 | **Prerequisites** | The server implements dialect 3.11 and compression feature. |
@@ -6296,6 +7818,128 @@ Scenario see [Scenario](#3.1.57).
 |                          | 2.  Client sends a compressed message with invalid CompressionAlgorithm with value 0x0004, which should be unsupported by SUT. |
 |                          | 3.  Verifies the SMB2 connection is closed by SUT. | 
 | **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_InvalidCompressionAlgorithmInCompressionPayloadHeader |
+|**Description**| This test case is designed to test whether server will disconnect the connection if it received a compressed message with invalid CompressionAlgorithm in compression payload header. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client sends a compressed message with invalid CompressionAlgorithm in compression payload header. |
+|                          | 3.  Verifies the SMB2 connection is closed by SUT. | 
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_InvalidLengthInCompressionPayloadHeader |
+|**Description**| This test case is designed to test whether server will disconnect the connection if it received a compressed message with invalid Length in compression payload header. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client sends a compressed message with invalid Length in compression payload header. |
+|                          | 3.  Verifies the SMB2 connection is closed by SUT. | 
+| **Cleanup**              ||
+
+|||
+|---|---|
+|**Test ID**| SMB2Compression_Chained_PatternV1_InvalidCompressionPatternPayloadV1Repetitions |
+|**Description**| This test case is designed to test whether server will disconnect the connection if it received a compressed message with invalid Repetitions in compression pattern payload V1. |
+| **Prerequisites** | The server implements dialect 3.11 and compression feature. |
+| **Test Execution Steps** | 1.  Start a client to create a file by sending the following requests: 1. NEGOTIATE with compression algorithms set to all supported ones and chained compression enabled; 2. SESSION\_SETUP; 3. TREE\_CONNECT; 4. CREATE.|
+|                          | 2.  Client sends a compressed message with invalid Repetitions in compression pattern payload V1. |
+|                          | 3.  Verifies the SMB2 connection is closed by SUT. | 
+| **Cleanup**              ||
+
+
+#### <a name="3.2.23"> NETWORK_INTERFACE_INFO
+
+This feature is to call IOCTL request with FSCTL\_QUERY\_NETWORK\_INTERFACE\_INFO to retrieve list of network interfaces from server.
+
+##### <a name="3.2.23.1"> Model
+
+Will not cover this feature in model.
+
+##### <a name="3.2.23.2"> Traditional Case
+
+Scenario see section [Scenario](#3.1.60.1)
+
+|||
+|---|---|
+|**Test ID**|NetworkInterfaceInfo_Query_ReturnsErrorStatus|
+|**Description**|Test that quering network interface returns error code when it fails.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends IOCTL request with FSCTL_QUERY_NETWORK_INTERFACE_INFO using invalid treeId to ask server to send list of network interfaces.|
+||Server sends IOCTL response|
+||Verify that IOCTL response status is STATUS_NETWORK_NAME_DELETED.|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+|||
+
+
+|||
+|---|---|
+|**Test ID**|NetworkInterfaceInfo_Query_ReturnsIPv4IPv6|
+|**Description**|Test that network interface info has IPv4 and IPv6.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends IOCTL request with FSCTL_QUERY_NETWORK_INTERFACE_INFO to ask server to send list of network interfaces.|
+||Server sends IOCTL response|
+||Verify that NETWORK_INTERFACE_INFO_Response contains IPv4 and IPv6 family.|
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+|||
+
+
+|||
+|---|---|
+|**Test ID**|NetworkInterfaceInfo_ChangeConnection_BindCurrentSession|
+|**Description**|Test that current session is binded to new connection when different server IP is connected by client.|
+|**Prerequisites**||
+|**Test Execution Steps**|Client sends NEGOTIATE request|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||According to the status code of last step, client may send more SESSION_SETUP request as needed|
+||Client sends TREE_CONNECT request|
+||Server sends TREE_CONNECT response|
+||Client sends IOCTL request with FSCTL_QUERY_NETWORK_INTERFACE_INFO to ask server to send list of network interfaces.|
+||Server sends IOCTL response|
+||Verify that NETWORK_INTERFACE_INFO_Response contains alternate IP address |
+||Client sends CLOSE request|
+||Server sends CLOSE response|
+||Client sends NEGOTIATE request using alternate IP address|
+||Server sends NEGOTIATE response|
+||Client sends SESSION_SETUP request|
+||Server sends SESSION_SETUP response|
+||Verify that alternate channel SessionId matches main channel SessionId|
+||Client sends TREE_DISCONNECT request|
+||Server sends TREE_DISCONNECT response|
+||Client sends LOGOFF request|
+||Server sends LOGOFF response|
+|**Cleanup**||
+|||
 
 ### <a name="3.3">SMB2 Feature Combination
 
@@ -7239,7 +8883,7 @@ Following scenarios extend “SMB2 Feature Test” by adding more complex messag
 
 |||
 |---|---|
-| **Test ID**              | SWNRegistrationEx\_InvalidIpAddress                                                   |
+| **Test ID**              | SWNRegistrationEx\_InvalidShareName                                                   |
 | **Description**         | Register with WitnessrRegisterEx and invalid sharename.                               |
 | **Prerequisites**        |                                                                                   |
 | **Test Execution Steps** | 1.  GetClusterResourceOwner                                                       |
@@ -9024,7 +10668,7 @@ In dialect 3.02, a new flag SMB2\_SHARE\_CAP\_ASYMMETRIC 0x00000080 is introduce
 | **DC\_referral\_to\_DC**                     | 6              |
 | **Sysvol\_referral\_to\_DC**                 | 7              |
 | **Root\_referral\_to\_DC**                   | 5              |
-| **Link\_referral\_to\_DC**                   | 7              |
+| **Link\_referral\_to\_DC**                   | 6              |
 | **Root\_and\_Link\_referral\_to\_DFSServer** | 11             |
 | **Path\_Normalization\_to\_DFSServer**       | 2              |
 
@@ -9466,30 +11110,6 @@ The test cases are designed with below assumptions, and these terms will be used
 ||3.  If DC is hosting DFS server, then client expects STATUS == STATUS_SUCCESS and RESP GET_DFS_REFERRAL message version is v3. Otherwise, client expects STATUS_NOT_FOUND from DC.|
 ||4. Verify the response.|
 ||5. Disconnect and logoff.|
-|**Cleanup**|N/A|
-
-
-|||
-|---|---|
-|**Test ID**|InvalidDomainNameLinkReferralToDC|
-|**Description**|Client sends a v2 Link referral request with invalid Domain name to DC, expect negative response|
-|**Prerequisites**|Common prerequisites|
-|**Test Execution Steps**|1. Client establishes an SMB connection between client and DC server.|
-||2. Client sends a Link referral v2 REQ_GET_DFS_REFERRAL message with invalid domain name (RequestFileName is "\Invalid\DomainBased\DFSLink", MaxReferralLevel is 2) to DC.|
-||3. Client expects STATUS == STATUS_NOT_FOUND.|
-||4. Disconnect and logoff.|
-|**Cleanup**|N/A|
-
-
-|||
-|---|---|
-|**Test ID**|InvalidLinkNameLinkReferralToDC|
-|**Description**|Client sends a v3 Link referral request with invalid link name to DC, expect negative response|
-|**Prerequisites**|Common prerequisites|
-|**Test Execution Steps**|1. Client establishes an SMB connection between client and DC server.|
-||2. Client sends a Link referral v3 REQ_GET_DFS_REFERRAL message (RequestFileName is "\contoso.com\DomainBased\Invalid", MaxReferralLevel is 3) to DC.|
-||3. Client expects STATUS == STATUS_NOT_FOUND.|
-||4. Disconnect and logoff.|
 |**Cleanup**|N/A|
 
 

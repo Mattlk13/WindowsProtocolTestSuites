@@ -1,6 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -129,20 +133,15 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic
 
             //use Des with ECB CipherMode and NONE padding option to encrypt "KGS!@#$%"
             byte[] hashDataBuffer = Encoding.ASCII.GetBytes(this.lmHashData);
-            DESCryptoServiceProvider des = new DESCryptoServiceProvider();
-            des.Mode = CipherMode.ECB;
+            DESCryptoServiceProvider des = new DESCryptoServiceProvider(); // CodeQL [SM02192, SM00400] Required by [MS-NLMP] section 6: LM hash and LMOWFv1 are defined as DES-based primitives. Protocol-test interop code, not a security boundary.
+            des.Mode = CipherMode.ECB; // CodeQL [SM00395, SM02199] Required by LM hash definition in [MS-NLMP] section 6: DES-ECB encrypts the constant "KGS!@#$%" with each password-derived 7-byte key. Protocol-test interop code, not a security boundary.
             des.Padding = PaddingMode.None;
 
             // DES class performs weak key check so that some short-length keys may fail
             // We call its method to create ICryptoTransform directly to bypass the check.
-            const string methodName = "_NewEncryptor";
-            object[] desParams = new object[] { password1, des.Mode, null, des.FeedbackSize, 0 };
-            ICryptoTransform ct1 = (ICryptoTransform)ObjectUtility.InvokeMethod(des, methodName, desParams);
-            byte[] hash1 = ct1.TransformFinalBlock(hashDataBuffer, 0, hashDataBuffer.Length);
+            byte[] hash1 = EncryptData(hashDataBuffer, 0, hashDataBuffer.Length, password1,des.IV);
 
-            desParams[0] = password2;
-            ICryptoTransform ct2 = (ICryptoTransform)ObjectUtility.InvokeMethod(des, methodName, desParams);
-            byte[] hash2 = ct2.TransformFinalBlock(hashDataBuffer, 0, hashDataBuffer.Length);
+            byte[] hash2 = EncryptData(hashDataBuffer, 0, hashDataBuffer.Length, password2, des.IV);
 
             //concatenate the two encrypted text to one.
             byte[] ConcatenatedArray = Helper.ConcatenateByteArrays(hash1, hash2);
@@ -150,7 +149,30 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic
             return ConcatenatedArray;
         }
 
+        //this method is used to replace _NewEncryptor method. 
+        public byte[] EncryptData(byte[] data, int offset, int length, byte[] key, byte[] iv) // CodeQL [SM02205] BouncyCastle is required here because the LM hash construction defined by [MS-NLMP] section 6 produces DES keys that .NET's DESCryptoServiceProvider rejects via its hardcoded weak-key check; BC's DesEngine bypasses that check so the protocol-test code can match the spec. Protocol-test interop code, not a security boundary.
+        {
+            try
+            {
+                var desEngine = new DesEngine(); // CodeQL [SM02742] LM hash is defined by [MS-NLMP] section 6 as DES-based; BouncyCastle's DesEngine is used here to bypass .NET's weak-key check that LM hash inputs can trigger. Protocol-test interop code, not a security boundary.
+                var cbcBlockCipher = new CbcBlockCipher(desEngine);
+                var bufferedBlockCipher = new BufferedBlockCipher(cbcBlockCipher);
 
+                bufferedBlockCipher.Init(true, new ParametersWithIV(new KeyParameter(key), iv));
+
+                var cipherData = new byte[bufferedBlockCipher.GetOutputSize(length - offset)];
+
+                var outputLength = bufferedBlockCipher.ProcessBytes(data, offset, length, cipherData, 0);
+
+                bufferedBlockCipher.DoFinal(cipherData, outputLength);
+
+                return cipherData;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
         /// <summary>
         /// Generate des key by insert 0 bit every 7 bits
         /// </summary>

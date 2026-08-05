@@ -1,14 +1,14 @@
-########################################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-## Microsoft Windows Powershell Scripting
-## File:           Create-FSAEnv.ps1
-## Purpose:        Create ShareFolder and relevant files in SUT for MS-FSA test suite
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2012, Windows Server 2012 R2
-## 
-#########################################################################################
+##############################################################################
+# Microsoft Windows Powershell Scripting
+# File:           Create-FSAEnv.ps1
+# Purpose:        Create ShareFolder and relevant files in SUT for MS-FSA test suite
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2012, Windows Server 2012 R2
+# 
+##############################################################################
 
 #----------------------------------------------------------------------------
 # Global variables
@@ -28,27 +28,30 @@ function ExitCode()
 function CreateFAT32VolumeForFSA()
 {
     Write-Info.ps1 "Create Volume for SMBFAT32Share"
-    $volume = gwmi -Class Win32_volume | where {$_.FileSystem -eq "FAT32" -and $_.Label -eq "FAT32"}
-    if ($volume -eq $null)
-    {
+    $volume = Get-WmiObject -Class Win32_Volume | Where-Object { $_.FileSystem -eq "FAT32" -and $_.Label -eq "FAT32" }
+    if ($volume -eq $null) {
         Write-Info.ps1 "Create Volume for SMBFAT32Share"
         # Get disk and partition
-        $disk = Get-WmiObject -Class Win32_DiskDrive | sort DeviceID | Select-Object -first 1
+        $disk = Get-WmiObject -Class Win32_DiskDrive | Sort-Object DeviceID | Select-Object -First 1
         $diskNum = $disk.Index
-        For ($i = 1; $i -le 20; $i++) {
-            $partition = Get-Partition -DiskNumber $diskNum -PartitionNumber $i
+        for ($i = 1; $i -le 20; $i++) {
+            $partition = Get-Partition -DiskNumber $diskNum -PartitionNumber $i -ErrorAction SilentlyContinue
             if ($partition -eq $null) {
-                $partitionId = $i - 1
+                $newPartitionId = $i
                 break
             }
         }
-        $newPartitionId = $partitionId + 1
 
         Write-Info.ps1 "Create partition using diskpart.exe"
         $diskPartCmd = @()
         $diskPartCmd += "select disk $diskNum"
         # assign the left 2000MB for FAT32
-        $diskPartCmd += "create partition logical size=2000"
+        if((Get-Disk -Number $diskNum).PartitionStyle -eq "GPT") {
+            # Logical and extended partitions cannot be created on a GPT disk.
+            $diskPartCmd += "create partition primary size=2000"
+        } else {
+            $diskPartCmd += "create partition logical size=2000"
+        }
         $diskPartCmd += "select partition $newPartitionId"
         Write-Info.ps1 "FAT32 in Windows vNext, Windows Server vNext, and beyond uses a default cluster size of 4 KB. FAT32 also supports a 32-KB cluster size."
         Write-Info.ps1 "For current test suite, we use default 4-KB cluster size."
@@ -156,6 +159,12 @@ CreateShareFolderForFSA -Path "C:" -FolderName "FileShare"
 CreateShareFolderForFSA -Path "K:" -FolderName "SMBReFSShare"
 # This script assumes Create-SMB2Env.ps1 has been run and created F: solume for FAT32 file system.
 CreateShareFolderForFSA -Path "J:" -FolderName "SMBFAT32Share"
+
+#----------------------------------------------------------------------------
+# Enable LastAccessTime update
+#----------------------------------------------------------------------------
+ Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name NtfsDisableLastAccessUpdate 0x80000000 
+ Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name RefsDisableLastAccessUpdate 0x80000000 
 
 #----------------------------------------------------------------------------
 # Ending

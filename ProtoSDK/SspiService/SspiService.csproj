@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <targetframework>net8.0</targetframework>
+    <AssemblyName>Microsoft.Protocols.TestTools.StackSdk.Security.SspiService</AssemblyName>
+    <RootNamespace>Microsoft.Protocols.TestTools.StackSdk.Security.SspiService</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\AssemblyInfo\SharedAssemblyInfo.cs">
+      <Link>SharedAssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\KerberosLib\KerberosLib.csproj" />
+    <ProjectReference Include="..\MS-NLMP\Nlmp.csproj" />
+    <ProjectReference Include="..\MS-SPNG\Spng.csproj" />
+    <ProjectReference Include="..\Sspi\Sspi.csproj" />
+  </ItemGroup>
+</Project>

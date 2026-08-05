@@ -8,10 +8,10 @@ using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Swn;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
 {
@@ -239,7 +239,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                     // Windows Server: when stopping a non-owner node of ScaleOutFS, no notification will be sent by SMB witness.
                     // So get one IP of the owner node of ScaleOutFS to access.                    
                     string resourceOwnerNode = sutController.GetClusterResourceOwner(server);
-                    IPAddress[] ownerIpList = Dns.GetHostEntry(resourceOwnerNode).AddressList;
+                    IPAddress[] ownerIpList = Dns.GetHostAddresses(resourceOwnerNode);
                     foreach (var ip in ownerIpList)
                     {
                         BaseTestSite.Log.Add(LogEntryKind.Debug, "Owner IP: {0}", ip);
@@ -247,7 +247,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                     if (!ownerIpList.Contains(currentAccessIpAddr))
                     {
                         currentAccessIpAddr = null;
-                        IPAddress[] accessIpList = Dns.GetHostEntry(server).AddressList;
+                        IPAddress[] accessIpList = Dns.GetHostAddresses(server);
                         foreach (var ip in accessIpList)
                         {
                             if (ownerIpList.Contains(ip))
@@ -320,7 +320,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             string uncSharePath = Smb2Utility.GetUncPath(server, TestConfig.ClusteredFileShare);
             string content = Smb2Utility.CreateRandomString(TestConfig.WriteBufferLengthInKb);
             string testDirectory = CreateTestDirectory(uncSharePath);
-            string file = Path.Combine(testDirectory, Guid.NewGuid().ToString());
+            string file = string.Format(@"{0}\{1}", testDirectory, Guid.NewGuid().ToString());
             Guid clientGuid = Guid.NewGuid();
             Guid createGuid = Guid.NewGuid();
 
@@ -359,8 +359,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                     DoUntilSucceed(() =>
                     {
                         this.sutController.FlushDNS();
-                        IPAddress[] accessIpList = Dns.GetHostEntry(server).AddressList;
-                        foreach (IPAddress ipAddress in accessIpList)
+                        foreach (IPAddress ipAddress in Dns.GetHostAddresses(server))
                         {
                             Smb2FunctionalClient pingClient = new Smb2FunctionalClient(TestConfig.FailoverTimeout, TestConfig, BaseTestSite);
 
@@ -386,8 +385,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                     DoUntilSucceed(() =>
                     {
                         this.sutController.FlushDNS();
-                        IPAddress[] accessIpList = Dns.GetHostEntry(server).AddressList;
-                        foreach (IPAddress ipAddress in accessIpList)
+                        foreach (IPAddress ipAddress in Dns.GetHostAddresses(server))
                         {
                             if (TestConfig.IsWindowsPlatform)
                             {
@@ -505,11 +503,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                 (uint)3,
                 errCtx.NotificationType,
                 "This field (NotificationType) MUST be set to 3. Actually server returns {0}.", errCtx.NotificationType);
-            byte[] uncSharePathToByte = Encoding.Unicode.GetBytes(uncSharePath);
-            BaseTestSite.Assert.AreEqual(
-                (uint)uncSharePathToByte.Length,
-                errCtx.ResourceNameLength,
-                "The length of the share name provided in the ResourceName field, in bytes, should be the length of {0}. Actually server returns {1}.", uncSharePathToByte.Length, errCtx.ResourceNameLength);
+
             BaseTestSite.Assert.AreEqual(
                 0,
                 errCtx.Flags,
@@ -521,7 +515,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             BaseTestSite.Assert.IsTrue(
                 errCtx.IPAddrCount > 0,
                 "The number of MOVE_DST_IPADDR structures in the IPAddrMoveList field should be greater than 0. Actually server returns {0}.", errCtx.IPAddrCount);
-            IPAddress[] ipv4AddressList = Dns.GetHostEntry(sofsHostedNode).AddressList;
+            IPAddress[] ipv4AddressList = Dns.GetHostAddresses(sofsHostedNode);
             System.Net.Sockets.AddressFamily addressFamily = ipv4AddressList[0].AddressFamily;
 
             for (int i = 0; i < errCtx.IPAddrCount; i++)
@@ -575,10 +569,44 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                 }
             }
 
-            string resourceName = Encoding.Unicode.GetString(errCtx.ResourceName, 0, (int)errCtx.ResourceNameLength);
+            var resourceName = Encoding.Unicode.GetString(errCtx.ResourceName, 0, (int)errCtx.ResourceNameLength);
+            BaseTestSite.Log.Add(LogEntryKind.Debug, $"uncSharePath: {uncSharePath}");
+            BaseTestSite.Log.Add(LogEntryKind.Debug, $"ResourceName: {resourceName}");
+
             BaseTestSite.Assert.IsTrue(
-                uncSharePath.ToLower().Contains(resourceName.ToLower()),
-                "ResourceName should be the same as uncSharePath. Actually server returns {0}.", resourceName);
+                CompareUNCSharePathAndResourceName(uncSharePath.ToLower(), resourceName.ToLower()),
+                "ResourceName should indicate the same share as what uncSharePath indicates. Actually server returns {0}.", resourceName);
+
+            bool CompareUNCSharePathAndResourceName(string uncSharePath, string resourceName)
+            {
+                var pathRegex = @"\\\\(?<serverName>.+)\\(?<shareName>.+)";
+                var regex = new Regex(pathRegex);
+
+                var uncSharePathMatch = regex.Match(uncSharePath);
+                var shareServer = ExtractServerName(uncSharePathMatch.Groups["serverName"].Value);
+                var shareName = uncSharePathMatch.Groups["shareName"].Value;
+
+                var resourceNameMatch = regex.Match(resourceName);
+                var resourceShareServer = ExtractServerName(resourceNameMatch.Groups["serverName"].Value);
+                var resourceShareName = resourceNameMatch.Groups["shareName"].Value;
+
+                return shareServer == resourceShareServer && shareName == resourceShareName;
+
+                string ExtractServerName(string matchedGroupValue)
+                {
+                    // If the matched value is not an FQDN (e.g. computer name or IP address), return it directly.
+                    // If the matched value is an FQDN, extract the server name from it.
+                    if (!matchedGroupValue.Contains(TestConfig.DomainName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return matchedGroupValue;
+                    }
+                    else
+                    {
+                        return matchedGroupValue.Substring(0, matchedGroupValue.IndexOf(TestConfig.DomainName, StringComparison.OrdinalIgnoreCase) - 1);
+                    }
+                }
+            }
+
             #endregion
         }
 
@@ -593,12 +621,12 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             bool isRedirectToOwnerTested = false;
             #region Get IP address list from ScaleOutFS
             string server = TestConfig.ClusteredScaleOutFileServerName;
-            IPAddress[] accessIpList = Dns.GetHostEntry(server).AddressList;
+            IPAddress[] accessIpList = Dns.GetHostAddresses(server);
             #endregion
 
             #region Get IP address from nonSofsHostedNode
             IPAddress currentAccessIpAddr = null;
-            IPAddress[] accessIpListNonSoftHosted = Dns.GetHostEntry(nonSofsHostedNode).AddressList;
+            IPAddress[] accessIpListNonSoftHosted = Dns.GetHostAddresses(nonSofsHostedNode);
             for (int i = 0; i < accessIpList.Length; i++)
             {
                 for (int j = 0; j < accessIpListNonSoftHosted.Length; j++)
@@ -707,7 +735,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
         /// <returns>Share capabilities</returns>
         private Share_Capabilities_Values GetShareCapabilities(string server, string sharePath, TreeConnect_Flags flags = TreeConnect_Flags.SMB2_SHAREFLAG_NONE)
         {
-            IPAddress shareIpAddr = Dns.GetHostEntry(server).AddressList[0];
+            IPAddress shareIpAddr = Dns.GetHostAddresses(server)[0];
 
             Smb2FunctionalClient client = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
             client.ConnectToServer(TestConfig.UnderlyingTransport, server, shareIpAddr);

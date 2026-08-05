@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
-using System.Drawing;
+using SkiaSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
@@ -20,7 +20,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify if the segmented messages, the compress flag, and Rdpegfx Header can be handled correctly by RDP Client")]
         public void RDPEGFX_Segmentation_Positive_MultipleSegmentedPacking()
         {
@@ -46,13 +48,13 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Encode Header/Data Messages to client.");
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
 
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+            SKImage bgImage;
+            SKBitmap compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
                                     RdpegfxTestUtility.ccLargeBandWidth, RdpegfxTestUtility.ccLargeBandWidth, out bgImage);
             // Send a big size bitmap with raw data exceeds 65535 bytes to client, multiple segmented packing are adopted for this message
             this.TestSite.Log.Add(LogEntryKind.Comment, "A large size bitmap is sent to the client using multipart datapacking for frame {0}.", fid);
-            fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
-            
+            fid = this.rdpegfxAdapter.SendUncompressedImage(SKImage.FromBitmap(compImage), RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
+
             // Expect the client to send a frame acknowledge pdu
             // If the server receives the message, it indicates that the client has been successfully decoded the logical frame of graphics commands
             this.rdpegfxAdapter.ExpectFrameAck(fid);
@@ -69,7 +71,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle an uncompressed message without segment header.")]
         public void RDPEGFX_Segmentation_Negative_UncompressedNoSegmentHeader()
         {
@@ -94,7 +98,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending capability confirm message not using RDP 8.0 compression technology without segment header to client.");
             this.rdpegfxAdapter.SendCapabilityConfirm(capFlag);
 
-            RDPClientTryDropConnection("capability confirm message without RDP 8.0 compression technology without segment header");            
+            RDPClientTryDropConnection("capability confirm message without RDP 8.0 compression technology without segment header");
         }
 
 
@@ -103,7 +107,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle an uncompressed message with segment header.")]
         public void RDPEGFX_Segmentation_Positive_UncompressedSegmentHeader()
         {
@@ -155,7 +161,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a compressed message without segment header.")]
         public void RDPEGFX_Segmentation_Negative_CompressedNoSegmentHeader()
         {
@@ -180,7 +188,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending capability confirm message without segment header to the client. This message is compressed by RDP 8.0 compression technology.");
             this.rdpegfxAdapter.SendCapabilityConfirm(capFlag);
 
-            RDPClientTryDropConnection("capability confirm message without segment header");            
+            RDPClientTryDropConnection("capability confirm message without segment header");
         }
 
         [TestMethod]
@@ -188,7 +196,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with segment descriptor is neither 0xE0 nor 0xE1.")]
         public void RDPEGFX_Segmentation_Negative_IncorrectSegmentDescriptor()
         {
@@ -222,7 +232,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with single segment with segmentCount field")]
         public void RDPEGFX_Segmentation_Negative_SingleSegmentWithSegmentCount()
         {
@@ -256,7 +268,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with single segment with UncompressedSize field")]
         public void RDPEGFX_Segmentation_Negative_SingleSegmentWithUncompressedSize()
         {
@@ -290,7 +304,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with single segment with SegmentArray field")]
         public void RDPEGFX_Segmentation_Negative_SingleSegmentWithSegmentArray()
         {
@@ -323,7 +339,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with multiple segments without SegmentCount field")]
         public void RDPEGFX_Segmentation_Negative_MultiSegmentNoSegmentCount()
         {
@@ -350,11 +368,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Encode Header/Data Messages to client.");
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
 
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+            SKImage bgImage;
+            SKBitmap compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
                                    RdpegfxTestUtility.ccLargeBandWidth, RdpegfxTestUtility.ccLargeBandHeight, out bgImage);
             this.TestSite.Log.Add(LogEntryKind.Comment, "Send a large size bitmap using multipart datapacking but without SegmentCount field to the client for frame {0}.", fid);
-            fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
+            fid = this.rdpegfxAdapter.SendUncompressedImage(SKImage.FromBitmap(compImage), RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
 
             RDPClientTryDropConnection("a large size bitmap using multipart datapacking but without SegmentCount field");
         }
@@ -364,7 +382,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with multiple segments without UncompressedSize field")]
         public void RDPEGFX_Segmentation_Negative_MultiSegmentNoUncompressedSize()
         {
@@ -391,11 +411,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Encode Header/Data Messages to client.");
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
 
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+            SKImage bgImage;
+            SKBitmap compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
                                    RdpegfxTestUtility.ccLargeBandWidth, RdpegfxTestUtility.ccLargeBandHeight, out bgImage);
             this.TestSite.Log.Add(LogEntryKind.Comment, "Send a large size bitmap using multipart datapacking but without UncompressedSize field to the client for frame {0}.", fid);
-            fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
+            fid = this.rdpegfxAdapter.SendUncompressedImage(SKImage.FromBitmap(compImage), RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
 
             RDPClientTryDropConnection("a large size bitmap using multipart datapacking but without SegmentCount field");
         }
@@ -406,7 +426,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Non-BVT")]
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
-        [TestCategory("RDPEGFX")]        
+        [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with multiple segment without SegmentArray field")]
         public void RDPEGFX_Segmentation_Negative_MultiSegmentNoSegmentArray()
         {
@@ -436,11 +458,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             // byte compFlag = RdpSegmentedPdu.PACKET_COMPR_TYPE_RDP8 | RdpSegmentedPdu.PACKET_COMPRESSED;
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
 
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+            SKImage bgImage;
+            SKBitmap compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
                                    RdpegfxTestUtility.ccLargeBandWidth, RdpegfxTestUtility.ccLargeBandHeight, out bgImage);
             this.TestSite.Log.Add(LogEntryKind.Comment, "Send a large size bitmap using multipart datapacking but without SegmentArray field to the client for frame {0}.", fid);
-            fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
+            fid = this.rdpegfxAdapter.SendUncompressedImage(SKImage.FromBitmap(compImage), RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
 
             RDPClientTryDropConnection("a large size bitmap using multipart datapacking but without SegmentArray field");
         }

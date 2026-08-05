@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
-using System.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
@@ -10,6 +9,7 @@ using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestSuites.Rdp;
+using SkiaSharp;
 
 namespace Microsoft.Protocols.TestSuites.Rdpegfx
 {
@@ -21,6 +21,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to test Compression segment of bitmap transition via RDPEGFX.")]
         public void RDPEGFX_Compression_PositiveTest()
         {
@@ -44,9 +46,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Comment, "The bitmap is sent to the client for frame {0} using RDP 8.0 compression technology.", fid); 
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8 | (byte)PACKET_COMPR_FLAG.PACKET_COMPRESSED;
             // byte compFlag = RdpSegmentedPdu.PACKET_COMPR_TYPE_RDP8;
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
-                                                RdpegfxTestUtility.smallWidth, RdpegfxTestUtility.smallHeight, out bgImage);
+            SKImage bgImage;
+            SKImage compImage = SKImage.FromBitmap(RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+                                                RdpegfxTestUtility.smallWidth, RdpegfxTestUtility.smallHeight, out bgImage));
             fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
             this.rdpegfxAdapter.ExpectFrameAck(fid);
             
@@ -61,6 +63,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with compress flag is not 0x20.")]
         public void RDPEGFX_Compression_Negative_IncorrectCompressFlag()
         {
@@ -86,6 +90,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with compress type is not 0x04.")]
         public void RDPEGFX_Compression_Negative_IncorrectCompressType()
         {
@@ -111,6 +117,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Negative")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to check if client can handle a message with incorrect compressed pdu.")]
         public void RDPEGFX_Compression_Negative_InvalidCompressPdu()
         {

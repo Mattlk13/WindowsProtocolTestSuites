@@ -13,9 +13,7 @@ These PowerShell/batch scripts and configuraiton files are used to download and 
     * **FileServer**
       Choose this category if you want to install the prerequisites to run FileServer test suite.
     * **Kerberos**
-      Choose this category if you want to install the prerequisites to run Kerberos test suite.
-    * **SMB**
-      Choose this category if you want to install the prerequisites to run MS-SMB test suite.
+      Choose this category if you want to install the prerequisites to run Kerberos test suite.    
     * **SMBD**
       Choose this category if you want to install the prerequisites to run MS-SMBD test suite.
     * **RDP**
@@ -49,6 +47,6 @@ These PowerShell/batch scripts and configuraiton files are used to download and 
 ## System Requirements
 
 * Windows 7 SP1 (with latest Windows Updates) or later
-* Microsoft .NET Framework 4.5 or later
-* PowerShell 4.0 or later
+* Microsoft .NET Framework 6.0 or later
+* PowerShell 7.0 or later
 

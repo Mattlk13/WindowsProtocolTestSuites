@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
-using System.Drawing;
 using System.Collections;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx
@@ -342,7 +341,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx
         protected static void doQuantization_Component(short[,] component, TS_RFX_CODEC_QUANT tsRfxCodecQuant, bool useReduceExtrapolate)
         {
             // Quantization factor: HL1, LH1, HH1, HL2, LH2, HH2, HL3, LH3, HH3, LL3            
-            Hashtable scaleValueTable = new Hashtable();
             int HL1_Factor = tsRfxCodecQuant.HL1_HH1 & 0x0f;
             int LH1_Factor = (tsRfxCodecQuant.HH2_LH1 & 0xf0) >> 4;
             int HH1_Factor = (tsRfxCodecQuant.HL1_HH1 & 0xf0) >> 4;

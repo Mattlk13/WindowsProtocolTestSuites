@@ -9,7 +9,8 @@ using System.Net;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
 {
@@ -233,6 +234,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
             base.Initialize(testSite);
             this.site = testSite;
             this.smb2Client = null;
+            TestTools.StackSdk.Security.KerberosLib.KerberosContext.KDCComputerName = testConfig.DCServerName;
+            TestTools.StackSdk.Security.KerberosLib.KerberosContext.KDCPort = testConfig.KDCPort;
         }
 
         /// <summary>
@@ -267,8 +270,21 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
 
             bool isIpv4 = this.ipVersion == IpVersion.Ipv6 ? false : true;
             IPAddress serverIp = FsaUtility.GetIpAddress(this.serverName, isIpv4);
-            this.site.Log.Add(LogEntryKind.Debug, "Connect to server {0} over TCP.", serverIp.ToString());
-            this.smb2Client.ConnectOverTCP(serverIp);
+
+            switch (testConfig.UnderlyingTransport)
+            {
+                case Smb2TransportType.Tcp:
+                    this.site.Log.Add(LogEntryKind.Debug, "Connect to server {0} over TCP.", serverIp.ToString());
+                    this.smb2Client.ConnectOverTCP(serverIp);
+                    break;
+                case Smb2TransportType.Quic:
+                    this.site.Log.Add(LogEntryKind.Debug, "Connect to server {0} over Quic.", this.serverName);
+                    this.smb2Client.ConnectOverQuic(this.serverName, serverIp, this.testConfig.TransportPort);
+                    break;
+                default:
+                    break;
+
+            }
 
             MessageStatus status = MessageStatus.SUCCESS;
             status = this.Negotiate();
@@ -353,10 +369,6 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
                 encryptionAlgs
                 );
             packetHeader = negotiateResponse.Header;
-            if (testConfig.IsGlobalEncryptDataEnabled && testConfig.IsGlobalRejectUnencryptedAccessEnabled)
-            {
-                site.Assert.Inconclusive("Test case is not applicable when both IsGlobalEncryptDataEnabled and IsGlobalRejectUnencryptedAccessEnabled set to true.");
-            }
             testConfig.CheckNegotiateContext(negotiateRequest, negotiateResponse);
 
             return (MessageStatus)status;
@@ -371,15 +383,21 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
             uint status;
             SESSION_SETUP_Response sessionSetupResponse;
 
+            SecurityPackageType securityPackage = this.testConfig.DefaultSecurityPackage;
+
             SspiClientSecurityContext sspiClientGss =
                 new SspiClientSecurityContext(
-                    SecurityPackageType.Negotiate,
+                    securityPackage,
                     new AccountCredential(this.domainName, this.userName, this.password),
                     Smb2Utility.GetCifsServicePrincipalName(this.serverName),
                     ClientSecurityContextAttribute.None,
                     SecurityTargetDataRepresentation.SecurityNativeDrep);
 
-            sspiClientGss.Initialize(this.gssToken);
+            if (securityPackage == SecurityPackageType.Negotiate)
+                sspiClientGss.Initialize(this.gssToken);
+            else
+                sspiClientGss.Initialize(null);
+
             this.sessionId = 0;
 
             do
@@ -412,6 +430,10 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
                 sessionKey = sspiClientGss.SessionKey;
                 this.smb2Client.GenerateCryptoKeys(sessionId, sessionKey, testConfig.SendSignedRequest, false);
                 if (testConfig.IsGlobalEncryptDataEnabled && selectedDialect >= DialectRevision.Smb30 && selectedDialect != DialectRevision.Smb2Unknown)
+                {
+                    this.smb2Client.EnableSessionSigningAndEncryption(sessionId, testConfig.SendSignedRequest, true);
+                }
+                else if (testConfig.IsGlobalEncryptDataEnabled && sessionSetupResponse.SessionFlags.HasFlag(SessionFlags_Values.SESSION_FLAG_ENCRYPT_DATA))
                 {
                     this.smb2Client.EnableSessionSigningAndEncryption(sessionId, testConfig.SendSignedRequest, true);
                 }
@@ -517,7 +539,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
                     FileDispositionInformation fileDispositionInfo = new FileDispositionInformation();
                     fileDispositionInfo.DeletePending = 1;
                     List<byte> byteList = new List<byte>();
-                    byteList.AddRange(BitConverter.GetBytes(fileDispositionInfo.DeletePending));
+                    byteList.AddRange(new byte[] { fileDispositionInfo.DeletePending });
 
                     status = SetFileInformation((uint)FileInfoClass.FILE_DISPOSITION_INFORMATION, byteList.ToArray());
                     status = CloseFile();
@@ -790,7 +812,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
             )
         {
             QUERY_DIRECTORY_Response responsePayload;
-            QUERY_DIRECTORY_Request_Flags_Values restartScanFlag = 
+            QUERY_DIRECTORY_Request_Flags_Values restartScanFlag =
                 restartScan ? QUERY_DIRECTORY_Request_Flags_Values.RESTART_SCANS : QUERY_DIRECTORY_Request_Flags_Values.NONE;
 
             uint status = this.smb2Client.QueryDirectory(
@@ -836,7 +858,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
             bool returnSingleEntry,
             uint fileIndex,
             string fileNamePattern,
-            out byte[] outBuffer            
+            out byte[] outBuffer
             )
         {
             QUERY_DIRECTORY_Response responsePayload;
@@ -860,7 +882,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
                 out outBuffer,
                 out packetHeader,
                 out responsePayload);
-           
+
             return (MessageStatus)status;
         }
 
@@ -1200,6 +1222,28 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
             return (MessageStatus)status;
         }
 
+        public MessageStatus SetFileInformation_InvalidBufferLength(
+            UInt32 fileInfomationClass,
+            byte[] buffer)
+        {
+            uint status = this.smb2Client.SetInfo_InvalidBufferLength(
+                1,
+                1,
+                this.packetHeaderFlag,
+                this.messageId++,
+                this.sessionId,
+                this.treeId,
+                SET_INFO_Request_InfoType_Values.SMB2_0_INFO_FILE,
+                (byte)fileInfomationClass,
+                SET_INFO_Request_AdditionalInformation_Values.NONE,
+                this.fileId,
+                buffer,
+                out packetHeader,
+                out SET_INFO_Response setInfoResponse);
+
+            return (MessageStatus)status;
+        }
+
         #endregion
 
         #region 3.1.5.15   Server Requests Setting of File System Information
@@ -1256,8 +1300,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSA.Adapter
                 this.sessionId,
                 this.treeId,
                 SET_INFO_Request_InfoType_Values.SMB2_0_INFO_SECURITY,
-                (byte)securityInformation,
-                SET_INFO_Request_AdditionalInformation_Values.NONE,
+                0,
+                (SET_INFO_Request_AdditionalInformation_Values)securityInformation,
                 this.fileId,
                 buffer,
                 out packetHeader,

@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr.Mcs;
+using Microsoft.Protocols.TestTools.StackSdk.Security.Cssp;
+using Microsoft.Protocols.TestTools.StackSdk.Transport;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,18 +10,12 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using System.Security.Authentication;
-
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr.Mcs;
-using Microsoft.Protocols.TestTools.StackSdk.Security;
-using Microsoft.Protocols.TestTools.StackSdk.Transport;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 {
@@ -237,7 +234,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             bool supportAutoReconnect = true,
             bool supportFastPathInput = false,
             bool supportFastPathOutput = false,
-            bool supportSVCCompression = false)
+            bool supportSVCCompression = false,
+            bool support384PointerSize = false)
         {
             Collection<ITsCapsSet> capabilitySets = new Collection<ITsCapsSet>();
 
@@ -524,7 +522,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             TS_MULTIFRAGMENTUPDATE_CAPABILITYSET multiFragmentCapabilitySet =
                 new TS_MULTIFRAGMENTUPDATE_CAPABILITYSET();
             multiFragmentCapabilitySet.capabilitySetType = capabilitySetType_Values.CAPSETTYPE_MULTIFRAGMENTUPDATE;
-            multiFragmentCapabilitySet.MaxRequestSize = ConstValue.MULTIFRAGMENT_CAP_MAX_REQUEST_SIZE;
+            multiFragmentCapabilitySet.MaxRequestSize = support384PointerSize ? ConstValue.MULTIFRAGMENT_CAP_MAX_REQUEST_SIZE_FOR_LARGEPOINTER : ConstValue.MULTIFRAGMENT_CAP_MAX_REQUEST_SIZE;
             multiFragmentCapabilitySet.lengthCapability = (ushort)Marshal.SizeOf(multiFragmentCapabilitySet);
 
             capabilitySets.Add(multiFragmentCapabilitySet);
@@ -533,8 +531,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             #region Populating Large Pointer Capability Set
             TS_LARGE_POINTER_CAPABILITYSET largePointerCapabilitySet = new TS_LARGE_POINTER_CAPABILITYSET();
             largePointerCapabilitySet.capabilitySetType = capabilitySetType_Values.CAPSETTYPE_LARGE_POINTER;
-            largePointerCapabilitySet.largePointerSupportFlags =
-                largePointerSupportFlags_Values.LARGE_POINTER_FLAG_96x96;
+            largePointerCapabilitySet.largePointerSupportFlags = support384PointerSize ?
+                largePointerSupportFlags_Values.LARGE_POINTER_FLAG_384x384 : largePointerSupportFlags_Values.LARGE_POINTER_FLAG_96x96;
             largePointerCapabilitySet.lengthCapability = sizeof(ushort) + sizeof(ushort) + sizeof(ushort);
 
             capabilitySets.Add(largePointerCapabilitySet);
@@ -616,12 +614,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                 {
                     // the server name should start with "TERMSRV/"
                     string targetSPN = ConstValue.CREDSSP_SERVER_NAME_PREFIX + serverName;
-                    clientStream = new CredSspStream(clientStream,
-                                                     serverDomain,
-                                                     targetSPN,
-                                                     logonName,
-                                                     logonPassword);
-                    ((CredSspStream)clientStream).Authenticate();
+
+                    var csspClient = new CsspClient(clientStream);
+
+                    clientStream = csspClient.GetStream();
+
+                    csspClient.Authenticate(serverDomain, targetSPN, logonName, logonPassword);
                 }
             }
             else
@@ -685,11 +683,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                         target = ConstValue.CREDSSP_SERVER_NAME_PREFIX + serverName;
                     }
 
-                    clientStream = new CredSspStream(clientStream,
-                                                     serverDomain,
-                                                     target,
-                                                     logonName,
-                                                     logonPassword);
+                    var csspClient = new CsspClient(clientStream);
+
+                    clientStream = csspClient.GetStream();
+
                     transportConfig.Stream = clientStream;
                     transportStack.UpdateConfig(transportConfig, () =>
                     {
@@ -697,7 +694,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                         tcpClient.Client.Blocking = true;
                         tcpClient.Client.ReceiveTimeout = 0;
 
-                        ((CredSspStream)clientStream).Authenticate();
+                        csspClient.Authenticate(serverDomain, target, logonName, logonPassword);
 
                         if (Context.ServerSelectedProtocol == (uint)selectedProtocols_Values.PROTOCOL_HYBRID_EX)
                         {
@@ -713,7 +710,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
         #region SSL methods
         /// <summary>
-        /// This method is used for SSL authentication.
+        /// This method is used for SSL authentication. The SSL Certificate used is a self signed cetificate and is not imported into the Trusted Certificate Storage.
+        /// The method must return true to bypass the override and bypass the inbuilt validation.
         /// </summary>
         /// <param name="sender">Not used.</param>
         /// <param name="certificate">Not used.</param>
@@ -728,12 +726,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             SslPolicyErrors sslPolicyErrors)
         {
             return true;
-            //if (sslPolicyErrors == SslPolicyErrors.None)
-            //{
-            //    return true;
-            //}
-
-            //return false;
         }
         #endregion SSL methods
 
@@ -748,10 +740,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         {
             if (this.context.SVCManager != null)
             {
-                if (!this.context.SVCManager.IsRunning)
-                {
-                    this.context.SVCManager.Start();
-                }
+                this.context.SVCManager.Start();
             }
         }
 
@@ -762,10 +751,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         {
             if (this.context.SVCManager != null)
             {
-                if (this.context.SVCManager.IsRunning)
-                {
-                    this.context.SVCManager.Stop();
-                }
+                this.context.SVCManager.Stop();
             }
         }
 
@@ -1031,7 +1017,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             string clientDigProductId = context.ClientDigProductId;
             encryptionMethod_Values encryptionMethod = (encryptionMethod_Values)context.RdpEncryptionMethod;
             CHANNEL_DEF[] virtualChannelDefines = context.VirtualChannelDefines;
-            Collection<ITsCapsSet> confirmCapabilitySets = context.ConfirmCapabilitySets;
+            Collection<ITsCapsSet> confirmCapabilitySets = context.ConfirmActiveCapabilitySets;
             context.ClearForReconnect();
             TimeSpan totalTime = timeout + DateTime.Now.TimeOfDay;
             #endregion clear the configuration
@@ -1165,7 +1151,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             #region Capabilities Exchange
             Server_Demand_Active_Pdu demandActivePdu =
                 (Server_Demand_Active_Pdu)ExpectPdu(totalTime - DateTime.Now.TimeOfDay);
-            Collection<ITsCapsSet> capabilitySets = context.ConfirmCapabilitySets;
+            Collection<ITsCapsSet> capabilitySets = context.ConfirmActiveCapabilitySets;
             Client_Confirm_Active_Pdu confirmActivePdu;
             if (capabilitySets == null)
             {
@@ -1254,7 +1240,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         {
             encryptedProtocol = protocol;
 #if !UT
-            tcpClient = new TcpClient(serverName.ParseIPAddress().ToString(), serverPort); //Initialize and synchronous connect
+            // Remote IPEndPoint.
+            IPEndPoint remoteEP = new IPEndPoint(serverName.ParseIPAddress(), serverPort);
+            // Initialize IPV4 socket TcpClient.
+            tcpClient = new TcpClient(AddressFamily.InterNetwork);
+            // Connect the remote IPEndPoint.
+            tcpClient.Connect(remoteEP);
             clientStream = tcpClient.GetStream();
 #endif
             // create a type of transport
@@ -2086,7 +2077,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                                      | TS_SECURITY_HEADER_flags_Values.SEC_RESET_SEQNO);
 
             TS_SYNCHRONIZE_PDU synchronizePduData = new TS_SYNCHRONIZE_PDU();
-            synchronizePduData.messageType = TS_SYNCHRONIZE_PDU_messageType_Values.SYNCMSGTYPE_SYNC ;
+            synchronizePduData.messageType = TS_SYNCHRONIZE_PDU_messageType_Values.SYNCMSGTYPE_SYNC;
             synchronizePduData.targetUser = (ushort)context.ServerChannelId;
             RdpbcgrUtility.FillShareDataHeader(ref synchronizePduData.shareDataHeader,
                 (ushort)(Marshal.SizeOf(synchronizePduData) - Marshal.SizeOf(synchronizePduData.shareDataHeader)),

@@ -8,17 +8,16 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.Messages;
-using Microsoft.Protocols.TestTools.Messages.Marshaling;
 using Microsoft.Protocols.TestSuites.Frs2DataTypes;
 using FRS2Model;
 using System.DirectoryServices.Protocols;
 using System.DirectoryServices;
 using System.Runtime.InteropServices;
-using Microsoft.Modeling;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using BKUPParser;
 using FileStreamDataParser;
+using System.Threading.Tasks;
 
 namespace Microsoft.Protocols.TestSuites.MS_FRS2
 {
@@ -392,9 +391,13 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
         /// </summary>
         public string interfaceUUIDdrsuapi;
         /// <summary>
-        /// Asynchronous Thread.
+        /// Asynchronous Task.
         /// </summary>
-        Thread AsyncThread;
+        Task asyncTask;
+        /// <summary>
+        /// Propagates notification that operations should be canceled.
+        /// </summary>
+        CancellationTokenSource cancellationToken;
         /// <summary>
         /// A GUID represents the Replication Group Id.
         /// </summary>
@@ -1312,13 +1315,13 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
         /// <returns>error_status_t</returns>
         public error_status_t Initialization(
                                             OSVersion osVersion,
-                                            Map<int, connectionProperty> serverConn,
-                                            Map<int, FromServer> fromServConn,
-                                            Map<string, int> replGrpConn,
-                                            Map<string, ReplicationGroupTypes> replGrpType,
-                                            Map<int, string> folderReplGrp,
-                                            Map<int, accessLevels> folderAccLevel,
-                                            Map<int, connectionProperty> folderDFRS)
+                                            IDictionary<int, connectionProperty> serverConn,
+                                            IDictionary<int, FromServer> fromServConn,
+                                            IDictionary<string, int> replGrpConn,
+                                            IDictionary<string, ReplicationGroupTypes> replGrpType,
+                                            IDictionary<int, string> folderReplGrp,
+                                            IDictionary<int, accessLevels> folderAccLevel,
+                                            IDictionary<int, connectionProperty> folderDFRS)
         {
             GeneralInitialize();
             return error_status_t.ERROR_SUCCESS;
@@ -1345,11 +1348,12 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
             //reset any possible cross test case state variables
             updateCancelflag = false;
             m_inShutdown = false;
-            if (AsyncThread != null)
+            if ((asyncTask != null) && asyncTask.Status == TaskStatus.Running)
             {
                 try
                 {
-                    AsyncThread.Abort();
+                    cancellationToken.Cancel();
+                    asyncTask = null;
                 }
                 catch
                 {
@@ -1360,11 +1364,12 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
 
         protected override void Dispose(bool disposing)
         {
-            if (AsyncThread != null)
+            if ((asyncTask != null) && asyncTask.Status == TaskStatus.Running)
             {
                 try
                 {
-                    AsyncThread.Abort();
+                    cancellationToken.Cancel();
+                    asyncTask = null;
                 }
                 catch
                 {
@@ -2048,18 +2053,20 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
                 m_asyncRetVal = 0;
                 // uint retVal = 0;
                 flagAsyncpollReq = false;
-                //Asyncpoll Thread.
-                if (AsyncThread != null)
+                //Asyncpoll Task.
+                if ((asyncTask != null) && asyncTask.Status == TaskStatus.Running)
                 {
                     try
                     {
-                        AsyncThread.Abort();
+                        cancellationToken.Cancel();
+                        asyncTask = null;
                     }
                     catch
                     {
                     }
                 }
-                AsyncThread = new Thread(delegate()
+                cancellationToken = new CancellationTokenSource();
+                asyncTask = new Task(delegate()
                 {
                     try
                     {
@@ -2081,9 +2088,9 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
                         FRSSite.Assert.Fail("Failed on AsyncPoll: {0}", (e.InnerException == null ? e.Message : e.InnerException.Message));
                     }
                     flagAsyncpollReq = true;
-                });
-                AsyncThread.Start(); //Starting the Thread.
-                System.Threading.Thread.Sleep(Convert.ToInt32(ConfigStore.SleepTime));
+                }, cancellationToken.Token);
+                asyncTask.Start(); //Starting the Task.
+                asyncTask.Wait();
                 flagAsyncpollRequested = true;
                 FRSSite.Log.Add(LogEntryKind.Checkpoint, "AsyncPoll return value is {0}", m_asyncRetVal);
                 if (m_asyncRetVal == 9033)
@@ -2737,7 +2744,8 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
 
             if ((!flagAsyncpollReq) && (flagAsyncpollRequested))
             {
-                AsyncThread.Abort();
+                cancellationToken.Cancel();
+                asyncTask = null;
             }
             else
             {

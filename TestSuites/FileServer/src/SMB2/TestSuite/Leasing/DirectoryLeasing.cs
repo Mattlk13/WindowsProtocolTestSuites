@@ -3,12 +3,11 @@
 
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestSuites.FileSharing.Common.TestSuite;
-using Microsoft.Protocols.TestSuites.FileSharing.SMB2.Adapter;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
+using System.Threading;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 {
@@ -37,6 +36,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         protected override void TestInitialize()
         {
             base.TestInitialize();
+            notificationReceived = new AutoResetEvent(false);
             client = new Smb2FunctionalClient(TestConfig.LongerTimeout, TestConfig, BaseTestSite);
             client.Smb2Client.LeaseBreakNotificationReceived +=
                 new Action<Packet_Header, LEASE_BREAK_Notification_Packet>(base.OnLeaseBreakNotificationReceived);
@@ -267,7 +267,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
             if (expectedDialect >= DialectRevision.Smb30)
             {
                 // Break the lease with creating another file in the directory
-                sutProtocolController.CreateFile(Path.Combine(Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.BasicFileShare), testDirectory), CurrentTestCaseName, string.Empty);
+                sutProtocolController.CreateFile(Smb2Utility.GetUncPath(TestConfig.SutComputerName, TestConfig.BasicFileShare), $"{testDirectory}\\{CurrentTestCaseName}", string.Empty);
 
                 // Wait until LEASE_BREAK_Notification is received
                 BaseTestSite.Assert.IsTrue(

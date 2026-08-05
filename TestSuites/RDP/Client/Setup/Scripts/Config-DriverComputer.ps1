@@ -12,7 +12,6 @@ Push-Location $scriptsPath
 # Starting script
 #----------------------------------------------------------------------------
 
-
 $settingFile = "$scriptsPath\ParamConfig.xml"
 if(Test-Path -Path $settingFile)
 {    
@@ -34,6 +33,10 @@ if(Test-Path -Path $settingFile)
 	$RDPVersion         = .\Get-Parameter.ps1 $settingFile RDPVersion
     $workgroupDomain    = .\Get-Parameter.ps1 $settingFile workgroupDomain
     $tcSystemDrive      = .\Get-Parameter.ps1 $settingFile tcSystemDrive
+    $agentPort          = .\Get-Parameter.ps1 $settingFile agentPort
+    $agentRemoteClient  = .\Get-Parameter.ps1 $settingFile agentRemoteClient
+    $compressionInTC    = .\Get-Parameter.ps1 $settingFile compressionInTC
+    $certPwd            = .\Get-Parameter.ps1 $settingFile userPwdInTC
     .\Set-Parameter.ps1 $settingFile LogFile $logFile "If no log file path specified, this value should be used."
 }
 else
@@ -42,20 +45,54 @@ else
 }
 
 $DropConnectionForInvalidRequest = "true"
-$SutOsVersion = Invoke-Command -ComputerName $tcComputerName -ScriptBlock {""+[System.Environment]::OSVersion.Version.Major.ToString() + "." + [System.Environment]::OSVersion.Version.Minor.ToString()}
-$SutOsBuildNumber = Invoke-Command -ComputerName $tcComputerName -ScriptBlock {[System.Environment]::OSVersion.Version.Build}
+[decimal]$SutOsVersion = Invoke-Command -ComputerName $tcComputerName -ScriptBlock { "$([System.Environment]::OSVersion.Version.Major.ToString()).$([System.Environment]::OSVersion.Version.Minor.ToString())" }
+[int]$SutOsBuildNumber = Invoke-Command -ComputerName $tcComputerName -ScriptBlock { [System.Environment]::OSVersion.Version.Build }
 
-if([double]$SutOSVersion -ge "10.0")
-{
-    
-    if([double] $SutOsBuildNumber -eq "15063")
-    {
-        $RDPVersion = "10.3"
+if ($SutOSVersion -ge 10.0) {
+    if ($SutOsBuildNumber -ge 26100) {
+        $RDPVersion = "10.12"
     }
-
-    if([double] $SutOsBuildNumber -ge "15063")
-    {
+    elseif ($SutOsBuildNumber -ge 19041) {
+        $RDPVersion = "10.8"
+    }
+    elseif ($SutOsBuildNumber -ge 18362) {
+        $RDPVersion = "10.7"
+    }
+    elseif ($SutOsBuildNumber -ge 17763) {
+        $RDPVersion = "10.6"
+    }
+    elseif ($SutOsBuildNumber -ge 17134) {
+        $RDPVersion = "10.5"
+    }
+    elseif ($SutOsBuildNumber -ge 16299) {
+        $RDPVersion = "10.4"
+    }
+    elseif ($SutOsBuildNumber -ge 15063) {
+        $RDPVersion = "10.3"
         $DropConnectionForInvalidRequest = "false"
+    }
+    elseif ($SutOsBuildNumber -ge 14393) {
+        $RDPVersion = "10.2"
+    }
+    elseif ($SutOsBuildNumber -ge 10586) {
+        $RDPVersion = "10.1"
+    }
+    else {
+        $RDPVersion = "10.0"
+    }
+}
+elseif ($SutOsVersion -ge 6.3) {
+    $RDPVersion = "8.1"
+}
+elseif ($SutOsVersion -ge 6.2) {
+    $RDPVersion = "8.0"
+}
+elseif ($SutOsVersion -ge 6.1) {
+    if ($SutOsBuildNumber -ge 7601) {
+        $RDPVersion = "7.1"
+    }
+    else {
+        $RDPVersion = "7.0"
     }
 }
 
@@ -99,6 +136,9 @@ Write-Host "`$osVersion          = $osVersion"
 Write-Host "`$RDPVersion         = $RDPVersion" 
 Write-Host "`$workgroupDomain    = $workgroupDomain"
 Write-Host "`$tcSystemDrive      = $tcSystemDrive"
+Write-Host "`$agentPort          = $agentPort"
+Write-Host "`$agentRemoteClient  = $agentRemoteClient"
+Write-Host "`$compressionInTC    = $compressionInTC"
 
 #-----------------------------------------------------
 # Begin to config Driver Computer
@@ -131,7 +171,7 @@ else
 {
     $certCN = $driverComputerName
 }
-$certPwd = "Password01!"
+
 $certFileName = $driverComputerName
 
 if (Test-Path -Path "$env:HOMEDRIVE\$certFileName.cer")
@@ -148,7 +188,6 @@ $securePwd = (ConvertTo-SecureString -string "$certPwd" -Force -AsPlainText)
 Export-PfxCertificate -Cert $cert -Force -Password $securePwd -FilePath "$env:HOMEDRIVE\$certFileName.pfx"
 Export-Certificate -Cert $cert -FilePath "$env:HOMEDRIVE\$certFileName.cer" -Type CERT
 
-
 #-----------------------------------------------------
 # If listening port of test suite is 3389 and the Remote Desktop Service is running, edit registry to change Windows RDP service port and restart TermService
 #-----------------------------------------------------
@@ -164,7 +203,22 @@ if($listeningPort -eq "3389")
             Write-Warning  "Restart-Service TermService failed..."
        }
        
+       try {
+              $systemroot = get-content env:systemroot
+              netsh advfirewall firewall add rule name="Remote Desktop - Custom Port" dir=in program=$systemroot\system32\svchost.exe service=termservice action=allow protocol=TCP localport=4488 enable=yes
+       }
+       catch {
+            Write-Warning  "Enable firewall for RDP Port with 4488 failed..."
+       }
    }
+
+   # If listening port is 3389, we need to enable firewall for it.
+    try {
+           netsh advfirewall firewall add rule name="enable3389" dir=in action=allow protocol=TCP localport=3389 enable=yes
+    }
+    catch {
+        Write-Warning  "Enable 3389 port firewall failed..."
+    }
 }
 
 #-----------------------------------------------------
@@ -173,49 +227,69 @@ if($listeningPort -eq "3389")
 $binPath         = $scriptsPath + "\..\Bin"
 $dataPath        = $scriptsPath + "\..\Data"
 $DepPtfConfig    = "$binPath\RDP_ClientTestSuite.deployment.ptfconfig"
+$PtfConfig       = "$binPath\RDP_ClientTestSuite.ptfconfig"
+
+Write-Host  "TurnOff FileReadonly for $PtfConfig..."
+.\TurnOff-FileReadonly.ps1 $PtfConfig
+
+$agentAddress    = "$tcComputerName" + ":" + $agentPort
+Write-Host "Begin to update RDP_ClientTestSuite.ptfconfig..."
+.\Modify-ConfigFileNode.ps1 $PtfConfig "AgentAddress"     $agentAddress
 
 Write-Host  "TurnOff FileReadonly for $DepPtfConfig..."
 .\TurnOff-FileReadonly.ps1 $DepPtfConfig
 
 Write-Host "Begin to update RDP_ClientTestSuite.deployment.ptfconfig..."
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.ServerPort"            $listeningPort
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.IpVersion"             $ipVersion
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Protocol"     $securityProtocol
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Negotiation"  $negotiationBased
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "ServerPort"            $listeningPort
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "IpVersion"             $ipVersion
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "Protocol"     $securityProtocol
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "Negotiation"  $negotiationBased
 .\Modify-ConfigFileNode.ps1 $DepPtfConfig "CertificatePath"           "$env:HOMEDRIVE\$certFileName.pfx"
 .\Modify-ConfigFileNode.ps1 $DepPtfConfig "CertificatePassword"       $certPwd
 .\Modify-ConfigFileNode.ps1 $DepPtfConfig "SUTName"                   $tcComputerName
 .\Modify-ConfigFileNode.ps1 $DepPtfConfig "SUTUserPassword"           $userPwdInTC
 .\Modify-ConfigFileNode.ps1 $DepPtfConfig "SUTSystemDrive"            $tcSystemDrive
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.ServerDomain"          $domainName
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.ServerUserName"        $CredSSPUser
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.ServerUserPassword"    $CredSSPPwd
-.\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Version"               $RDPVersion
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "ServerDomain"          $domainName
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "ServerUserName"        $CredSSPUser
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "ServerUserPassword"    $CredSSPPwd
+.\Modify-ConfigFileNode.ps1 $DepPtfConfig "Version"               $RDPVersion
+
+if ($compressionInTC.ToUpper() -eq "YES")
+{
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "SupportCompression"  "true"
+}
 
 if ($osVersion.ToUpper() -eq "NONWINDOWS")
 {
     .\Modify-ConfigFileNode.ps1 $DepPtfConfig "IsWindowsImplementation"      "false"
 	
     # Update default RDP security protocol as RDP/Low/128bit for NonWindows AutoTest
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Protocol" "RDP"    
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "Protocol" "RDP"    
     .\Modify-ConfigFileNode.ps1 $DepPtfConfig "DropConnectionForInvalidRequest" "true"
     
 }
 else
 {
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "IsWindowsImplementation"      "true"
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "DropConnectionForInvalidRequest" $DropConnectionForInvalidRequest
+    if($agentRemoteClient -ne "mstsc"){
+        .\Modify-ConfigFileNode.ps1 $DepPtfConfig "IsWindowsImplementation" "false"
+        .\Modify-ConfigFileNode.ps1 $DepPtfConfig "DropConnectionForInvalidRequest" "false"
+    }
+    else
+    {
+        .\Modify-ConfigFileNode.ps1 $DepPtfConfig "IsWindowsImplementation"      "true"
+        .\Modify-ConfigFileNode.ps1 $DepPtfConfig "DropConnectionForInvalidRequest" $DropConnectionForInvalidRequest
+    }
 }
 
 if ($securityProtocol.ToUpper() -eq "RDP")
 {
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Encryption.Level" "Low" 
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Encryption.Method" "128bit" 
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "Level" "Low" 
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "Method" "128bit" 
 }
 else
 {
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Encryption.Level" "None" 
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.Security.Encryption.Method" "None" 
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "Level" "None" 
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "Method" "None" 
 }
 
 if ($workgroupDomain.ToUpper() -eq "DOMAIN")
@@ -225,28 +299,26 @@ if ($workgroupDomain.ToUpper() -eq "DOMAIN")
 else
 {
     .\Modify-ConfigFileNode.ps1 $DepPtfConfig "SUTUserName"      "$userNameInTC"
-    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "RDP.ServerDomain" "$driverComputerName"
+    .\Modify-ConfigFileNode.ps1 $DepPtfConfig "ServerDomain" "$driverComputerName"
 }
 
 Write-Host  "TurnOff FileReadonly for $DepPtfConfig due to Execution Console..."
 .\TurnOff-FileReadonly.ps1 $DepPtfConfig
 
 #-----------------------------------------------------
-# Modify ClientLocal.testsettings file
+# Edit registry.
 #-----------------------------------------------------
-Write-Host  "Modify ClientLocal.testsettings fileg..."
-$settingFile = "$binPath\ClientLocal.testsettings"
-[XML]$settingXml = Get-Content $settingFile
-$depFiles = $settingXml.GetElementsByTagName("DeploymentItem")
-foreach ($depFile in $depFiles)
-{
-    $fileOrg = $depFile.filename
-    $idx     = $fileOrg.LastIndexOf("\")
-    $fileNew = ".\" + $fileOrg.SubString($idx + 1)
-    Write-Host "Change $fileOrg to $fileNew."
-    $depFile.filename = $fileNew
-}
-$settingXml.Save("$settingFile")
+
+# Disable TLS 1.0 for Server
+Write-Host "Disable TLS 1.0 for Server."
+New-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Force | Out-Null
+New-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -name 'Enabled' -value 0 -PropertyType 'DWord' -Force | Out-Null
+New-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -name 'DisabledByDefault' -value '0xffffffff' -PropertyType 'DWord' -Force | Out-Null
+Write-Host 'TLS 1.0 has been disabled.'
+
+# Set Maximum Disconnection Timeout
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -Name "MaxDisconnectionTime" -Value 60000 -PropertyType DWord -Force
+
 
 #-----------------------------------------------------
 # Create task to detect whether the SUT Adapter works

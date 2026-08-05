@@ -7,99 +7,93 @@ A Test Suite evaluates whether a protocol or protocol family implementation meet
 Test Suites do not cover every protocol requirement and in no way certify an implementation, even if all tests pass. 
 However, each test suite provides users with a useful indication of interoperability.
 
-* **SMB1 Server Test Suite**. It covers the requirements documented by [MS-SMB], and those documented by other protocols which are related to [MS-SMB], i.e. [MS-FSCC] and [MS-CIFS].
-* **File Server Family Test Suite**. It is designed to test implementations of file server protocol family including [MS-SMB2], [MS-DFSC], [MS-SWN], [MS-FSRVP], [MS-FSA], [MS-RSVD] and [MS-SQOS].
-* **RDP Client Family Test Suite**. It provides interoperability testing for client implementation of RDP family protocols including [MS-RDPBCGR], [MS-RDPEDISP], [MS-RDPEDYC], [MS-RDPEGFX], [MS-RDPEGT], [MS-RDPEI], [MS-RDPEMT], [MS-RDPEUDP], [MS-RDPEUSB], [MS-RDPEVOR] and [MS-RDPRFX].
-* **RDP Server Family Test Suite**. It provides interoperability testing for server implementation of RDP family protocols including [MS-RDPBCGR], [MS-RDPEDYC], [MS-RDPEMT] and [MS-RDPELE].  
-* **Kerberos Server Test Suite**. It is designed to test server implementations of Kerberos protocols including [MS-KILE], [MS-KKDCP] and [MS-PAC].
-* **SMBD Server Test Suite**. It is designed to test the implementations of SMB2&3 direct (RDMA) protocol, as specified in [MS-SMBD] and [MS-SMB2].
-* **Branch Cache Test Suite**. It is designed to test the implementations of [MS-PCCRTP], [MS-PCCRR], [MS-PCHC] and [MS-PCCRC] protocol.
-* **AZOD Test Suite**. It is designed to test the implementations of [MS-AZOD] protocol.
-* **ADFamily Test Suite**. It is designed to test the implementations of the Active Directory protocols including [MS-ADTS], [MS-APDS], [MS-DRSR] [MS-FRS2], [MS-LSAD], [MS-LSAT], [MS-SAMR] and [MS-NRPC]. 
-* **ADFSPIP Client Test Suite**. It is designed to test the implementations of ADFS Proxy and Web Application Proxy integration, as described in [MS-ADFSPIP].
-* **ADOD Test Suite**. It is designed to test the implementations of [MS-ADOD] protocol.
+* **File Server Family Test Suite**. It is designed to test implementations of file server protocol family including [MS-SMB2], [MS-DFSC], [MS-SWN], [MS-FSRVP], [MS-FSA], [MS-FSCC], [MS-RSVD] and [MS-SQOS].
+    To get started with File Server test suite, you can refer to the [File Server Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/FileServer/docs/FileServerUserGuide.md).
+* **RDP Client Family Test Suite**. It provides interoperability testing for client implementation of RDP family protocols including [MS-RDPBCGR], [MS-RDPEDISP], [MS-RDPEDYC], [MS-RDPEGFX], [MS-RDPEGT], [MS-RDPEI], [MS-RDPEMT], [MS-RDPEUDP], [MS-RDPEUSB], [MS-RDPEVOR] and [MS-RDPRFX]. To get started with RDP Client test suite, you can refer to the [RDP Client Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/RDP/Client/docs/RDP_ClientUserGuide.md)
+* **RDP Server Family Test Suite**. It provides interoperability testing for server implementation of RDP family protocols including [MS-RDPBCGR], [MS-RDPEDYC], [MS-RDPEMT] and [MS-RDPELE]. To get started with RDP Server test suite, you can refer to the [RDP Server Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/RDP/Server/Docs/RDP_ServerUserGuide.md)
+* **Kerberos Server Test Suite**. It is designed to test server implementations of Kerberos protocols including [MS-KILE], [MS-KKDCP] and [MS-PAC]. To get started with Kerberos Server test suite, you can refer to the [Kerberos Server Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/Kerberos/docs/Kerberos_ServerUserGuide.md)
+* **SMBD Server Test Suite**. It is designed to test the implementations of SMB2&3 direct (RDMA) protocol, as specified in [MS-SMBD] and [MS-SMB2]. To get started with SMBD Server test suite, you can refer to the [SMBD Server Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-SMBD/docs/MS-SMBD_ServerUserGuide.md)
+* **Branch Cache Test Suite**. It is designed to test the implementations of [MS-PCCRTP], [MS-PCCRR], [MS-PCHC] and [MS-PCCRC] protocol. To get started with Branch Cache test suite, you can refer to the [Branch Cache Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/BranchCache/docs/BranchCache_UserGuide.md)
+* **AZOD Test Suite**. It is designed to test the implementations of [MS-AZOD] protocol. To get started with AZOD test suite, you can refer to the [AZOD Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-AZOD/docs/MS-AZOD_ODUserGuide.md)
+* **ADFamily Test Suite**. It is designed to test the implementations of the Active Directory protocols including [MS-ADA1], [MS-ADA2], [MS-ADA3], [MS-ADLS], [MS-ADSC], [MS-ADTS], [MS-APDS], [MS-DRSR], [MS-FRS2], [MS-LSAD], [MS-LSAT], [MS-SAMR] and [MS-NRPC]. To get started with ADFamily test suite, you can refer to the [ADFamily Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/ADFamily/docs/ADFamily_ServerUserGuide.md)
+* **ADFSPIP Client Test Suite**. It is designed to test the implementations of ADFS Proxy and Web Application Proxy integration, as described in [MS-ADFSPIP]. To get started with ADFSPIP Client test suite, you can refer to the [ADFSPIP Client Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-ADFSPIP/Docs/MS-ADFSPIP_ClientUserGuide.md)
+* **ADOD Test Suite**. It is designed to test the implementations of [MS-ADOD] protocol. To get started with ADOD test suite, you can refer to the [ADOD Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-ADOD/Docs/MS-ADOD_ODUserGuide.md)
+* **XCA Test Suite**. It is designed to test the implementations of [MS-XCA] protocol. To get started with XCA test suite, you can refer to the [XCA Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-XCA/docs/MS-XCA_TestSuiteUserGuide.md)
+* **WSP Test Suite**. It is designed to test the implementations of [MS-WSP] protocol. To get started with WSP test suite, you can refer to the [WSP Test Suite User Guide](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/TestSuites/MS-WSP/docs/MS-WSP_TestSuiteUserGuide.md)
 
 ## Components
-Windows Protocol Test Suites contain 4 components:
+Windows Protocol Test Suites contain below components:
 
 * **CommonScripts**. Common scripts used by each test suite. Normally they're used to deploy the environment.
-* **ProtocolTestManager**. A UI tool to help you configure and run test cases.
 * **ProtoSDK**. The protocol library used by each test suite. It provides the data structures of the protocol messages, the methods to encode and decode the messages, the methods to send and receive messages and etc.
 * **TestSuites**. All Test Suites code and documents are saved here and categorized by folder representing each test suite.
-
+* **ProtocolTestManager**. A tool to help you configure and run test suites.
 
 ## Prerequisites
-The Test Suites are developed and must be installed on a Windows platform.
+**Windows Protocol Test Suites** are based on [.NET](https://dotnet.microsoft.com/) so they can be developed and run across different platforms.
 You should install the software listed below based on your testing purpose, including their own dependencies.
 
-1. [Visual Studio](https://visualstudio.microsoft.com/downloads/) 2017 or higher ([Visual Studio 2017 Community](https://aka.ms/vs/15/release/vs_community.exe) recommended), installed with these individual components from the installer:
+1. .NET and related components
+
+   a. For Windows, Linux and macOS, install [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0/) to build or run test suites.
+
+   b. For those who work on Windows and prefer IDE, install [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) or higher ([Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=17) recommended), together with these individual components from the installer:
  
-    |Section|Individual Component in Visual Studio 2017|Individual Component in Visual Studio 2019|Run Windows Protocol Test Suites|Build Windows Protocol Test Suites from source code|
-    |---|---|---|---|---|
-    |.NET|.NET Framework 4.7.1 SDK|.NET Framework 4.7.1 SDK||Required|
-    |.NET|.NET Framework 4.7.1 targeting pack|.NET Framework 4.7.1 targeting pack|Required|Required|
-    |Compilers, build tools, and runtime|C# and Visual Basic Roslyn compilers|C# and Visual Basic Roslyn compilers||Required|
-    |Compilers, build tools, and runtime|VC++ 2017 version 15.9 v14.16 latest v141 tools|MSVC v141 - VS 2017 C++ x64/x86 build tools (v14.16)||Required<sup>[1](#footnote1)</sup>|
-    |Compilers, build tools, and runtime|Visual C++ 2017 Redistributable Update|C++ 2019 Redistributable Update|Required<sup>[1](#footnote1)</sup>|Required<sup>[1](#footnote1)</sup>|
-    |Debugging and testing|Testing tools core features||Required<sup>[2](#footnote2)</sup>|Required<sup>[2](#footnote2)</sup>|
-    |Developent Activities|Visual Studio C++ core features|C++ core features||Required<sup>[1](#footnote1)</sup>|
-    |SDKs, libraries, and frameworks|Windows 10 SDK (10.0.16299.0) for Desktop C++ [x86 and x64]|Windows 10 SDK (10.0.16299.0)||Required<sup>[1](#footnote1)</sup>|
+      |Section|Individual Component in Visual Studio 2022|Run Windows Protocol Test Suites|Build Windows Protocol Test Suites from source code|
+      |---|---|---|---|
+      |.NET|.NET SDK|Required|Required|
+      |Compilers, build tools, and runtime|C# and Visual Basic Roslyn compilers||Required|
+      |Compilers, build tools, and runtime|MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)||Required<sup>[1](#footnote1)</sup>|
+      |Compilers, build tools, and runtime|C++/CLI support for v143 build tools (Latest)||Required<sup>[1](#footnote1)</sup>|
+      |Compilers, build tools, and runtime|C++ 2022 Redistributable Update|Required<sup>[1](#footnote1)</sup>|Required<sup>[1](#footnote1)</sup>|
+      |Development Activities|C++ core features||Required<sup>[1](#footnote1)</sup>|
+      |SDKs, libraries, and frameworks|Windows 10 SDK (10.0.19041.0)||Required<sup>[1](#footnote1)</sup>|      
 
-    Note:
+      Note:
 
-    <a name="footnote1">1</a>: This individual component is required by ADFamily, MS-SMBD or Protocol Test Manager which have C++ code.
+<a name="footnote1">[1]</a>: This individual component is required by ADFamily and MS-SMBD which have C++ code.
 
-    <a name="footnote2">2</a>: This individual component is installed in Visual Studio 2019 by default.
+1. [Protocol Test Framework v2.6 (build 2.6.1)](https://github.com/microsoft/ProtocolTestFramework/releases/tag/PTF2.6.1)
 
-1. [Spec Explorer 2010 v3.5.3146.0](https://visualstudiogallery.msdn.microsoft.com/271d0904-f178-4ce9-956b-d9bfa4902745/)
+   Protocol Test Framework is referenced by projects of ProtoSDK and TestSuites as [NuGet packages](https://www.nuget.org/packages/Microsoft.Protocols.TestTools/2.6.1).
 
-   It is required if you want to build or run the test suites. It is used to implement test scenarios and cases utilizing [Model-Based Testing](#Model-Based-Testing).
-
-1. [Protocol Test Framework build 1.0 (build 1.0.7500.0)](https://github.com/Microsoft/ProtocolTestFramework/releases/tag/1.0.7500.0)
-
-   You can use a released MSI file or build it from source code.
-
-1. Enable .NET Framework 3.5.1
-
-   1. _Turn Windows features on or off_
-   1. Enable _.NET Framework 3.5 (includes .NET 2.0 and 3.0)_
-
-   This is necessary for WiX Toolset.
-
-1. [WiX Toolset v3.14](https://wixtoolset.org/releases/v3-14-0-2927/)
-
-1. [WiX Toolset Visual Studio 2017 Extension](https://marketplace.visualstudio.com/items?itemName=WixToolset.WixToolsetVisualStudio2017Extension) or [Wix Toolset Visual Studio 2019 Extension](https://marketplace.visualstudio.com/items?itemName=WixToolset.WixToolsetVisualStudio2019Extension)
-
-   WiX Toolset components required if you want to build test suites or Protocol Test Manager from source code.
-
-1. [NuGet CLI](https://www.nuget.org/downloads)
-
-   It is required if you want to build Protocol Test Manager. Please download `nuget.exe` into a suitable folder and add that folder to `Path` environment variable 
-
-1. Microsoft Message Analyzer
-
-   It is required if you want to build or run ADFamily, ADOD and AZOD test suites.
-   
-   November 25 2019 - Microsoft Message Analyzer (MMA) has been retired and removed from public-facing sites on microsoft.com. A private MMA build is available for testing purposes; to request it, send an email to [getmma@microsoft.com](mailto:getmma@microsoft.com).
-
-1. [Open XML SDK](https://www.microsoft.com/en-us/download/details.aspx?id=30425)
-
-   It is required if you want to build or run ADFamily test suite.
-
-1. [Network Direct DDK](https://www.microsoft.com/en-us/download/details.aspx?id=26645)
+1. [Network Direct DDK](https://www.microsoft.com/en-us/download/details.aspx?id=36043)
 
    From `NetworkDirect_DDK.zip` extract `ndspi.h` and `ndstatus.h` into project path `ProtoSDK\RDMA\include`. This is to build SMBD test suite.
 
+1. [PowerShell Core](https://github.com/PowerShell/PowerShell/releases)
 
-You can use the script in `InstallPrerequisites` folder to automatically download and install these software.
+   This is required only when user want to use [PowerShell Core Remoting over SSH](https://github.com/microsoft/WindowsProtocolTestSuites/wiki/Run-Test-Suites-With-Enabling-PowerShell-Core-Remoting-Over-SSH).
+
+1. [Win32-OpenSSH](https://github.com/PowerShell/Win32-OpenSSH/releases)
+
+   This is required only when user want to use [PowerShell Core Remoting over SSH](https://github.com/microsoft/WindowsProtocolTestSuites/wiki/Run-Test-Suites-With-Enabling-PowerShell-Core-Remoting-Over-SSH) for Windows platform.
+
+1. [WMF 5.1](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/wmf/setup/install-configure?view=powershell-7.1)
+
+   This is required only when user want to use PowerShell implementation on Windows Server 2012R2 for ISutCommonControlAdapter in [CommonTestSuite.ptfconfig](./TestSuites/FileServer/src/Common/TestSuite/CommonTestSuite.ptfconfig).
+
+   a. If you choose PowerShell implementation for ISutCommonControlAdapter in a domain environment where the DC runs Windows Server 2012R2, in order to get SID from the DC, you need to install WMF 5.1 on the DC, for other Windows Server versions newer than Windows Server 2012R2, you do not need to install WMF 5.1 on the DC.
+
+   b. If you choose PowerShell implementation for ISutCommonControlAdapter on Windows platforms (including Windows Server 2012R2 and newer versions) in workgroup environment, you do not need to install WMF 5.1 on the SUT.
+
+   c. If you choose managed implementation for ISutCommonControlAdapter on Windows platforms (including Windows Server 2012R2 and newer versions), it will use LDAP queries to get SID and only supports domain environment.
+
+
+If your work on Windows, you can use the script in `InstallPrerequisites` folder to automatically download and install these software.
 
 Tips when using the script in `InstallPrerequisites` folder:
+* The script requires internet connectivity to download some dependencies.
 
-* To run the script, open **Windows PowerShell**, and execute the commands below in the **PowerShell Window**:
+* The parameter **Category** is used to specify which set of tools need to be downloaded and installed, based on the different test suite names, such as `FileServer`, `Kerberos`, `SMBD`, `RDP`, `BranchCache`, `ADFamily`, `AZOD`, `ADFSPIP` and `ADOD`. Categories are defined in [PrerequisitesConfig.xml](https://github.com/microsoft/WindowsProtocolTestSuites/blob/main/InstallPrerequisites/PrerequisitesConfig.xml) and you can update this configuration file to achieve your desired requirement.
+
+* The parameter **ConfigPath** is used to specify prerequisites configuration file path, default value is ".\PrerequisitesConfig.xml".
+
+* To run the script for the FileServer test suite, for example, open **Windows PowerShell**, and execute the commands below in the **PowerShell Window**:
 
 ```
 cd WindowsProtocolTestSuites\InstallPrerequisites
-.\InstallPrerequisites.ps1
+.\InstallPrerequisites.ps1 -Category FileServer -ConfigPath ".\PrerequisitesConfig.xml"
 ```
 
 * If you meet errors about **Execution Policy**, make sure you run **Windows PowerShell** as **Administrator**, and type the following and enter:
@@ -116,61 +110,82 @@ Get-ExecutionPolicy
 
 Then rerun the script.
 
-## Model-Based Testing
-
-Some test suites use [Model-Based Testing](https://msdn.microsoft.com/en-us/library/ee620469.aspx):
-
-* **SMB1 Server Test Suite**
-* **File Server Family Test Suite**
-* **Kerberos Server Test Suite**
-* **SMBD Server Test Suite**
-* **BranchCache Server Test Suite**
-* **ADFamily Test Suite**
-* **ADFSPIP Client Test Suite**
-* **AZOD Test Suite**
-* **ADOD Test Suite**
-
-If you want to regenerate Model-Based Test cases, you must install Visual Studio 2012.
-
 ## Build
 
-After you [clone a copy](https://help.github.com/articles/cloning-a-repository/) of this repo, you can run `build.cmd` for Protocol Test Manager and each test suite separately after you have installed all the softwares required for build listed in [Prerequisites](#prerequisites)
+After you [clone a copy](https://help.github.com/articles/cloning-a-repository/) of this repo, you can run `build.ps1` in PowerShell or `build.sh` in shell for each test suite separately after you have installed all the softwares required for build listed in [Prerequisites](#prerequisites).
 
-### Build Protocol Test Manager
-
-```
-cd WindowsProtocolTestSuites\ProtocolTestManager
-build.cmd
-```
-
-After the build succeeds, the MSI file of Protocol Test Manager should be generated in the folder `WindowsProtocolTestSuite\drop\ProtocolTestManager\installer\`.
-
-### Build a test suite
+For example, if you want to build FileServer test suite:
 
 ```
 cd WindowsProtocolTestSuites\TestSuites\FileServer\src
-build.cmd
+build.ps1
 ```
 
-After the build succeeds, the MSI file of each test suite should be generated in the folder `WindowsProtocolTestSuite\drop\TestSuites\\[TestSuiteName]\deploy\`.
-Take File Server test suite as an example, `FileServer-TestSuite-ServerEP.msi` should be generated in the folder `WindowsProtocolTestSuite\drop\TestSuites\FileServer\deploy\`.
+After the build succeeds, the common folder structure should be generated in the folder `WindowsProtocolTestSuite\drop\TestSuites\[TestSuiteName]\`.
 
-## How to use test suites
+* `Bin`: all the built binaries including ProtoSDK, adapters and test suites.
+* `Batch`: batch files (.ps1, .sh) which can be used to launch tests.
+* `Scripts`: scripts which can be used to configure test environment.
+* `Utils`: some utilities which can be used in tests.
 
-Take File Server test suite as an example, you can learn how to configure and run test suite by Protocol Test Manager referring to this [tutorial](./Doc/File%20Server%20SMB2%20Test%20Suite%20Lab%20Tutorial_v2.pdf).
-
-## Upgrade from an older version
-
-You can download and install the latest msi of test suites, Protocol Test Manager and Protocol Test Framework to upgrade them to the latest version. Or uninstall the old version and then install the new one.
+Alternatively, you can download the pre-built test suite archive from [Releases](https://github.com/microsoft/WindowsProtocolTestSuites/releases).
 
 ## Run
 
-After the build succeeds, you could set up the test environment, install Protocol Test Manager and install/configure/run the test suite according to its **User Guide**.
-Each test suite has its own **User Guide** in the `WindowsProtocolTestSuites\TestSuites\[TestSuiteName]\docs` folder.
-There are two more documents in the same folder:
+Before running a test suite, you need do either of below:
 
-* **Technical Document**. The Open Specifications documentation for protocols, published by Microsoft. It's the basis of developing Test Suites.
-* **Test Design Spec**.  It provides information about the test scope and test suite design.
+* Download the test suite archive you want to run from [Releases](https://github.com/microsoft/WindowsProtocolTestSuites/releases), and extract it to some path you have access.
+* Build the test suite according to [Build a test suite](#build).
+
+On macOS, the FileServer test suite uses [AesCcm and AesGcm classes](https://docs.microsoft.com/en-us/dotnet/standard/security/cross-platform-cryptography#aes-ccm-and-aes-gcm-on-macos) which require OpenSSL, so if there is not OpenSSL 1.1 on your macOS please install OpenSSL 1.1 and set the environment variable as following before you run the FileServer test suite on macOS,
+```
+brew install openssl@1.1
+export DYLD_LIBRARY_PATH="/usr/local/opt/openssl@1.1/lib:$DYLD_LIBRARY_PATH"
+```
+**Note:**
+1. If `brew` is not installed on your macOS, you can install it according to [brew](https://brew.sh/).
+2. If you get the error "algorithm 'aesgcm' is not supported on this platform", that means dotnet cannot load AesGcm class from libcrypto.1.1.dylib on your macOS, then you need to check whether its location is in your `DYLD_LIBRARY_PATH` environment variable or not. Once you install OpenSSL 1.1 on your macOS the crypto library location is `/usr/local/Cellar/openssl@1.1/1.1.1m/lib/libcrypto.1.1.dylib` and `/usr/local/opt/openssl` links to the `/usr/local/Cellar/openssl@1.1/1.1.1m` directory by default.
+
+### Run test suite by batch
+
+In the `Batch` folder under root path of the test suite, there are several scripts you can use to launch tests.
+
+1. Run all test cases
+   
+   Execute `RunAllTestCases.ps1` in PowerShell, or `RunAllTestCases.sh` in shell directly.
+
+1. Run test cases by filters
+
+   Execute `RunTestCasesByFilter.ps1 -Filter [your filter expression]` in PowerShell, or `RunTestCasesByFilter.sh [your filter expression]` in shell directly.
+
+   For example, you can run below command if you want to run test cases with test category `BVT` and `SMB311`:
+   ```
+   RunTestCasesByFilter.sh "TestCategory=BVT&TestCategory=SMB311"
+   ``` 
+
+   For more information about how to construct the filter expression, you can refer to [Filter option details](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test#filter-option-details).
+
+1. Dry run
+
+   If you want to list the test cases before running them actually, you could add `-DryRun` switch to `.ps1` scripts or pass a non-empty string as the last argument to `.sh` scripts.
+
+   For example, you can run below command if you want to list test cases with test category `BVT` and `SMB311`:
+   ```
+   RunTestCasesByFilter.sh "TestCategory=BVT&TestCategory=SMB311" "list"
+   ```
+
+### Configure and run test suite by Protocol Test Manager Service
+
+**Protocol Test Manager Service (PTMService)** is a single web page application tool that helps you configure and run test cases in the Test Suites. PTMService supports multiple platforms, including Windows, Linux, and macOS. To get started with PTMService, you can refer to the [PTMService Wiki](https://github.com/microsoft/WindowsProtocolTestSuites/wiki/PTMService).
+
+## Documents
+
+You could set up the test environment and configure the test suite according to its **User Guide**.
+Each test suite has its own **User Guide** in the `WindowsProtocolTestSuites\TestSuites\[TestSuiteName]\docs` folder.
+There are two more kinds of documents in the same folder:
+
+* **Technical Documents**. The Open Specifications documentation for protocols, published by Microsoft. It's the basis of developing Test Suites.
+* **Test Design Specs**.  It provides information about the test scope and test suite design.
 
 ## Contribute
 
@@ -183,7 +198,7 @@ Windows Protocol Test Suites are under the [MIT license](./LICENSE.txt).
 ## Contact
 The following resources are for Windows protocol test suite news, discussion, and support:
 * View news announcements in [Open Specification Windows Protocols Forum](https://social.msdn.microsoft.com/Forums/en-US/home?forum=os_windowsprotocols).
-* Discuss test suites issues [here](./issues) on the github.
+* Discuss test suites issues [here](https://github.com/Microsoft/WindowsProtocolTestSuites/issues) on the github.
 * For [Open Specifications Protocols](https://msdn.microsoft.com/en-us/library/gg685446.aspx) support, contact dochelp@microsoft.com.
 
 ## Microsoft Open Source Code of Conduct

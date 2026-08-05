@@ -1,21 +1,19 @@
-#############################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#############################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           WaitFor-ComputerReady.ps1
-## Purpose:        This script pause the script until the specified file on remote machine is ready for accessing.
-## Scenarios:      1) Wait for a computer starting up. In this case, will wait for ADMIN$
-##                 2) Wait for something done in another computer (such as server config, or testing on client). 
-##                   a) If "config.finished.signal" found, that means the configuration finished successfully;
-##                   b) If "config.error.signal" found, that means the configuration terminated with exceptions;
-##                   c) If "test.finished.signal" found, that means the testing finished successfully;
-##                   d) If "test.error.signal" found, that means the testing terminated with exceptions;
-## Version:        1.1 (26 June, 2008)
-##
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           WaitFor-ComputerReady.ps1
+# Purpose:        This script pause the script until the specified file on remote machine is ready for accessing.
+# Scenarios:      1) Wait for a computer starting up. In this case, will wait for ADMIN$
+#                 2) Wait for something done in another computer (such as server config, or testing on client). 
+#                   a) If "config.finished.signal" found, that means the configuration finished successfully;
+#                   b) If "config.error.signal" found, that means the configuration terminated with exceptions;
+#                   c) If "test.finished.signal" found, that means the testing finished successfully;
+#                   d) If "test.error.signal" found, that means the testing terminated with exceptions;
+# Version:        1.1 (26 June, 2008)
+#
 ##############################################################################
 
 Param ( 
@@ -137,7 +135,14 @@ for (; $retryCount -lt $timeoutSec/2; $retryCount++)
     #----------------------------------------------------------------------------
     # Remove the credential from cache.
     #----------------------------------------------------------------------------
-    cmd /c $disconnectCmd
+    try
+    {
+        cmd /c $disconnectCmd
+    }
+    catch
+    {
+        Write-Host Write-Host "disconnectCmd failed:$_"
+    }
 
     #----------------------------------------------------------------------------
     # Reset client cache because computer's IP address may change after restart
@@ -149,7 +154,14 @@ for (; $retryCount -lt $timeoutSec/2; $retryCount++)
     # Setup the credential to access remote computer
     #----------------------------------------------------------------------------
     Write-Host "." -noNewLine -foregroundcolor Yellow
-    cmd.exe /c $connectCmd
+    try
+    {
+        cmd.exe /c $connectCmd
+    }
+    catch
+    {
+        Write-Host Write-Host "connectCmd failed:$_"
+    }
 	
 	sleep 3
 
@@ -161,7 +173,14 @@ for (; $retryCount -lt $timeoutSec/2; $retryCount++)
         if (($signalFileName -eq $null) -or ($signalFileName -eq ""))
         {
             $isReady = $True
-            cmd /c $disconnectCmd
+            try
+            {
+                cmd /c $disconnectCmd
+            }
+            catch
+            {
+                Write-Host Write-Host "disconnectCmd failed:$_"
+            }
             break
         }
 
@@ -172,7 +191,14 @@ for (; $retryCount -lt $timeoutSec/2; $retryCount++)
         if ( [System.IO.File]::Exists( $SignalFileFullName ) -eq $true )
         {
             $isReady = $True
-            cmd /c $disconnectCmd
+            try
+            {
+                cmd /c $disconnectCmd
+            }
+            catch
+            {
+                Write-Host Write-Host "disconnectCmd failed:$_"
+            }
             break
         }
 
@@ -185,7 +211,14 @@ for (; $retryCount -lt $timeoutSec/2; $retryCount++)
             if ( [System.IO.File]::Exists( $errorSignalFileFullName ) -eq $true )
             {
                 $errorFound = $True
-                cmd /c $disconnectCmd
+                try
+                {
+                    cmd /c $disconnectCmd
+                }
+                catch
+                {
+                    Write-Host Write-Host "disconnectCmd failed:$_"
+                }
                 break
             }
         }

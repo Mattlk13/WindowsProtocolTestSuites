@@ -4,7 +4,7 @@
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -42,6 +42,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             get
             {
                 return ParsePropertyToEnum<Smb2TransportType>(GetProperty("UnderlyingTransport"), "UnderlyingTransport");
+            }
+        }
+
+        public ushort TransportPort
+        {
+            get
+            {
+                return ushort.Parse( GetProperty("TransportPort"));
             }
         }
 
@@ -178,6 +186,30 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             }
         }
 
+        public bool DisableEncryptionOverSecureTransport
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("DisableEncryptionOverSecureTransport"));
+            }
+        }
+
+        public bool AllowNamedPipeAccessOverQUIC
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("AllowNamedPipeAccessOverQUIC"));
+            }
+        }
+
+        public bool IsServerToClientNotificationsSupported
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("IsServerToClientNotificationsSupported"));
+            }
+        }
+
         public DialectRevision[] RequestDialects
         {
             get
@@ -230,6 +262,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             }
         }
 
+        public string CompressedFileShare
+        {
+            get
+            {
+                return GetProperty("CompressedFileShare");
+            }
+        }
+
         public string CAShareName
         {
             get
@@ -269,6 +309,17 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             }
         }
 
+        /// <summary>
+        /// Timeout in seconds to wait for a notification during a lease break
+        /// </summary>
+        public TimeSpan LeaseBreakNotificationWaitTimeout
+        {
+            get
+            {
+                return TimeSpan.FromSeconds(int.Parse(GetProperty("LeaseBreakNotificationWaitTimeout")));
+            }
+        }
+
         public Platform Platform
         {
             get
@@ -303,6 +354,29 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             {
                 // Allow DomainName being null
                 return GetProperty("DomainName", false);
+            }
+        }
+
+        public string DCServerName
+        {
+            get
+            {
+                return GetProperty("DCServerComputerName", false);
+            }
+        }
+
+        public int KDCPort
+        {
+            get
+            {
+                try
+                {
+                    return int.Parse(GetProperty("KDCPort", false));
+                }
+                catch
+                {
+                    return TestTools.StackSdk.Security.KerberosLib.KerberosContext.KDCPort;
+                }
             }
         }
 
@@ -388,9 +462,27 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             }
         }
 
-        public List<EncryptionAlgorithm> SupportedEncryptionAlgorithmList;
+        public List<EncryptionAlgorithm> SutSupportedEncryptionAlgorithmList;
 
         public List<CompressionAlgorithm> SupportedCompressionAlgorithmList;
+
+        public List<SigningAlgorithm> SupportedSigningAlgorithmList;
+
+        public bool IsChainedCompressionSupported
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("IsChainedCompressionSupported"));
+            }
+        }
+
+        public bool IsRDMATransformSupported
+        {
+            get
+            {
+                return Boolean.Parse(GetProperty("IsRDMATransformSupported"));
+            }
+        }
 
         #endregion
 
@@ -416,9 +508,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
 
             MaxSmbVersionClientSupported = ParsePropertyToEnum<DialectRevision>(GetProperty("MaxSmbVersionClientSupported"), "MaxSmbVersionClientSupported");
 
-            SupportedEncryptionAlgorithmList = ParsePropertyToList<EncryptionAlgorithm>("SupportedEncryptionAlgorithms");
+            SutSupportedEncryptionAlgorithmList = ParsePropertyToList<EncryptionAlgorithm>("SutSupportedEncryptionAlgorithms");
 
             SupportedCompressionAlgorithmList = ParsePropertyToList<CompressionAlgorithm>("SupportedCompressionAlgorithms");
+
+            SupportedSigningAlgorithmList = ParsePropertyToList<SigningAlgorithm>("SupportedSigningAlgorithms");
 
             SendSignedRequest = Boolean.Parse(GetProperty("SendSignedRequest"));
 
@@ -524,6 +618,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
                     return this.IsDirectoryLeasingSupported;
                 case NEGOTIATE_Response_Capabilities_Values.GLOBAL_CAP_ENCRYPTION:
                     return this.IsEncryptionSupported;
+                case NEGOTIATE_Response_Capabilities_Values.GLOBAL_CAP_NOTIFICATIONS:
+                    return this.IsServerToClientNotificationsSupported;
                 default:
                     throw new Exception("Capability not supported");
             }
@@ -585,7 +681,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
 
         public void CheckPlatform(Platform platform)
         {
-            if (Platform < platform)
+            if (IsWindowsPlatform && Platform < platform) //Only windows platform could be compared with version
             {
                 Site.Assert.Inconclusive("The case is applicable in {0}.", platform);
             }
@@ -652,9 +748,25 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
 
         public void CheckEncryptionAlgorithm(EncryptionAlgorithm cipherId)
         {
-            if (!SupportedEncryptionAlgorithmList.Contains(cipherId))
+            if (!SutSupportedEncryptionAlgorithmList.Contains(cipherId))
             {
                 Site.Assert.Inconclusive("Test case is applicable for the server that supports {0}", cipherId);
+            }
+        }
+
+        public void CheckSigningAlgorithm(SigningAlgorithm? signingAlgorithm = null)
+        {
+            if (SupportedSigningAlgorithmList.Count == 0)
+            {
+                Site.Assert.Inconclusive("The number of signing algorithms provided by client MUST be greater than zero");
+            }
+
+            if (signingAlgorithm != null)
+            {
+                if (!SupportedSigningAlgorithmList.Contains(signingAlgorithm.Value))
+                {
+                    Site.Assert.Inconclusive("The specified signing algorithm {0} is not supported by SUT", signingAlgorithm);
+                }               
             }
         }
 
@@ -669,7 +781,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
             // Windows 10 v1809 operating system and prior, Windows Server v1809 operating system and prior, and Windows Server 2019 and prior do not support compression.
             if (IsWindowsPlatform)
             {
-                return Platform >= Platform.WindowsServerV1903; 
+                return Platform >= Platform.WindowsServerV1903;
             }
 
             return true;
@@ -725,20 +837,21 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
                 {
                     Site.Assert.Fail("The server Should not response a SMB2_COMPRESSION_CAPABILITIES as it's not sent in request.");
                 }
+                if ((smb2Request.NegotiateContext_SIGNING == null) && (response.NegotiateContext_SIGNING != null))
+                {
+                    Site.Assert.Fail("The server Should not response a SMB2_SIGNING_CAPABILITIES as it's not sent in request.");
+                }
 
                 if (response.NegotiateContext_ENCRYPTION != null)
                 {
                     Site.Assert.AreEqual<int>(1, response.NegotiateContext_ENCRYPTION.Value.CipherCount, "The response's SMB2_ENCRYPTION_CAPABILITIES.CipherCount MUST be set to 1");
-                }
-                if (response.NegotiateContext_COMPRESSION != null)
-                {
-                    Site.Assert.AreEqual<int>(1, response.NegotiateContext_COMPRESSION.Value.CompressionAlgorithmCount, "The response's SMB2_COMPRESSION_CAPABILITIES.CompressionAlgorithmCount MUST be set to 1");
                 }
             }
             else if (request is SmbNegotiateRequestPacket)
             {
                 Site.Assert.IsNull(response.NegotiateContext_ENCRYPTION, "The server Should not response a SMB2_ENCRYPTION_CAPABILITIES as request is SmbNegotiateRequestPacket.");
                 Site.Assert.IsNull(response.NegotiateContext_COMPRESSION, "The server Should not response a SMB2_COMPRESSION_CAPABILITIES as request is SmbNegotiateRequestPacket.");
+                Site.Assert.IsNull(response.NegotiateContext_SIGNING, "The server Should not response a SMB2_SIGNING_CAPABILITIES as request is SmbNegotiateRequestPacket.");
             }
         }
         #endregion
@@ -795,5 +908,65 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter
         /// Windows Server v1903 
         /// </summary>
         WindowsServerV1903 = 0x1000000C,
+
+        /// <summary>
+        /// Windows Server v1909
+        /// </summary>
+        WindowsServerV1909 = 0x1000000D,
+
+        /// <summary>
+        /// Windows Server v2004
+        /// </summary>
+        WindowsServerV2004 = 0x1000000E,
+
+        /// <summary>
+        /// Windows Server v2020
+        /// </summary>
+        WindowsServerV20H2 = 0x1000000F,
+
+        /// <summary>
+        /// Windows 10 v21H1
+        /// </summary>
+        Windows10V21H1 = 0x10000010,
+
+        /// <summary>
+        /// Windows Server v2022
+        /// </summary>
+        WindowsServer2022 = 0x10000011,
+
+        /// <summary>
+        /// Windows Server 2022 v22H2
+        /// </summary>
+        WindowsServerV22H2 = 0x10000012,
+
+        /// <summary>
+        /// Windows Server v2025
+        /// </summary>
+        WindowsServer2025 = 0x10000013,
+
+        /// <summary>
+        /// Windows 11
+        /// </summary>
+        Windows11 = 0x10000014,
+
+        /// <summary>
+        /// Windows 11 2021 v21H2
+        /// </summary>
+        Windows11V21H2 = 0x10000015,
+
+        /// <summary>
+        /// Windows 11 2022 v22H2
+        /// </summary>
+        Windows11V22H2 = 0x10000016,
+
+        /// <summary>
+        /// Windows 11 2023 v23H2
+        /// </summary>
+        Windows11V23H2 = 0x10000017,
+
+        /// <summary>
+        /// Windows 11 2024 v24H2
+        /// </summary>
+        Windows11V24H2 = 0x10000018
     }
 }

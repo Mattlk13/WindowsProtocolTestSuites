@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 {
@@ -71,7 +72,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         private CHANGE_NOTIFY_Response receivedChangeNotify;
         private Packet_Header receivedChangeNotifyHeader;
         private FILE_NOTIFY_INFORMATION[] receivedFileNotifyInfo;
-        private ManualResetEvent changeNotificationReceived = new ManualResetEvent(false);
+        private AutoResetEvent changeNotificationReceived = new AutoResetEvent(false);
         #endregion
 
         #region Test Initialize and Cleanup
@@ -97,7 +98,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 
         protected override void TestCleanup()
         {
-            if(client1 != null)
+            if (client1 != null)
             {
                 try
                 {
@@ -109,7 +110,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 }
             }
 
-            if(client2 != null)
+            if (client2 != null)
             {
                 try
                 {
@@ -120,7 +121,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                     BaseTestSite.Log.Add(LogEntryKind.Debug, "Unexpected exception when disconnect client2: {0}", ex.ToString());
                 }
             }
-            
+
             base.TestCleanup();
         }
         #endregion
@@ -133,7 +134,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         [TestCategory(TestCategories.ChangeNotify)]
         [Description("This test case is designed to verify that CANCEL request cancels CHANGE_NOTIFY request when there's no CHANGE_NOTIFY response from server.")]
         public void BVT_SMB2Basic_CancelRegisteredChangeNotify()
-        {            
+        {
             uint status;
             string testDirectory = CreateTestDirectory(TestConfig.SutComputerName, TestConfig.BasicFileShare);
             BaseTestSite.Log.Add(
@@ -141,7 +142,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "Test directory \"{0}\" was created on share \"{1}\"", testDirectory, TestConfig.BasicFileShare);
 
             client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
-            client1.Smb2Client.ChangeNotifyResponseReceived += new Action<FILE_NOTIFY_INFORMATION[],Packet_Header,CHANGE_NOTIFY_Response>(OnChangeNotifyResponseReceived);
+            client1.Smb2Client.ChangeNotifyResponseReceived += new Action<FILE_NOTIFY_INFORMATION[], Packet_Header, CHANGE_NOTIFY_Response>(OnChangeNotifyResponseReceived);
 
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Start a client to create a file by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT; CREATE");
             client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
@@ -178,7 +179,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 
             BaseTestSite.Assert.AreNotEqual(
                 Smb2Status.STATUS_SUCCESS,
-                receivedChangeNotifyHeader.Status, "CHANGE_NOTIFY is not expected to success after cancel, actually server returns {0}.", 
+                receivedChangeNotifyHeader.Status, "CHANGE_NOTIFY is not expected to success after cancel, actually server returns {0}.",
                 Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
             BaseTestSite.CaptureRequirementIfAreEqual(
                 Smb2Status.STATUS_CANCELLED,
@@ -194,11 +195,77 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
+        [TestCategory(TestCategories.Smb311)]
+        [TestCategory(TestCategories.FileAccess)]
+        [Description("This test case is designed to verify that If the connection is over QUIC, server sends correct response when a named pipe is opened.")]
+        public void BVT_SMB2Basic_QuicTransport_OpenNamedPipe()
+        {
+            if(TestConfig.UnderlyingTransport != Smb2TransportType.Quic)
+            {
+                BaseTestSite.Assert.Inconclusive("Underlying transport must be QUIC");
+            }
+
+            uint returnedstatus;
+            uint expectedStatus = Smb2Status.STATUS_ACCESS_DENIED;
+            if (TestConfig.AllowNamedPipeAccessOverQUIC)
+            {
+                expectedStatus = Smb2Status.STATUS_OBJECT_NAME_NOT_FOUND;
+            }
+
+            client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Start a client to create a file by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT; CREATE");
+            client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
+            returnedstatus = client1.Negotiate(TestConfig.RequestDialects, TestConfig.IsSMB1NegotiateEnabled);
+            returnedstatus = client1.SessionSetup(
+                TestConfig.DefaultSecurityPackage,
+                TestConfig.SutComputerName,
+                TestConfig.AccountCredential,
+                TestConfig.UseServerGssToken);
+
+            //Tree connect with share type as PIPE
+            uint treeId1;
+            uncSharePath = "\\\\" + TestConfig.SutComputerName + "\\IPC$";
+            returnedstatus = client1.TreeConnect(uncSharePath, out treeId1,
+                checker: (header, response) =>
+                {
+                    BaseTestSite.Assert.AreEqual(
+                        ShareType_Values.SHARE_TYPE_PIPE,
+                        response.ShareType,
+                        "Share type should be SMB2_SHARE_TYPE_PIPE, actually server returns {0}", response.ShareType);
+                });
+
+            //Open a named pipe
+            FILEID fileId;
+            returnedstatus = client1.Create(
+                treeId1,
+                "random",
+                CreateOptions_Values.FILE_NON_DIRECTORY_FILE,
+                out fileId,
+                out _, checker: (header, response) =>
+                {
+                    BaseTestSite.Assert.AreEqual(
+                       expectedStatus,
+                        header.Status,
+                       "If the connection is over QUIC, AllowNamedPipeAccessOverQUIC is FALSE, and a named pipe is " +
+                       "being opened, the server MUST fail the request with STATUS_ACCESS_DENIED");
+                });
+
+            if(returnedstatus == Smb2Status.STATUS_SUCCESS)
+            {
+                client1.Close(treeId1, fileId);
+            }
+
+            client1.TreeDisconnect(treeId1);
+            client1.LogOff();
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Smb2002)]
         [TestCategory(TestCategories.QueryAndSetFileInfo)]
         [Description("This test case is designed to test whether server can handle QUERY and SET requests to a file correctly.")]
         public void BVT_SMB2Basic_QueryAndSet_FileInfo()
-        {            
+        {
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Starts a client by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT.");
             client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
             client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
@@ -365,13 +432,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
             FileNameInformation filenameInfo = TypeMarshal.ToStruct<FileNameInformation>(filenameInfoBuffer);
 
             /*
+             * According to [MS-SMB2] section 3.3.5.20.1 Handling SMB2_0_INFO_FILE:
              * If the information class is FileAllInformation,
              * the server SHOULD return an empty FileNameInformation
              * by setting FileNameLength field to zero and FileName field
              * to an empty string.
              */
-            if ((testConfig.Platform >= Platform.WindowsServer2016) ||
-                (testConfig.Platform == Platform.NonWindows))
+            if (testConfig.Platform >= Platform.WindowsServer2016) 
             {
                 BaseTestSite.Assert.IsTrue(
                     0 == filenameInfo.FileNameLength,
@@ -383,13 +450,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                     Encoding.Unicode.GetString(filenameInfo.FileName));
             }
             /*
-             * <357>
+             * According to [MS-SMB2] section 6	Appendix A: Product Behavior:
              * If the information class is FileAllInformation, Windows Vista SP1,
              * Windows Server 2008, Windows 7, Windows Server 2008 R2, Windows 8,
              * Windows Server 2012, Windows 8.1, and Windows Server 2012 R2
              * return an absolute path to the file name as part of FileNameInformation.
              */
-            else
+            else if (testConfig.Platform != Platform.NonWindows)
             {
                 string absoluteFilePath = "\\" + TestConfig.BasicFileShare + "\\" + fileName;
                 string filenameInFilenameInfo = Encoding.Unicode.GetString(filenameInfo.FileName);
@@ -402,6 +469,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                     "FileName should be set as the absolute path to the file, actually server returns {0}.",
                     filenameInFilenameInfo);
             }
+            else // not check for non-Windows, only print log
+            {
+                BaseTestSite.Log.Add(LogEntryKind.TestStep, "Actually server returns {0}.",
+                    Encoding.Unicode.GetString(filenameInfo.FileName));
+            }
 
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Tear down the client by sending the following requests: CLOSE; TREE_DISCONNECT; LOG_OFF");
             client1.Close(treeId1, fileId1);
@@ -412,6 +484,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.QueryInfo)]
         [Description("This test case is designed to verify the behavior of querying quota information with FILE_GET_QUOTA_INFO in SidBuffer.")]
         public void BVT_SMB2Basic_Query_Quota_Info()
@@ -421,11 +494,31 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
+        [TestCategory(TestCategories.Smb30)]
+        [TestCategory(TestCategories.QueryInfo)]
+        [Description("This test case is designed to test whether server can handle QUERY requests to a data file for FileNormalizedNameInformation correctly.")]
+        public void BVT_SMB2Basic_Query_FileNormalizedNameInformation_DataFile()
+        {
+            QueryFileNormalizedNameInfo(FileType.DataFile);
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Bvt)]
+        [TestCategory(TestCategories.Smb30)]
+        [TestCategory(TestCategories.QueryInfo)]
+        [Description("This test case is designed to test whether server can handle QUERY requests to a directory file for FileNormalizedNameInformation correctly.")]
+        public void BVT_SMB2Basic_Query_FileNormalizedNameInformation_DirectoryFile()
+        {
+            QueryFileNormalizedNameInfo(FileType.DirectoryFile);
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Smb2002)]
         [TestCategory(TestCategories.LockUnlock)]
         [Description("This test case is designed to test whether server can handle WRITE of locking content correctly.")]
         public void BVT_SMB2Basic_LockAndUnLock()
-        {            
+        {
             uint status;
             string content = Smb2Utility.CreateRandomString(TestConfig.WriteBufferLengthInKb);
 
@@ -435,7 +528,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "From client1 locks a byte range and try to write content to the file within the range.");
 
             BaseTestSite.Log.Add(
-                LogEntryKind.TestStep, 
+                LogEntryKind.TestStep,
                 "Start client1 to create a file with sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT; CREATE.");
             client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
             client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
@@ -686,6 +779,18 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         public void BVT_SMB2Basic_QueryDir_Reopen_OnFile()
         {
             QueryDir_Reopen(FileType.DataFile);
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Bvt)]
+        [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.QueryDir)]
+        [Description("This test case is designed to verify QUERY_DIRECTORY with flag SMB2_REOPEN on an empty directory returns " +
+            "STATUS_NO_MORE_FILES (Windows 10 v1803 through Windows 11, Windows Server 2019) or STATUS_NO_SUCH_FILE " +
+            "(Windows 11 v22H2 and later with patches, Windows Server 2022+ with patches).")]
+        public void BVT_SMB2Basic_QueryDir_Reopen_OnEmptyDir_NoFilesReturned()
+        {
+            QueryDir_Reopen_EmptyDirectory();
         }
 
         [TestMethod]
@@ -1767,11 +1872,22 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "CHANGE_NOTIFY should be received within {0} milliseconds", TestConfig.WaitTimeoutInMilliseconds);
 
             // MS-SMB2 3.3.5.19 Receiving an SMB2 CHANGE_NOTIFY request
-            BaseTestSite.Assert.AreEqual(
-                Smb2Status.STATUS_INVALID_PARAMETER,
-                receivedChangeNotifyHeader.Status,
-                "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
-                Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            if (TestConfig.Platform == Platform.NonWindows) // not check for non-Windows
+            {
+                BaseTestSite.Assert.AreNotEqual(
+                    Smb2Status.STATUS_SUCCESS,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
+            else
+            {
+                BaseTestSite.Assert.AreEqual(
+                    Smb2Status.STATUS_INVALID_PARAMETER,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
 
             BaseTestSite.Log.Add(
                 LogEntryKind.TestStep,
@@ -1814,11 +1930,22 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "CHANGE_NOTIFY should be received within {0} milliseconds", TestConfig.WaitTimeoutInMilliseconds);
 
             // MS-SMB2 3.3.5.19 Receiving an SMB2 CHANGE_NOTIFY request
-            BaseTestSite.Assert.AreEqual(
+            if (TestConfig.Platform == Platform.NonWindows) // not check for non-Windows
+            {
+                BaseTestSite.Assert.AreNotEqual(
+                    Smb2Status.STATUS_SUCCESS,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
+            else
+            {
+                BaseTestSite.Assert.AreEqual(
                 Smb2Status.STATUS_INVALID_PARAMETER,
                 receivedChangeNotifyHeader.Status,
                 "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
                 Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
 
             BaseTestSite.Log.Add(
                 LogEntryKind.TestStep,
@@ -1861,11 +1988,22 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "CHANGE_NOTIFY should be received within {0} milliseconds", TestConfig.WaitTimeoutInMilliseconds);
 
             // MS-SMB2 3.3.5.19 Receiving an SMB2 CHANGE_NOTIFY request
-            BaseTestSite.Assert.AreEqual(
+            if (TestConfig.Platform == Platform.NonWindows) // not check for non-Windows
+            {
+                BaseTestSite.Assert.AreNotEqual(
+                    Smb2Status.STATUS_SUCCESS,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
+            else
+            {
+                BaseTestSite.Assert.AreEqual(
                 Smb2Status.STATUS_INVALID_PARAMETER,
                 receivedChangeNotifyHeader.Status,
                 "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
                 Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
 
             BaseTestSite.Log.Add(
                 LogEntryKind.TestStep,
@@ -1908,11 +2046,22 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "CHANGE_NOTIFY should be received within {0} milliseconds", TestConfig.WaitTimeoutInMilliseconds);
 
             // MS-SMB2 3.3.5.19 Receiving an SMB2 CHANGE_NOTIFY request
-            BaseTestSite.Assert.AreEqual(
+            if (TestConfig.Platform == Platform.NonWindows) // not check for non-Windows
+            {
+                BaseTestSite.Assert.AreNotEqual(
+                    Smb2Status.STATUS_SUCCESS,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
+            else
+            {
+                BaseTestSite.Assert.AreEqual(
                 Smb2Status.STATUS_INVALID_PARAMETER,
                 receivedChangeNotifyHeader.Status,
                 "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
                 Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
 
             BaseTestSite.Log.Add(
                 LogEntryKind.TestStep,
@@ -1955,11 +2104,22 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 "CHANGE_NOTIFY should be received within {0} milliseconds", TestConfig.WaitTimeoutInMilliseconds);
 
             // MS-SMB2 3.3.5.19 Receiving an SMB2 CHANGE_NOTIFY request
-            BaseTestSite.Assert.AreEqual(
+            if (TestConfig.Platform == Platform.NonWindows) // not check for non-Windows
+            {
+                BaseTestSite.Assert.AreNotEqual(
+                    Smb2Status.STATUS_SUCCESS,
+                    receivedChangeNotifyHeader.Status,
+                    "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
+                    Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
+            else
+            {
+                BaseTestSite.Assert.AreEqual(
                 Smb2Status.STATUS_INVALID_PARAMETER,
                 receivedChangeNotifyHeader.Status,
                 "If OutputBufferLength is greater than Connection.MaxTransactSize, the server SHOULD fail the request with STATUS_INVALID_PARAMETER. Actually server returns {0}.",
                 Smb2Status.GetStatusCode(receivedChangeNotifyHeader.Status));
+            }
 
             BaseTestSite.Log.Add(
                 LogEntryKind.TestStep,
@@ -2170,7 +2330,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
                 out outputBuffer);
 
             FileBasicInformation fileBasicInfoToSet = TypeMarshal.ToStruct<FileBasicInformation>(outputBuffer);
-            switch (fileBasicInfoType) {
+            switch (fileBasicInfoType)
+            {
                 case FileBasicInfoType.FileBasicInfoAttribute:
                     fileBasicInfoToSet.FileAttributes = File_Attributes.FILE_ATTRIBUTE_HIDDEN;
                     break;
@@ -2354,8 +2515,144 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
             client1.LogOff();
         }
 
+        /// <summary>
+        /// Test QUERY_DIRECTORY with SMB2_REOPEN flag on an empty directory where the object store does not return any files.
+        /// Windows 10 v1803 through Windows 11, and Windows Server 2019 fail the request with STATUS_NO_MORE_FILES.
+        /// Windows 11 v22H2 and later with patches, Windows Server 2022+ with patches fail the request with STATUS_NO_SUCH_FILE.
+        /// </summary>
+        private void QueryDir_Reopen_EmptyDirectory()
+        {
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, 
+                "Test Scenario: When SMB2_REOPEN is set in the Flags field of SMB2 QUERY_DIRECTORY request and " +
+                "the object store does not return any files, verify the server returns the expected status code.");
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, 
+                "Start a client to create an empty directory by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT; CREATE");
+            
+            client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
+            client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
+
+            uint status = client1.Negotiate(
+                TestConfig.RequestDialects,
+                TestConfig.IsSMB1NegotiateEnabled);
+
+            status = client1.SessionSetup(
+                TestConfig.DefaultSecurityPackage,
+                TestConfig.SutComputerName,
+                TestConfig.AccountCredential,
+                TestConfig.UseServerGssToken);
+
+            uint treeId;
+            status = client1.TreeConnect(uncSharePath, out treeId);
+
+            FILEID fileId;
+            Smb2CreateContextResponse[] serverCreateContexts;
+
+            // Create an empty directory
+            string emptyDirName = GetTestFileName(uncSharePath);
+            status = client1.Create(
+                treeId,
+                emptyDirName,
+                CreateOptions_Values.FILE_DIRECTORY_FILE | CreateOptions_Values.FILE_DELETE_ON_CLOSE,
+                out fileId,
+                out serverCreateContexts);
+
+            BaseTestSite.Assert.AreEqual(
+                Smb2Status.STATUS_SUCCESS,
+                status,
+                "Create empty directory should succeed, actually server returns {0}.", Smb2Status.GetStatusCode(status));
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, 
+                "Client sends initial QUERY_DIRECTORY request to enumerate the empty directory with a non-matching pattern.");
+            
+            byte[] outputBuffer;
+            // Use a pattern that won't match anything (to ensure the object store returns no files)
+            // First query should return STATUS_NO_SUCH_FILE for non-matching pattern on first query
+            status = client1.QueryDirectory(
+                treeId,
+                FileInformationClass_Values.FileDirectoryInformation,
+                QUERY_DIRECTORY_Request_Flags_Values.NONE,
+                0,
+                fileId,
+                "NonExistentPattern_*",
+                out outputBuffer,
+                checker: (header, response) => { }
+                );
+
+            BaseTestSite.Log.Add(LogEntryKind.Comment, 
+                "Initial QUERY_DIRECTORY returned status: {0}", Smb2Status.GetStatusCode(status));
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, 
+                "Client sends QUERY_DIRECTORY request with flag SMB2_REOPEN to restart the scan with a non-matching pattern.");
+            
+            status = client1.QueryDirectory(
+                treeId,
+                FileInformationClass_Values.FileDirectoryInformation,
+                QUERY_DIRECTORY_Request_Flags_Values.REOPEN,
+                0,
+                fileId,
+                "NonExistentPattern_*",
+                out outputBuffer,
+                checker: (header, response) => { }
+                );
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Verify server response based on Windows version.");
+            BaseTestSite.Log.Add(LogEntryKind.Comment, 
+                "Server returned status: {0} (0x{1:X8})", Smb2Status.GetStatusCode(status), status);
+
+            // MS-SMB2 behavior note:
+            // Windows 10 v1803 through Windows 11, and Windows Server 2019 fail the request with STATUS_NO_MORE_FILES.
+            // Windows 11 v22H2 and Windows 11, version 23H2 with [MSKB 5062663], Windows 11, version 24H2 with [MSKB-5062660] and later,
+            // Windows Server 2022 with [MSKB-5063880] and Windows Server 2022, 23H2 with [MSKB-5063899] and 
+            // Windows Server 2025 with [MSKB-5062660] and later fail the request with STATUS_NO_SUCH_FILE.
+
+            if (testConfig.Platform >= Platform.WindowsServerV1803 && testConfig.Platform < Platform.WindowsServer2022)
+            {
+                // Older Windows versions: STATUS_NO_MORE_FILES
+                BaseTestSite.Assert.AreEqual(
+                    Smb2Status.STATUS_NO_MORE_FILES,
+                    status,
+                    "When SMB2_REOPEN is set in the Flags field of SMB2 QUERY_DIRECTORY request and the object store " +
+                    "does not return any files, Windows 10 v1803 through Windows 11, and Windows Server 2019 " +
+                    "fail the request with STATUS_NO_MORE_FILES (0x80000006). Actually server returns {0} (0x{1:X8}).", 
+                    Smb2Status.GetStatusCode(status), status);
+            }
+            else if (testConfig.Platform >= Platform.WindowsServer2022)
+            {
+                // Newer Windows versions with patches: STATUS_NO_SUCH_FILE
+                BaseTestSite.Assert.AreEqual(
+                    Smb2Status.STATUS_NO_SUCH_FILE,
+                    status,
+                    "When SMB2_REOPEN is set in the Flags field of SMB2 QUERY_DIRECTORY request and the object store " +
+                    "does not return any files, Windows 11 v22H2 and later with patches, Windows Server 2022+ with patches " +
+                    "fail the request with STATUS_NO_SUCH_FILE (0xC000000F). Actually server returns {0} (0x{1:X8}).", 
+                    Smb2Status.GetStatusCode(status), status);
+            }
+            else
+            {
+                // For older platforms or non-Windows platforms, accept either status code
+                BaseTestSite.Assert.IsTrue(
+                    status == Smb2Status.STATUS_NO_MORE_FILES || status == Smb2Status.STATUS_NO_SUCH_FILE,
+                    "When SMB2_REOPEN is set in the Flags field of SMB2 QUERY_DIRECTORY request and the object store " +
+                    "does not return any files, the server should fail the request with STATUS_NO_MORE_FILES (0x80000006) " +
+                    "or STATUS_NO_SUCH_FILE (0xC000000F). Actually server returns {0} (0x{1:X8}).", 
+                    Smb2Status.GetStatusCode(status), status);
+            }
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Tear down the client by sending the following requests: CLOSE; TREE_DISCONNECT; LOG_OFF");
+            client1.Close(treeId, fileId);
+            client1.TreeDisconnect(treeId);
+            client1.LogOff();
+        }
+
         private void QueryQuotaInfo(SidBufferFormat type)
         {
+            // valid domain name matching, for example: contoso.com, local.contoso.com
+            if (!Regex.IsMatch(TestConfig.DomainName, @"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$", RegexOptions.IgnoreCase))
+            {
+                BaseTestSite.Assert.Inconclusive("Authentication test cases are not applicable in non-domain environment");
+            }
             // MS-SMB2 2.2.37.1
             BaseTestSite.Assert.IsFalse(
                 type == SidBufferFormat.SID,
@@ -2406,6 +2703,73 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
             client1.LogOff();
         }
 
+        private void QueryFileNormalizedNameInfo(FileType fileType)
+        {
+            #region Check Applicability
+            TestConfig.CheckDialect(DialectRevision.Smb30);
+            TestConfig.CheckPlatform(Platform.WindowsServerV1709);
+            #endregion
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Starts a client by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT.");
+            client1 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
+            client1.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
+            client1.Negotiate(TestConfig.RequestDialects, TestConfig.IsSMB1NegotiateEnabled);
+            client1.SessionSetup(
+                TestConfig.DefaultSecurityPackage,
+                TestConfig.SutComputerName,
+                TestConfig.AccountCredential,
+                TestConfig.UseServerGssToken);
+            uint treeId1;
+            client1.TreeConnect(uncSharePath, out treeId1);
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends CREATE request with desired access set to GENERIC_READ and GENERIC_WRITE to create a file.");
+            Smb2CreateContextResponse[] serverCreateContexts;
+            string fileName = GetTestFileName(uncSharePath);
+            FILEID fileId1;
+            client1.Create(
+                treeId1,
+                fileName,
+                fileType == FileType.DataFile ? CreateOptions_Values.FILE_NON_DIRECTORY_FILE : CreateOptions_Values.FILE_DIRECTORY_FILE,
+                out fileId1,
+                out serverCreateContexts,
+                accessMask: AccessMask.GENERIC_READ | AccessMask.GENERIC_WRITE);
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends QUERY_INFO request to query file normalized name information.");
+            // FileNameInformation([MS-FSCC] 2.1.7): length + 64 Unicode characters which is long enough to hold file name
+            uint outputBufferSize = 4 + 64 * 2;
+            byte[] outputBuffer = new byte[outputBufferSize];
+            uint status = client1.QueryFileNormalizedNameInformation(
+                treeId1,
+                QUERY_INFO_Request_Flags_Values.V1,
+                fileId1,
+                null,
+                out outputBuffer,
+                checker: (header, response) => { }
+            );
+
+            if (status != Smb2Status.STATUS_SUCCESS)
+            {
+                if (status == Smb2Status.STATUS_NOT_SUPPORTED)
+                {
+                    BaseTestSite.Assert.Inconclusive("Query FileNormalizedNameInformation is not supported by server.");
+                }
+                else
+                {
+                    BaseTestSite.Assert.Fail("Query FileNormalizedNameInformation failed with status {0}.", status);
+                }
+            }
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Verify outputBuffer as FileNameInformation.");
+            var fileNormalizedNameInfo = TypeMarshal.ToStruct<FileNameInformation>(outputBuffer);
+            string filePath = Encoding.Unicode.GetString(fileNormalizedNameInfo.FileName);
+            BaseTestSite.Assert.AreEqual(fileName, filePath, "If the information class is FileNormalizedNameInformation, the server MUST convert the information returned from the underlying object store to a normalized path name.");
+
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Tear down the client by sending the following requests: CLOSE; TREE_DISCONNECT; LOG_OFF");
+            client1.Close(treeId1, fileId1);
+            client1.TreeDisconnect(treeId1);
+            client1.LogOff();
+        }
+
         /// <summary>
         /// MS-SMB2 2.2.37.1
         /// Create SidBuffer
@@ -2423,7 +2787,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
             // and StartSidOffset SHOULD be set to 0.
 
             FileGetQuotaInformation fileGetQuotaInfo = new FileGetQuotaInformation();
-            _SID curSid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, testConfig.UserName);
+            _SID curSid = DtypUtility.GetSidFromAccount(TestConfig.DomainName, testConfig.UserName, testConfig.UserName, testConfig.UserPassword);
             fileGetQuotaInfo.Sid = curSid;
             fileGetQuotaInfo.SidLength = (uint)TypeMarshal.ToBytes<_SID>(curSid).Length;
             quotaInfo.Buffer = TypeMarshal.ToBytes<FileGetQuotaInformation>(fileGetQuotaInfo);

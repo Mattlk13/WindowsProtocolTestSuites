@@ -4,7 +4,8 @@ using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Rdma;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,6 @@ namespace Microsoft.Protocols.TestManager.SMBDPlugin.Detector
         private int creditAvailable;
         private bool signingRequired;
         private bool encryptionEnabled;
-        private RdmaAdapterInfo adapterInfo;
         private bool negotiated;
         private uint maxReadSize;
         private uint maxWriteSize;
@@ -422,7 +422,7 @@ namespace Microsoft.Protocols.TestManager.SMBDPlugin.Detector
 
 
         #region SMBD procedures
-        public void ConnectOverRDMA(string localIpAddress, string remoteIpAddress, int port, uint maxReceiveSize)
+        public void ConnectOverRDMA(string localIpAddress, string remoteIpAddress, int port, uint maxReceiveSize, out RdmaAdapterInfo adapterInfo)
         {
             NtStatus status;
 

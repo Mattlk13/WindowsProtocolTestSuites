@@ -12,7 +12,7 @@ using Microsoft.Protocols.TestTools.StackSdk.Transport;
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
 {
     /// <summary>
-    /// The KILE client, receives server PDUs and sends client PDUs.
+    /// The Kerberos Client, receives server PDUs and sends client PDUs.
     /// It is called by test cases to create, send or receive PDUs.
     /// </summary>
     public class KerberosClient : KerberosRole
@@ -29,7 +29,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
 
         private Type expectedPduType;
 
-        protected string kdcAddress;
+        protected IPAddress kdcAddress;
         protected int kdcPort;
         protected TransportType transportType;
         protected KerberosConstValue.OidPkt oidPkt;
@@ -75,11 +75,19 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             get;
             set;
         }
+
+        /// <summary>
+        /// MsKerberosOidInt(1, 2, 840, 48018, 1, 2, 2) or KerberosOid(1, 2, 840, 113554, 1, 2, 2)
+        /// </summary>
+        public KerberosConstValue.OidPkt OidPkt
+        {
+            get { return this.oidPkt; }
+        }
         #endregion properties
 
         #region constructor
         /// <summary>
-        /// Create a KileClient instance.
+        /// Create a KerberosClient instance.
         /// </summary>
         /// <param name="domain">The realm part of the client's principal identifier.
         /// This argument cannot be null.</param>
@@ -91,10 +99,28 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <param name="kdcPort">The port of the KDC.</param>
         /// <param name="transportType">Whether the transport is TCP or UDP transport.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the input parameter is null.</exception>
-        public KerberosClient(string domain, string cName, string password, KerberosAccountType accountType, string kdcAddress, int kdcPort, TransportType transportType, KerberosConstValue.OidPkt oidPkt = KerberosConstValue.OidPkt.KerberosToken, string salt = null)
+        public KerberosClient(string domain, string cName, string password, KerberosAccountType accountType, string kdcAddress, int kdcPort, TransportType transportType, KerberosConstValue.OidPkt oidPkt = KerberosConstValue.OidPkt.KerberosToken, string salt = null) :
+            this(domain, cName, password, accountType, IPAddress.Parse(kdcAddress), kdcPort, transportType, oidPkt, salt)
+        {
+        }
+
+        /// <summary>
+        /// Create a KerberosClient instance.
+        /// </summary>
+        /// <param name="domain">The realm part of the client's principal identifier.
+        /// This argument cannot be null.</param>
+        /// <param name="cName">The account to logon the remote machine. Either user account or computer account
+        /// This argument cannot be null.</param>
+        /// <param name="password">The password of the user. This argument cannot be null.</param>
+        /// <param name="accountType">The type of the logon account. User or Computer</param>
+        /// <param name="kdcAddress">The IP address of the KDC.</param>
+        /// <param name="kdcPort">The port of the KDC.</param>
+        /// <param name="transportType">Whether the transport is TCP or UDP transport.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input parameter is null.</exception>
+        public KerberosClient(string domain, string cName, string password, KerberosAccountType accountType, IPAddress kdcAddress, int kdcPort, TransportType transportType, KerberosConstValue.OidPkt oidPkt = KerberosConstValue.OidPkt.KerberosToken, string salt = null)
         {
             TransportBufferSize = KerberosConstValue.TRANSPORT_BUFFER_SIZE;
-            this.Context = new KerberosContext(domain, cName, password, accountType, salt);
+            this.Context = new KerberosContext(domain, cName, password, accountType, KerberosContextType.Client, salt);
             this.kdcAddress = kdcAddress;
             this.kdcPort = kdcPort;
             this.transportType = transportType;
@@ -116,9 +142,27 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
         /// <param name="transportType">Whether the transport is TCP or UDP transport.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the input parameter is null.</exception>
         public KerberosClient(string domain, string cName, string password, KerberosAccountType accountType, KerberosTicket armorTicket, EncryptionKey armorSessionKey, string kdcAddress, int kdcPort, TransportType transportType, KerberosConstValue.OidPkt oidPkt = KerberosConstValue.OidPkt.KerberosToken, string salt = null)
+            : this(domain, cName, password, accountType, armorTicket, armorSessionKey, IPAddress.Parse(kdcAddress), kdcPort, transportType, oidPkt, salt)
+        {
+        }
+
+        /// <summary>
+        /// Create a KileClient instance.
+        /// </summary>
+        /// <param name="domain">The realm part of the client's principal identifier.
+        /// This argument cannot be null.</param>
+        /// <param name="cName">The account to logon the remote machine. Either user account or computer account
+        /// This argument cannot be null.</param>
+        /// <param name="password">The password of the user. This argument cannot be null.</param>
+        /// <param name="accountType">The type of the logon account. User or Computer</param>
+        /// <param name="kdcAddress">The IP address of the KDC.</param>
+        /// <param name="kdcPort">The port of the KDC.</param>
+        /// <param name="transportType">Whether the transport is TCP or UDP transport.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input parameter is null.</exception>
+        public KerberosClient(string domain, string cName, string password, KerberosAccountType accountType, KerberosTicket armorTicket, EncryptionKey armorSessionKey, IPAddress kdcAddress, int kdcPort, TransportType transportType, KerberosConstValue.OidPkt oidPkt = KerberosConstValue.OidPkt.KerberosToken, string salt = null)
         {
             TransportBufferSize = KerberosConstValue.TRANSPORT_BUFFER_SIZE;
-            this.Context = new KerberosContext(domain, cName, password, accountType, salt, armorTicket, armorSessionKey);
+            this.Context = new KerberosContext(domain, cName, password, accountType, salt, armorTicket, armorSessionKey, KerberosContextType.Client);
             this.kdcAddress = kdcAddress;
             this.kdcPort = kdcPort;
             this.transportType = transportType;
@@ -139,7 +183,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             transportConfig.MaxConnections = 1;
             transportConfig.BufferSize = TransportBufferSize;
             transportConfig.RemoteIpPort = kdcPort;
-            transportConfig.RemoteIpAddress = IPAddress.Parse(kdcAddress);
+            transportConfig.RemoteIpAddress = kdcAddress;
 
             // For UDP bind
             if (transportConfig.RemoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
@@ -233,7 +277,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             this.Connect();
             kdcTransport.SendBytes(packetBuffer);
         }
-        
+
         /// <summary>
         /// Expect to receive a PDU of any type from the remote host.
         /// </summary>
@@ -277,14 +321,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
 
         #region Decoder
         /// <summary>
-        /// Decode KILE PDUs from received message bytes
+        /// Decode Kerberos PDUs from received message bytes
         /// </summary>
         /// <param name="endPoint">An endpoint from which the message bytes are received</param>
         /// <param name="receivedBytes">The received bytes to be decoded</param>
         /// <param name="consumedLength">Length of message bytes consumed by decoder</param>
         /// <param name="expectedLength">Length of message bytes the decoder expects to receive</param>
-        /// <returns>The decoded KILE PDUs</returns>
-        /// <exception cref="System.FormatException">thrown when a kile message type is unsupported</exception>
+        /// <returns>The decoded Kerberos PDUs</returns>
+        /// <exception cref="System.FormatException">thrown when a Kerberos message type is unsupported</exception>
         public override KerberosPdu[] DecodePacketCallback(object endPoint,
                                                 byte[] receivedBytes,
                                                 out int consumedLength,
@@ -349,7 +393,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             consumedLength = expectedLength;
 
             // get message type
-            // (the lower 5 bits indicates its kile message type)
+            // (the lower 5 bits indicates its Kerberos message type)
             MsgType kileMessageType = (MsgType)(pduBytes[0] & 0x1f);
             KerberosPdu pdu = null;
 
@@ -419,6 +463,18 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             if (pdu is KerberosTgsResponse)
             {
                 KerberosTgsResponse response = pdu as KerberosTgsResponse;
+                UpdateContext(response);
+            }
+
+            if (pdu is KerberosApRequest)
+            {
+                KerberosApRequest request = pdu as KerberosApRequest;
+                UpdateContext(request);
+            }
+
+            if (pdu is KerberosApResponse)
+            {
+                KerberosApResponse response = pdu as KerberosApResponse;
                 UpdateContext(response);
             }
 
@@ -497,6 +553,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             if (response.EncPart != null)
             {
                 Context.SessionKey = response.EncPart.key;
+                Context.TgsSessionKey = response.EncPart.key;
             }
 
             if (response.Response != null)
@@ -572,7 +629,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
                     {
                         if (entry.salt != null) salt = entry.salt.ToString();
                         else salt = null;
-                        return (long) etype.Value;
+                        return (long)etype.Value;
                     }
                 }
             }
@@ -590,6 +647,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
             {
                 Context.ReplyKey = Context.Subkey;
             }
+            Context.ApSubKey = Context.ReplyKey;
         }
 
         private void UpdateContext(KerberosTgsResponse response)
@@ -614,13 +672,56 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib
                     Context.Subkey == null ? KeyUsageNumber.TGS_REP_encrypted_part : KeyUsageNumber.TGS_REP_encrypted_part_subkey;
                 response.DecryptTgsResponse(Context.ReplyKey.keyvalue.ByteArrayValue, usage);
                 Context.SessionKey = response.EncPart.key;
+                Context.ApSessionKey = response.EncPart.key;
                 //Fix me: when hide-client-names is set to true, response.Response.cname is not the real CName.
                 Context.Ticket = new KerberosTicket(response.Response.ticket, response.Response.cname, response.EncPart.key);
                 Context.SelectedEType = (EncryptionType)Context.Ticket.Ticket.enc_part.etype.Value;
             }
         }
 
-        public void ChangeRealm(string realm, string kdcAddress, int kdcPort, TransportType transportType)
+        private void UpdateContext(KerberosApResponse response)
+        {
+            if (response.ApEncPart != null)
+            {
+                if (response.ApEncPart.seq_number != null)
+                {
+                    this.Context.CurrentRemoteSequenceNumber = (uint)response.ApEncPart.seq_number.Value;
+                }
+
+                if (response.ApEncPart.subkey != null)
+                {
+                    this.Context.AcceptorSubKey = response.ApEncPart.subkey;
+                    this.Context.SessionKey = response.ApEncPart.subkey;
+                }
+            }
+        }
+
+        private void UpdateContext(KerberosApRequest request)
+        {
+            this.Context.Time = request.Authenticator.ctime;
+            this.Context.Cusec = request.Authenticator.cusec;
+
+            if (request.Authenticator.cksum != null)
+            {
+                int flag = BitConverter.ToInt32(request.Authenticator.cksum.checksum.ByteArrayValue,
+                    KerberosConstValue.AUTHENTICATOR_CHECKSUM_LENGTH + sizeof(ChecksumFlags));
+                this.Context.ChecksumFlag = (ChecksumFlags)flag;
+            }
+            this.Context.ApSubKey = request.Authenticator.subkey;
+
+            if (request.Authenticator.seq_number != null)
+            {
+                this.Context.currentLocalSequenceNumber = (uint)request.Authenticator.seq_number.Value;
+                this.Context.CurrentRemoteSequenceNumber = this.Context.currentLocalSequenceNumber;
+            }
+        }
+
+        public void ChangeRealm(string realm, string kdcAddress, int kdcPort, TransportType transport)
+        {
+            ChangeRealm(realm, IPAddress.Parse(kdcAddress), kdcPort, transport);
+        }
+
+        public void ChangeRealm(string realm, IPAddress kdcAddress, int kdcPort, TransportType transportType)
         {
             this.Context.Realm = new Realm(realm);
             this.kdcAddress = kdcAddress;

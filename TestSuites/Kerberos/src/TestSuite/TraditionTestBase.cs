@@ -13,7 +13,7 @@ using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts.Asn1CodecV3;
 using Microsoft.Protocols.TestTools.StackSdk.Asn1;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -67,6 +67,10 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite
                     TlsClientCertificate = clientCert
                 };
             }
+
+            IClientControlAdapter adapter = BaseTestSite.GetAdapter<IClientControlAdapter>();
+            adapter.RestoreSupportedEncryptionTypes();
+            adapter.EnableCompoundIdentity();
         }
 
         protected override void TestCleanup()
@@ -207,7 +211,9 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite
                 Capabilities_Values.GLOBAL_CAP_DFS,
                 Guid.NewGuid(),
                 out selectedDialect);
-            BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_SUCCESS, status, "Negotiate failed with error.");
+
+            //this is to check whether SMB2 negotiate is successful or failed, if the status is not equal to STATUS_SUCCESS then throw "Negotiate status should be STATUS_SUCCESS"
+            BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_SUCCESS, status, "Negotiate status should be STATUS_SUCCESS");
 
             byte[] repToken;
             status = smb2Client.SessionSetup(
@@ -221,7 +227,9 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite
             if (status == Smb2Status.STATUS_SUCCESS)
             {
                 status = smb2Client.LogOff();
-                BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_SUCCESS, status, "Logoff failed with error.");
+
+                //this part checks whether client log off is successful, if the status is not equal to STATUS_SUCCESS then throw "Logoff status should be STATUS_SUCCESS"
+                BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_SUCCESS, status, "Logoff status should be STATUS_SUCCESS");
             }
             smb2Client.Disconnect();
 

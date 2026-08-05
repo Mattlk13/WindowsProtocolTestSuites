@@ -16,7 +16,7 @@ while($tryTime -lt 10){
 	Invoke-Command -ComputerName $computer -credential $cred -ScriptBlock {cmd /c schtasks /run /TN Negotiate_RDPConnect}
 	sleep 5
 	$process = Invoke-Command -ComputerName $computer -credential $cred -ScriptBlock {Get-Process mstsc}
-	Invoke-Command -ComputerName $computer -credential $cred -ScriptBlock {cmd /c schtasks /run /TN DisconnectAll}
+	Invoke-Command -ComputerName $computer -credential $cred -ScriptBlock {taskkill /F /IM mstsc.exe}
 	if($process -ne $null -and $process.Name -eq "mstsc"){
 		Write-Host "$sutComputerIP task scheduler ready." -foregroundcolor Green
         cmd /C ECHO MSTSC FINISHED > $env:HOMEDRIVE\mstsc.finished.signal
@@ -39,17 +39,17 @@ cd $batchPath
 $maxRetryTimes = 20
 $tryTime = 0
 while($tryTime -lt $maxRetryTimes){
-    cmd /c CommonRunSingleCase.cmd BVT_ConnectionTest_ConnectionInitiation_PositiveTest
+    ./RunTestCasesByFilter.ps1 S1_ConnectionTest_BasicSettingExchange_PositiveTest_EncryptionMethodandLevel
     sleep 15
-    $filenames = Get-ChildItem .\TestResults
+    $filenames = Get-ChildItem .\..\TestResults
     foreach($filename in $filenames){
         if($filename.Name.Contains(".trx")){
-            $trxFile = "$batchPath\TestResults\$filename"
+            $trxFile = "$batchPath\..\TestResults\$filename"
             break
         }
     }
     $result = Select-String '<ResultSummary outcome="Completed">' $trxFile
-    Remove-Item .\TestResults -Recurse -Force
+    Remove-Item .\..\TestResults -Recurse -Force
     if($result.count -gt 0){
         Write-Host "$sutComputerIP task scheduler ready." -foregroundcolor Green
         cmd /C ECHO SUTADAPTER FINISHED > $env:HOMEDRIVE\SUTAdapter.finished.signal

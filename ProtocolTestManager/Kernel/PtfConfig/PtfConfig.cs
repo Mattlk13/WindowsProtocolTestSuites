@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -18,6 +18,8 @@ namespace Microsoft.Protocols.TestManager.Kernel
     /// </summary>
     public class PtfConfig
     {
+        public const string DefaultGroup = "Default Group";
+
         // ConfigNode Tree root according to ptfconfig files
         public PtfProperty PtfPropertyRoot { get; set; }
 
@@ -55,6 +57,38 @@ namespace Microsoft.Protocols.TestManager.Kernel
 
             //Set Env value as default value
             SetDefaultValues(DefaultPtfPropertyRoot);
+        }
+
+        /// <summary>
+        /// Constructor of PtfConfig.
+        /// </summary>
+        /// <param name="configFiles">A list of config files.</param>
+        public PtfConfig(List<string> configFiles)
+        {
+            ConfigFileNames = configFiles;
+
+            XmlDocList = new List<XmlDocument>();
+
+            PtfPropertyRoot = new PtfProperty();
+
+            FileProperties = Merge(ConfigFileNames, PtfPropertyRoot);
+
+            AdjustDefaultGroup(PtfPropertyRoot);
+        }
+
+        /// <summary>
+        /// Save changes back to the original ptfconfig files.
+        /// </summary>
+        public void Save()
+        {
+            for (int i = 0; i < ConfigFileNames.Count; i++)
+            {
+                string fileName = ConfigFileNames[i];
+
+                Utility.RemoveReadonly(fileName);
+
+                XmlDocList[i].Save(fileName);
+            }
         }
 
         /// <summary>
@@ -307,7 +341,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 Name = StringResource.DefaultGroupName,
                 Description = "",
                 ValueType = PtfPropertyType.Group
-                
+
             };
             for (int i = 0; i < RootNode.Count; i++)
             {
@@ -372,7 +406,26 @@ namespace Microsoft.Protocols.TestManager.Kernel
             PtfProperty propertyNode = GetPropertyNodeByName(propertyName);
             if (propertyNode == null) return false;
 
+            propertyNode.Value = string.Join(",", propertyValue);
+
             return true;
+        }
+
+        /// <summary>
+        /// Sets the property value.
+        /// </summary>
+        /// <param name="propertyName">The property name</param>
+        /// <param name="propertyValue">The property value.</param>
+        public void SetPropertyValue(string propertyName, string propertyValue)
+        {
+            PtfProperty propertyNode = GetPropertyNodeByName(propertyName);
+
+            if (propertyNode == null)
+            {
+                throw new ArgumentException($"The property name {propertyName} is invalid.");
+            }
+
+            propertyNode.Value = propertyValue;
         }
 
         /// <summary>
@@ -383,7 +436,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
         public PtfProperty GetPropertyNodeByName(string propertyName)
         {
             string searchName = "." + propertyName;
-            string[] groups = propertyName.Split('.');
 
             //Property
             Stack<PtfProperty> s = new Stack<PtfProperty>();
@@ -410,7 +462,7 @@ namespace Microsoft.Protocols.TestManager.Kernel
                 }
             }
 
-            while(s.Count> 0)
+            while (s.Count > 0)
             {
                 PtfProperty p = s.Pop();
                 string n = b.Pop();

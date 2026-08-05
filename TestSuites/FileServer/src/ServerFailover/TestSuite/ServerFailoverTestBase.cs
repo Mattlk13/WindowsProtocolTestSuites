@@ -47,6 +47,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
 
             testConfig = new ServerFailoverTestConfig(BaseTestSite);
             sutController = BaseTestSite.GetAdapter<ISutControlAdapter>();
+            this.sutController.FlushDNS();
         }
 
         protected override void TestCleanup()
@@ -57,6 +58,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             }
 
             RestoreServer();
+            this.sutController.FlushDNS();
 
             base.TestCleanup();
         }
@@ -90,6 +92,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
 
             DoUntilSucceed(() => sutController.DisableClusterNode(clusterNode), TestConfig.FailoverTimeout,
                 "Retry to stop cluster service on {0} until succeed within timeout span", clusterNode);
+
+            sutController.FlushDNS();
+
+            // Sleep 30 seconds to wait cluster stable
+            System.Threading.Thread.Sleep(1000*30);
         }
 
         protected void RestoreClusterNodes(params string[] servers)
@@ -97,23 +104,24 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             // Restore cluster node
             foreach (string node in servers)
             {
-                BaseTestSite.Log.Add(LogEntryKind.Debug, "Restore cluster node {0}", node);
-                DoUntilSucceed(() => sutController.EnableClusterNode(node), TestConfig.FailoverTimeout,
+                DoUntilSucceed(() =>
+                {
+                    // Enable cluster node
+                    BaseTestSite.Log.Add(LogEntryKind.Debug, "Enable cluster node {0}", node);
+                    if (sutController.EnableClusterNode(node))
+                    {
+                        // Check node availability
+                        BaseTestSite.Log.Add(LogEntryKind.Debug, "Make sure cluster node {0} is in Running state", node);
+                        return sutController.GetClusterNodeStatus(node) == "Running";
+                    }
+                    return false;
+                }, TestConfig.FailoverTimeout,
                     "Retry to restore cluster node {0} until succeed within timeout span", node);
             }
 
+            // Only works for windows SUT.
             if (!TestConfig.IsWindowsPlatform)
                 return;
-
-            // Only works for windows.
-            // Check node availability
-            foreach (string node in servers)
-            {
-                BaseTestSite.Log.Add(LogEntryKind.Debug, "Make sure cluster node {0}", node);
-
-                DoUntilSucceed(() => sutController.GetClusterNodeStatus(node) == "Running", TestConfig.FailoverTimeout,
-                    "Retry to make sure cluster node {0} is in Running state", node);
-            }
 
             // Check cluster resource availability
             foreach (string resource in new string[] { TestConfig.ClusteredFileServerName, TestConfig.ClusteredScaleOutFileServerName })
@@ -140,7 +148,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
 
         #region Failover/Restore Server
         /// <summary>
-        /// File Server failover 
+        /// File Server failover
         /// For windows, simulated by disabling current access node of clustered file server
         /// </summary>
         /// <param name="server">Name of clustered file server</param>
@@ -155,7 +163,9 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                 return;
             }
 
-            // Windows
+            // Windows, before failover, we need to restore all nodes to be enabled.
+            RestoreClusterNodes(TestConfig.ClusterNode01, TestConfig.ClusterNode02);
+
             #region Failover accessed node
             BaseTestSite.Log.Add(
                 LogEntryKind.Debug,
@@ -173,6 +183,18 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                 DoUntilSucceed(() =>
                 {
                     newOwnerNode = sutController.GetClusterResourceOwner(server);
+                    if (!string.IsNullOrEmpty(newOwnerNode))
+                    {
+                        BaseTestSite.Log.Add(
+                            LogEntryKind.Debug,
+                            "currentAccessNode: {0}, newOwnerNode: {1}", currentAccessNode.ToUpper(), newOwnerNode.ToUpper());
+                    }
+                    else
+                    {
+                        BaseTestSite.Log.Add(
+                            LogEntryKind.Debug,
+                            "currentAccessNode: {0}, newOwnerNode: {1}", currentAccessNode.ToUpper(), "null or empty!");
+                    }
                     return (!string.IsNullOrEmpty(newOwnerNode) && newOwnerNode.ToUpper() != currentAccessNode.ToUpper());
                 }, TestConfig.FailoverTimeout, "Retry to get cluster owner node until succeed within timeout span.");
 
@@ -201,7 +223,8 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             {
                 if (TestConfig.IsWindowsPlatform)
                 {
-                    RestoreClusterNodes(currentAccessNode);
+                    // if all nodes are disabled, we want to keep next case good environment.
+                    RestoreClusterNodes(TestConfig.ClusterNode01, TestConfig.ClusterNode02);
                 }
                 else
                 {
@@ -232,7 +255,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             IPAddress serverAccessIp,
             string uncSharePath,
             string file,
-            string content,            
+            string content,
             Guid clientGuid,
             Guid createGuid,
             out FILEID fileId)
@@ -241,11 +264,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
             fileId = FILEID.Zero;
             beforeFailover = new Smb2FunctionalClient(TestConfig.FailoverTimeout, TestConfig, BaseTestSite);
 
-            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Start a client by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT to {0}", uncSharePath);            
-            
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Start a client by sending the following requests: NEGOTIATE; SESSION_SETUP; TREE_CONNECT to {0}", uncSharePath);
+
             beforeFailover.ConnectToServer(TestConfig.UnderlyingTransport, server, serverAccessIp);
 
-            Capabilities_Values requestCapabilities = Capabilities_Values.GLOBAL_CAP_DFS | Capabilities_Values.GLOBAL_CAP_DIRECTORY_LEASING | Capabilities_Values.GLOBAL_CAP_LARGE_MTU | Capabilities_Values.GLOBAL_CAP_LEASING | Capabilities_Values.GLOBAL_CAP_MULTI_CHANNEL | Capabilities_Values.GLOBAL_CAP_PERSISTENT_HANDLES;            
+            Capabilities_Values requestCapabilities = Capabilities_Values.GLOBAL_CAP_DFS | Capabilities_Values.GLOBAL_CAP_DIRECTORY_LEASING | Capabilities_Values.GLOBAL_CAP_LARGE_MTU | Capabilities_Values.GLOBAL_CAP_LEASING | Capabilities_Values.GLOBAL_CAP_MULTI_CHANNEL | Capabilities_Values.GLOBAL_CAP_PERSISTENT_HANDLES;
             status = beforeFailover.Negotiate(
                 TestConfig.RequestDialects,
                 TestConfig.IsSMB1NegotiateEnabled,
@@ -274,13 +297,10 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
 
             uint treeId = 0;
             Share_Capabilities_Values shareCapabilities = Share_Capabilities_Values.NONE;
-            status = DoUntilSucceed(
-                () => beforeFailover.TreeConnect(uncSharePath, out treeId, (header, response) =>
-                {
-                    shareCapabilities = response.Capabilities;
-                }),
-                TestConfig.FailoverTimeout,
-                "Retry TreeConnect until succeed within timeout span");
+            status = beforeFailover.TreeConnect(uncSharePath, out treeId, (header, response) =>
+            {
+                shareCapabilities = response.Capabilities;
+            });
 
             if (status != Smb2Status.STATUS_SUCCESS)
             {
@@ -306,7 +326,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                 out fileId,
                 out serverCreateContexts,
                 RequestedOplockLevel_Values.OPLOCK_LEVEL_NONE,
-                new Smb2CreateContextRequest[] { 
+                new Smb2CreateContextRequest[] {
                     new Smb2CreateDurableHandleRequestV2
                     {
                          CreateGuid = createGuid,
@@ -423,7 +443,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.ServerFailover.TestSuite
                         out fileId,
                         out serverCreateContexts,
                         RequestedOplockLevel_Values.OPLOCK_LEVEL_NONE,
-                        new Smb2CreateContextRequest[] { 
+                        new Smb2CreateContextRequest[] {
                             new Smb2CreateDurableHandleReconnectV2
                             {
                                 FileId = new FILEID { Persistent = fileId.Persistent },

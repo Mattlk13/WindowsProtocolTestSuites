@@ -2,7 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,8 @@ namespace Microsoft.Protocols.TestManager.FileServerPlugin
         public bool IsRequireMessageSigning { get; set; }
 
         public CompressionAlgorithm[] SupportedCompressionAlgorithms { get; set; }
+
+        public bool IsChainedCompressionSupported { get; set; }
     }
 
     /// <summary>
@@ -548,10 +551,13 @@ namespace Microsoft.Protocols.TestManager.FileServerPlugin
             {
                 logWriter.AddLog(LogLevel.Information, "SMB dialect less than 3.1.1 does not support compression.");
                 smb2Info.SupportedCompressionAlgorithms = new CompressionAlgorithm[0];
+                smb2Info.IsChainedCompressionSupported = false;
                 return;
             }
 
-            var possibleCompressionAlogrithms = new CompressionAlgorithm[] { CompressionAlgorithm.LZ77, CompressionAlgorithm.LZ77Huffman, CompressionAlgorithm.LZNT1 };
+            var allCompressionAlogrithms = Enum.GetValues(typeof(CompressionAlgorithm)).Cast<CompressionAlgorithm>().ToArray();
+
+            var possibleCompressionAlogrithms = Smb2Utility.GetSupportedPatternScanningAlgorithms(allCompressionAlogrithms).Concat(Smb2Utility.GetSupportedCompressionAlgorithms(allCompressionAlogrithms));
 
             // Iterate all possible compression algorithm for Windows will only return only one supported compression algorithm in response.
             var result = possibleCompressionAlogrithms.Where(compressionAlgorithm =>
@@ -596,6 +602,48 @@ namespace Microsoft.Protocols.TestManager.FileServerPlugin
             });
 
             smb2Info.SupportedCompressionAlgorithms = result.ToArray();
+
+            // Check for chained compression support
+            using (var client = new Smb2Client(new TimeSpan(0, 0, defaultTimeoutInSeconds)))
+            {
+                client.ConnectOverTCP(SUTIpAddress);
+
+                DialectRevision selectedDialect;
+                byte[] gssToken;
+                Packet_Header responseHeader;
+                NEGOTIATE_Response responsePayload;
+
+                uint status = client.Negotiate(
+                    0,
+                    1,
+                    Packet_Header_Flags_Values.NONE,
+                    0,
+                    new DialectRevision[] { DialectRevision.Smb311 },
+                    SecurityMode_Values.NEGOTIATE_SIGNING_ENABLED,
+                    Capabilities_Values.NONE,
+                    Guid.NewGuid(),
+                    out selectedDialect,
+                    out gssToken,
+                    out responseHeader,
+                    out responsePayload,
+                    preauthHashAlgs: new PreauthIntegrityHashID[] { PreauthIntegrityHashID.SHA_512 },
+                    compressionAlgorithms: possibleCompressionAlogrithms.ToArray(),
+                    compressionFlags: SMB2_COMPRESSION_CAPABILITIES_Flags.SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED
+                    );
+
+                if (status == Smb2Status.STATUS_SUCCESS && client.CompressionInfo.SupportChainedCompression)
+                {
+                    logWriter.AddLog(LogLevel.Information, "Chained compression is supported by SUT.");
+
+                    smb2Info.IsChainedCompressionSupported = true;
+                }
+                else
+                {
+                    logWriter.AddLog(LogLevel.Information, "Chained compression is not supported by SUT.");
+
+                    smb2Info.IsChainedCompressionSupported = false;
+                }
+            }
         }
 
         public ShareInfo[] FetchShareInfo(DetectionInfo info)
@@ -802,26 +850,21 @@ namespace Microsoft.Protocols.TestManager.FileServerPlugin
                     return Platform.WindowsServer2016;
                 }
 
-                if (build < 16299)
+                var minimumVersionToPlatformDict = new Dictionary<int, Platform>
                 {
-                    return Platform.WindowsServer2016;
-                }
-                else if (build < 17134)
-                {
-                    return Platform.WindowsServerV1709;
-                }
-                else if (build < 17763)
-                {
-                    return Platform.WindowsServerV1803;
-                }
-                else if (build < 18362)
-                {
-                    return Platform.WindowsServer2019;
-                }
-                else
-                {
-                    return Platform.WindowsServerV1903;
-                }
+                    [Int32.MinValue] = Platform.WindowsServer2016,
+                    [16299] = Platform.WindowsServerV1709,
+                    [17134] = Platform.WindowsServerV1803,
+                    [17763] = Platform.WindowsServer2019,
+                    [18362] = Platform.WindowsServerV1903,
+                    [18363] = Platform.WindowsServerV1909,
+                    [19041] = Platform.WindowsServerV2004,
+                };
+
+                // Find the maximum version which is not greater than build.
+                var kvpMatched = minimumVersionToPlatformDict.OrderBy((kvp) => kvp.Key).Last((kvp) => kvp.Key <= build);
+
+                return kvpMatched.Value;
             }
             else if (osVersion.StartsWith("6.3."))
                 return Platform.WindowsServer2012R2;

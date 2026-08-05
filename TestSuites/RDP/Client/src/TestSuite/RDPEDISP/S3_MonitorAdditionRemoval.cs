@@ -7,14 +7,14 @@ using System.Text;
 using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestTools;
-using System.Drawing;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedisp;
+using SkiaSharp;
 
 namespace Microsoft.Protocols.TestSuites.Rdpedisp
 {
     public partial class RdpedispTestSuite : RdpTestClassBase
     {
-        
+
         [TestMethod]
         [Priority(1)]
         [TestCategory("BVT")]
@@ -22,6 +22,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         [TestCategory("Positive")]
         [TestCategory("RDP8.1")]
         [TestCategory("RDPEDISP")]
+        [TestCategory("BasicFeature")]
         [Description("This test is used to test addition and removal of monitor and notification with surface management commands")]
         public void S3_RDPEDISP_MonitorAdditionRemoval_RestartGraphicsPipeline()
         {
@@ -60,6 +61,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         [TestCategory("Positive")]
         [TestCategory("RDP8.1")]
         [TestCategory("RDPEDISP")]
+        [TestCategory("BasicFeature")]
         [Description("This test is used to test addition and removal of monitor and notification with Deactivation-Reactivation Sequence")]
         public void S3_RDPEDISP_MonitorAdditionRemoval_DeactivationReactivation()
         {
@@ -85,13 +87,13 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Initialize Deactivation-Reactivation Sequence");
             this.rdpedispAdapter.initiateDeactivationReactivation(originalDesktopWidth, originalDesktopHeight);
-            Image testImage = LoadImage();
-            this.Site.Assume.AreNotEqual<Image>(null, testImage, "Cannot load the test image");
+            SKImage testImage = SKImage.FromBitmap(LoadImage());
+            this.Site.Assume.AreNotEqual<SKImage>(null, testImage, "Cannot load the test image");
             this.rdpedispAdapter.RdprfxSendImage(testImage, originalDesktopWidth, originalDesktopHeight);
             #endregion
         }
 
-       
+
 
         /// <summary>
         /// Common test body Monitor Addition

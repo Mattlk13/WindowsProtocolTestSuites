@@ -9,9 +9,10 @@ using System.Runtime.InteropServices;
 using System.DirectoryServices.Protocols;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Drsr;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic;
 using Microsoft.Protocols.TestTools.StackSdk.Security.KerberosLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Drsr
 {
@@ -374,9 +375,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Drsr
         /// <returns>IPv4 address. Null if not found.</returns>
         public static string GetIPAddress(string dnsName)
         {
-            System.Net.IPHostEntry hostEntry = System.Net.Dns.GetHostEntry(dnsName);
-            System.Net.IPAddress[] addrs = hostEntry.AddressList;
-            foreach (System.Net.IPAddress addr in addrs)
+            foreach (System.Net.IPAddress addr in System.Net.Dns.GetHostAddresses(dnsName))
             {
                 if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {

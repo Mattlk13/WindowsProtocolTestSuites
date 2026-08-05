@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+// using Microsoft.Protocols.TestTools.ExtendedLogging;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Protocols.TestTools.ExtendedLogging;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using System.Threading;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
 {
+    [SupportedOSPlatform("Windows")]
     public class RdpeudpDTLSChannel : ISecureChannel
     {
         #region Private variables
@@ -89,6 +89,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// <param name="eudpSocket">RDPEUDP Socket, which is transport</param>
         public RdpeudpDTLSChannel(RdpeudpSocket eudpSocket)
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                throw new PlatformNotSupportedException("The implementation of RdpeudpDTLSChannel is only supported on Windows.");
+            }
+
             if (eudpSocket == null || eudpSocket.TransMode == TransportMode.Reliable)
             {
                 throw new NotSupportedException("RdpeudpSocket is null or it is a socket for reliable RDPEUDP connection.");
@@ -98,10 +103,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             this.rdpeudpSocket.Received += ReceiveBytes;
             isAuthenticated = false;
 
+            rdpeudpSocket.Disconnected += RdpeudpSocket_Disconnected;
+
             receivedBuffer = new List<byte[]>();
             toSendBuffer = new List<byte[]>();
 
-            if(eudpSocket.AutoHandle)
+            if (eudpSocket.AutoHandle)
             {
                 // Check whether there is packets in unprocessed packet buffer
 
@@ -139,7 +146,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
 
                 // ETW Provider Dump Message
                 string messageName = "RDPEMT:SentPDU";
-                ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer2, "RDPEMT Sent PDU", data);
+                // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer2, "RDPEMT Sent PDU", data);
             }
         }
 
@@ -147,6 +154,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// Event be called when received data
         /// </summary>
         public event ReceiveData Received;
+
+        /// <summary>
+        /// Event triggered when connection is closed.
+        /// </summary>
+        public event DisconnectedHandler Disconnected;
 
         #endregion Implemented ISecurityChannel Interfaces
 
@@ -159,8 +171,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// <param name="cert">The certificate used to authenticate the server.</param>
         public void AuthenticateAsServer(X509Certificate cert)
         {
+            var data = new AuthenticateAsServerData
+            {
+                Certificate = cert,
+            };
+
             // Using thread in threadpool to manage the authentication process
-            ThreadPool.QueueUserWorkItem(AuthenticateAsServer, cert);
+            ThreadPool.QueueUserWorkItem(AuthenticateAsServerTask, data, false);
 
             DateTime endTime = DateTime.Now + timeout;
 
@@ -172,6 +189,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                 }
                 if (!IsAuthenticated)
                 {
+                    if (data.Exception != null)
+                    {
+                        throw data.Exception;
+                    }
+
                     throw new TimeoutException("Time out when Authenticate as Server!");
                 }
             }
@@ -184,7 +206,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         /// <param name="targetHost">The name of the server that shares this System.Net.Security.SslStream.</param>
         /// <param name="certValCallback">A System.Net.Security.RemoteCertificateValidationCallback delegate responsible for validating the certificate supplied by the remote party.</param>
         public void AuthenticateAsClient(string targetHost)
-        {            
+        {
             // Using thread in threadpool to manage the authentication process
             ThreadPool.QueueUserWorkItem(AuthenticateAsClient, targetHost);
 
@@ -219,7 +241,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
 
                     // ETW Provider Dump Message
                     string messageName = "RDPEMT:ReceivedPDU";
-                    ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer2, "RDPEMT Received PDU", decryptedData);
+                    // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer2, "RDPEMT Received PDU", decryptedData);
 
                     if (Received != null)
                     {
@@ -314,7 +336,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             }
         }
 
-        
+
 
         /// <summary>
         /// Get data to sent, the data is Write by SSL Stream
@@ -354,8 +376,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
             if (rdpeudpSocket != null)
             {
                 rdpeudpSocket.Received -= ReceiveBytes;
+
+                rdpeudpSocket.Disconnected -= RdpeudpSocket_Disconnected;
             }
-            if ( dtlsServerContext!= null)
+            if (dtlsServerContext != null)
             {
                 dtlsServerContext.Dispose();
             }
@@ -434,56 +458,71 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
         }
 
         /// <summary>
+        /// Authenticate as server data.
+        /// </summary>
+        private class AuthenticateAsServerData
+        {
+            /// <summary>
+            /// The certificate used by server.
+            /// </summary>
+            public X509Certificate Certificate { get; set; }
+
+            /// <summary>
+            /// The exception happened during authentication.
+            /// </summary>
+            public Exception Exception { get; set; }
+        }
+
+        /// <summary>
         /// Called by servers to authenticate the server and optionally the client in
         ///     a client-server connection using the specified certificate.
         /// </summary>
-        /// <param name="cert">The certificate used to authenticate the server.</param>
-        private void AuthenticateAsServer(object cert)
+        /// <param name="data">The authenticate as server data.</param>
+        private void AuthenticateAsServerTask(AuthenticateAsServerData data)
         {
-            if (cert is X509Certificate)
+            try
             {
+                var cert = data.Certificate;
+
                 dtlsServerContext = new DtlsServerSecurityContext(
                     SecurityPackageType.Schannel,
                     new CertificateCredential((X509Certificate)cert),
                     null,
                     ServerSecurityContextAttribute.ReplayDetect | ServerSecurityContextAttribute.SequenceDetect |
                      ServerSecurityContextAttribute.Confidentiality | ServerSecurityContextAttribute.ExtendedError |
-                     ServerSecurityContextAttribute.AllocMemory | ServerSecurityContextAttribute.Datagram,
+                     ServerSecurityContextAttribute.Datagram,
                     SecurityTargetDataRepresentation.SecurityNativeDrep);
 
-                try
-                {
-                    // First accept.
-                    byte[] clientToken = this.GetReceivedData(this.timeout);
-                    dtlsServerContext.Accept(clientToken);
-                    this.SendData(dtlsServerContext.Token);
+                // First accept.
+                byte[] clientToken = this.GetReceivedData(this.timeout);
+                dtlsServerContext.Accept(clientToken);
+                this.SendData(dtlsServerContext.Token);
 
-                    while (dtlsServerContext.NeedContinueProcessing)
+                while (dtlsServerContext.NeedContinueProcessing)
+                {
+                    if (dtlsServerContext.HasMoreFragments)
                     {
-                        if (dtlsServerContext.HasMoreFragments)
-                        {
-                            dtlsServerContext.Accept(null);
-                        }
-                        else
-                        {
-                            clientToken = this.GetReceivedData(this.timeout);
-                            dtlsServerContext.Accept(clientToken);
-                        }
-                        if (dtlsServerContext.Token != null)
-                        {
-                            this.SendData(dtlsServerContext.Token);
-                        }
+                        dtlsServerContext.Accept(null);
                     }
-
-
-                    isAuthenticated = true;
-
-                    dtlsStreamSizes = dtlsServerContext.StreamSizes;
+                    else
+                    {
+                        clientToken = this.GetReceivedData(this.timeout);
+                        dtlsServerContext.Accept(clientToken);
+                    }
+                    if (dtlsServerContext.Token != null)
+                    {
+                        this.SendData(dtlsServerContext.Token);
+                    }
                 }
-                catch
-                {
-                    // Don't throw exception in ThreadPool thread
-                }
+
+
+                isAuthenticated = true;
+
+                dtlsStreamSizes = dtlsServerContext.StreamSizes;
+            }
+            catch (Exception ex)
+            {
+                data.Exception = ex;
             }
         }
 
@@ -502,7 +541,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                     (string)targetHost,
                     ClientSecurityContextAttribute.ReplayDetect | ClientSecurityContextAttribute.SequenceDetect |
                      ClientSecurityContextAttribute.Confidentiality | ClientSecurityContextAttribute.ExtendedError |
-                     ClientSecurityContextAttribute.AllocMemory | ClientSecurityContextAttribute.Datagram |
+                     ClientSecurityContextAttribute.Datagram |
                      ClientSecurityContextAttribute.UseSuppliedCreds,
                     SecurityTargetDataRepresentation.SecurityNativeDrep);
 
@@ -538,7 +577,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                 {
                     // Don't throw exception in ThreadPool thread
                 }
-                
+
             }
         }
 
@@ -561,6 +600,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt
                     this.AddDataToSent(data);
                 }
             }
+        }
+
+        private void RdpeudpSocket_Disconnected()
+        {
+            Disconnected?.Invoke();
         }
         #endregion Private Methods
     }

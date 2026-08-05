@@ -10,7 +10,7 @@
     <Group name="SMB2">
       <!--Tag named Description is used for the comment-->
 
-      <Property name="WaitTimeoutInMilliseconds" value="5000">
+      <Property name="WaitTimeoutInMilliseconds" value="8000">
         <Description>
           Timeout in milliseconds before current thread continues when use WaitHandle.WaitOne
         </Description>
@@ -73,34 +73,50 @@
         </Description>
       </Property>
 
+      <Property name="IsKB500139Installed" value="false">
+        <Choice>True, False</Choice>
+		<Description>
+		  Is KB5001391 installed on the SUT.
+		  Used to determine the expected SMB2_COMPRESSION_CAPABILITES for WindowsServerV2004 and WindowsServerV20H2
+		</Description>	
+	  </Property>
+
+	    <Property name="IsServerToClientNotificationsSupported" value="true">
+			<Choice>True, False</Choice>
+			<Description>
+                Indicates whether the server supports server-to-client notifications.
+                If the server does not support this feature, set it to false.
+			</Description>
+		</Property>
     </Group>
-      <Group name="HVRS">
-          <Property name="SharePath" value="\\node01\SMBBasic">
-              <!--File_level_trim passed on smbbasic-->
-              <!--Property name="SharePath" value="\\node01\SMBBasic"-->
-              <!--Property name="SharePath" value="\\node01\SMBReFSShare"-->
-              <Description>
-                  The share path which contains the shared virtual disk files, should start with "\\"
-                  If no such share, leave it blank
-              </Description>
-          </Property>
-          <Property name="IsOffLoadImplemented" value="false">
-              <Choice>True, False</Choice>
-              <Description>
-                  Platform implements Off_Load Operations.
-              </Description>
-          </Property>
-          <Property name="IsSetZeroDataImplemented" value="true">
-              <Choice>True, False</Choice>
-              <Description>
-                  Platform implements FSCTL_SET_ZERO_DATA Operations.
-              </Description>
-          </Property>
-          <Property name="VolumnClusterSize" value="64">
-              <Description>
-                  The allocation unit size of the share volume. You can get this value when you try to format a disk.
-              </Description>
-          </Property>
-      </Group>
+	  
+    <Group name="HVRS">
+      <Property name="SharePath" value="\\node01.contoso.com\SMBBasic">
+        <!--File_level_trim passed on smbbasic-->
+        <!--Property name="SharePath" value="\\node01\SMBBasic"-->
+        <!--Property name="SharePath" value="\\node01\SMBReFSShare"-->
+        <Description>
+          The share path which contains the shared virtual disk files, should start with "\\"
+          If no such share, leave it blank
+        </Description>
+      </Property>
+      <Property name="IsOffLoadImplemented" value="false">
+        <Choice>True, False</Choice>
+        <Description>
+          Platform implements Off_Load Operations.
+        </Description>
+      </Property>
+      <Property name="IsSetZeroDataImplemented" value="true">
+        <Choice>True, False</Choice>
+        <Description>
+          Platform implements FSCTL_SET_ZERO_DATA Operations.
+        </Description>
+      </Property>
+      <Property name="VolumnClusterSize" value="64">
+        <Description>
+          The allocation unit size of the share volume. You can get this value when you try to format a disk.
+        </Description>
+      </Property>
+    </Group>
   </Properties>
 </TestSite>

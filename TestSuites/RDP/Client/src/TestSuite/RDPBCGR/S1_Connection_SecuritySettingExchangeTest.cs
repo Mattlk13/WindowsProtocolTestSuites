@@ -16,6 +16,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the length field within tpktHeader in License Error PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_SecurityExchange_NegativeTest_LicenseError_InvalidTKPKLength()
@@ -36,7 +38,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -105,6 +107,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the length field within MCS Header in License Error PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_SecurityExchange_NegativeTest_LicenseError_InvalidMCSLength()
@@ -125,7 +129,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -194,6 +198,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if the SEC_LICENSE_PKT (0x0080) flag within securityHeader in License Error PDU is not present.")]
         public void S1_ConnectionTest_SecurityExchange_NegativeTest_LicenseError_InvalidFlag()
@@ -214,7 +220,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -283,6 +289,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to verify 
                       SUT drops the connection if MAC signature within securityHeader in License Error PDU is not valid and SEC_ENCRYPT (0x0008) flag is present.")]
         public void S1_ConnectionTest_SecurityExchange_NegativeTest_LicenseError_InvalidSignature()
@@ -309,7 +317,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.

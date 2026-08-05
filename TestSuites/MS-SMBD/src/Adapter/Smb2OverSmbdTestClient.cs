@@ -5,12 +5,12 @@ using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2.Common;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-
 
 namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
 {
@@ -117,7 +117,14 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
                 while (smb2Response == null
                     || smb2Response.Length == 0)
                 {
-                    smbdClient.ReceiveMessage(smb2ConnectionTimeout, out smb2Response);
+                    NtStatus ret = smbdClient.ReceiveMessage(smb2ConnectionTimeout, out smb2Response);
+                    if (ret != NtStatus.STATUS_SUCCESS)
+                    {
+                        if (ret == NtStatus.STATUS_IO_TIMEOUT || ret == NtStatus.STATUS_CONNECTION_DISCONNECTED)
+                        {
+                            throw new TimeoutException();
+                        }
+                    }
                 }
 
                 //SmbdClient.ReceiveSmbdMessage(response.Length, response);
@@ -146,7 +153,8 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
             uint nInboundEntries,
             uint nOutboundEntries,
             uint inboundReadLimit,
-            uint inboundDataSize
+            uint inboundDataSize,
+            NdspiVersion ndVersion = NdspiVersion.NDv2
             )
         {
             this.decoder.TransportType = Smb2TransportType.Rdma;
@@ -159,7 +167,8 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
                 nInboundEntries,
                 nOutboundEntries,
                 inboundReadLimit,
-                inboundDataSize
+                inboundDataSize,
+                ndVersion
                 );
         }
 
@@ -277,24 +286,26 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
 
         #region SMB2 functional method
 
-        public uint Smb2Negotiate(DialectRevision[] requestDialects, out DialectRevision selectedDialect)
+        public uint Smb2Negotiate(DialectRevision[] requestDialects, out DialectRevision selectedDialect, Smb2RDMATransformId[] smb2RDMATransformIds = null, EncryptionAlgorithm[] encryptionAlgs = null, bool addDefaultEncryption = true, SigningAlgorithm[] signingAlgorithms = null)
         {
-            return Smb2Negotiate(requestDialects, Guid.NewGuid(), out selectedDialect);
+            return Smb2Negotiate(requestDialects, Guid.NewGuid(), out selectedDialect, smb2RDMATransformIds, encryptionAlgs, addDefaultEncryption, signingAlgorithms);
         }
 
-        public uint Smb2Negotiate(DialectRevision[] requestDialects, Guid clientId, out DialectRevision selectedDialect)
+        public uint Smb2Negotiate(DialectRevision[] requestDialects, Guid clientId, out DialectRevision selectedDialect, Smb2RDMATransformId[] smb2RDMATransformIds = null, EncryptionAlgorithm[] encryptionAlgs = null, bool addDefaultEncryption = true, SigningAlgorithm[] signingAlgorithms = null)
         {
             uint status;
             NEGOTIATE_Response negotiateResponse;
             clientGuid = clientId;
 
             PreauthIntegrityHashID[] preauthHashAlgs = null;
-            EncryptionAlgorithm[] encryptionAlgs = null;
             if (requestDialects.Contains(DialectRevision.Smb311))
             {
                 // initial negotiation context for SMB 3.1.1 dialect
                 preauthHashAlgs = new PreauthIntegrityHashID[] { PreauthIntegrityHashID.SHA_512 };
-                encryptionAlgs = new EncryptionAlgorithm[] { EncryptionAlgorithm.ENCRYPTION_AES128_CCM, EncryptionAlgorithm.ENCRYPTION_AES128_GCM };
+                if (addDefaultEncryption)
+                {
+                    encryptionAlgs = new EncryptionAlgorithm[] { EncryptionAlgorithm.ENCRYPTION_AES128_CCM, EncryptionAlgorithm.ENCRYPTION_AES128_GCM };
+                }
             }
 
             status = this.Negotiate(
@@ -312,7 +323,13 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
                 out negotiateResponse,
                 0,
                 preauthHashAlgs,
-                encryptionAlgs
+                encryptionAlgs,
+                null,
+                smb2RDMATransformIds,
+                SMB2_COMPRESSION_CAPABILITIES_Flags.SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE,
+                null,
+                addDefaultEncryption,
+                signingAlgorithms
                 );
 
             this.Smb2MaxReadSize = negotiateResponse.MaxReadSize;
@@ -327,7 +344,9 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
             string domainName,
             string userName,
             string password,
-            string serverName)
+            string serverName,
+            bool enableSigning = true,
+            bool enableEncryption = false)
         {
             uint status;
             SESSION_SETUP_Response sessionSetupResponse;
@@ -379,8 +398,9 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
             if (status == Smb2Status.STATUS_SUCCESS)
             {
                 sessionKey = sspiClientGss.SessionKey;
-                GenerateCryptoKeys(sessionId, sessionKey, true, false);
+                GenerateCryptoKeys(sessionId, sessionKey, enableSigning, enableEncryption);
             }
+            decoder.CryptoInfoTable = cryptoInfoTable;
 
             return status;
         }
@@ -917,6 +937,17 @@ namespace Microsoft.Protocols.TestSuites.Smbd.Adapter
                 return 1;
             }
         }
+
+        public void SignByteArray(byte[] original, out byte[] nonce, out byte[] signature, Smb2Command smb2Command)
+        {
+            Smb2Crypto.SignByteArray(cryptoInfoTable[sessionId], original, out nonce, out signature, Smb2Role.Client, smb2Command, messageId);
+        }
+
+        public void EncryptByteArray(byte[] original, out byte[] encrypted, out byte[] nonce, out byte[] signature)
+        {
+            Smb2Crypto.EncryptByteArray(cryptoInfoTable[sessionId], original, out encrypted, out nonce, out signature, Smb2Role.Client);
+        }
+
         #endregion
     }
 }

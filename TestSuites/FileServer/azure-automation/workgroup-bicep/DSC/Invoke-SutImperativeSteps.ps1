@@ -1,0 +1,479 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+<#
+.SYNOPSIS
+    Imperative steps for SUT that cannot be expressed in DSC.
+    Run this AFTER the DSC configuration has been applied.
+
+.DESCRIPTION
+    Handles:
+    - Disk partitioning (ReFS K:, FAT32 J:) via diskpart
+    - ReFS/FAT32 SMB shares on data disk
+    - Symbolic links and mount points
+    - Shadow copies (VSS)
+    - DFS namespace creation (dfsutil/dfscmd)
+    - QUIC certificate mapping (Azure Edition only)
+    - 8dot3 short name enable
+
+    This script is idempotent -- it checks for existing state before acting.
+
+.PARAMETER WorkingPath
+    Path to the Workgroup-Package folder (default: script location).
+
+.PARAMETER ConfigureFile
+    Path to Config.json (default: WorkingPath\Config.json).
+
+.PARAMETER NoTranscript
+    Preserve the parent orchestrator transcript when this script is invoked by Deploy-SUT.ps1.
+
+.EXAMPLE
+    .\Invoke-SutImperativeSteps.ps1 -WorkingPath C:\Workgroup-Package
+#>
+
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Password originates from Azure deployment config; no interactive prompt available.')]
+param(
+    [string]$WorkingPath = (Split-Path $PSScriptRoot -Parent),
+    [string]$ConfigureFile = "$WorkingPath\Config.json",
+    [string]$HeartbeatPath,
+    [switch]$NoTranscript
+)
+
+$ErrorActionPreference = 'Stop'
+$parentPath = $WorkingPath
+$scriptsPath = "$PSScriptRoot\Scripts"
+$env:Path += ";$parentPath;$scriptsPath"
+Push-Location $scriptsPath
+. "$PSScriptRoot\Deploy-CommonHelpers.ps1"
+
+function Set-ImperativeHeartbeat {
+    param(
+        [string]$Operation,
+        [string]$LastCheckpoint
+    )
+    Write-DeploymentHeartbeat -Phase 'Environment' -Operation $Operation `
+        -StartedAt $script:imperativeStartedAt -HeartbeatPath $HeartbeatPath `
+        -LastCheckpoint $LastCheckpoint
+}
+
+$script:imperativeStartedAt = Get-Date
+
+[string]$logFile = "$PSScriptRoot\Invoke-SutImperativeSteps.log"
+$transcriptStarted = $false
+if (-not $NoTranscript) {
+    Start-Transcript -Path $logFile -Append -Force
+    $transcriptStarted = $true
+}
+
+function Stop-LocalTranscript {
+    if ($transcriptStarted) {
+        Stop-Transcript
+    }
+}
+
+$config = $null
+if (Test-Path $ConfigureFile) {
+    try { $config = Get-Content -Path $ConfigureFile -Raw | ConvertFrom-Json }
+    catch { Write-Warning "Failed to parse config file: $_" }
+}
+
+$systemDrive = $env:SystemDrive
+
+$accountsOk  = $false
+$diskOk      = $false
+$dataShareOk = $false
+$symlinkOk   = $false
+$fsaOk       = $false
+$dfsOk       = $false
+$quicOk      = $false
+
+# ===========================================================================
+# TLS Cipher Suite Configuration
+# ===========================================================================
+try {
+    Set-ImperativeHeartbeat -Operation 'Configuring TLS cipher suites' -LastCheckpoint 'Post-reboot DSC convergence complete'
+    .\Write-Info.ps1 "Configuring TLS cipher suites..." -ForegroundColor Yellow
+    $tlsResult = & "$scriptsPath\Configure-TlsCipherSuites.ps1"
+    if ($tlsResult) {
+        .\Write-Info.ps1 "[OK] TLS cipher suites configured" -ForegroundColor Green
+    }
+} catch {
+    .\Write-Info.ps1 "[WARN] TLS cipher suite config failed: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# ===========================================================================
+# Account Lockout Policy -- DISABLE on the test SUT
+# ===========================================================================
+# The FileServer suites run negative-auth and rapid re-authentication cases
+# (e.g. SMB2Model ResilientHandle re-establish). Windows Server 2025 clean
+# installs ship with account lockout ENABLED by default (threshold 10, 10-min
+# duration) -- a baseline change introduced with Windows 11 22H2. Older images
+# shipped it disabled (0), which is what the suites were written against, so
+# nothing here ever set it. On 2025 the tests trip the threshold, the local
+# test account locks, and every subsequent SESSION_SETUP returns 0xC0000234
+# (STATUS_ACCOUNT_LOCKED_OUT). Pin the threshold back to 0 and clear any
+# already-locked local accounts. (Domain accounts are governed by the DC's
+# default domain policy -- see Invoke-DcImperativeSteps.ps1.)
+try {
+    Set-ImperativeHeartbeat -Operation 'Configuring local account policy' -LastCheckpoint 'TLS configuration attempted'
+    .\Write-Info.ps1 "Disabling account lockout policy (test SUT)..." -ForegroundColor Yellow
+    & net accounts /lockoutthreshold:0 2>&1 | .\Write-Info.ps1
+    Get-LocalUser -ErrorAction SilentlyContinue | ForEach-Object {
+        try { & net user $_.Name /active:yes 2>&1 | Out-Null } catch {}
+    }
+    .\Write-Info.ps1 "[OK] Account lockout disabled (threshold 0)" -ForegroundColor Green
+} catch {
+    .\Write-Info.ps1 "[WARN] Could not disable account lockout: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# ===========================================================================
+# 0. LOCAL TEST ACCOUNTS -- nonadmin, Guest, AzGroup01/AzUser01
+#    In domain scenarios these are created on the DC by Create-TestAccount.ps1.
+#    In workgroup mode there is no DC, so we create them locally on the SUT.
+#    Create-TestAccount.ps1 already handles workgroup mode (uses net.exe
+#    instead of AD cmdlets). It reads ParamConfig.json for the user/group list.
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Creating local test accounts' -LastCheckpoint 'Account policy configured'
+    $createAccountScript = "$scriptsPath\Create-TestAccount.ps1"
+    if (Test-Path $createAccountScript) {
+        .\Write-Info.ps1 "Creating local test accounts via Create-TestAccount.ps1..." -ForegroundColor Yellow
+        $result = & $createAccountScript -workingDir $scriptsPath -protocolConfigFile $ConfigureFile -NoTranscript
+        if (-not $result) {
+            .\Write-Info.ps1 "[WARN] Create-TestAccount.ps1 returned failure -- check Create-TestAccount.ps1.log" -ForegroundColor Yellow
+        } else {
+            .\Write-Info.ps1 "[OK] Local test accounts created" -ForegroundColor Green
+            $accountsOk = $true
+        }
+    } else {
+        .\Write-Info.ps1 "[WARN] Create-TestAccount.ps1 not found at $createAccountScript" -ForegroundColor Yellow
+    }
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] Local test account creation failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 1. DISK PARTITIONING -- ReFS (K:) and FAT32 (J:)
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Partitioning the SUT data disk' -LastCheckpoint 'Local accounts attempted'
+    function New-DataPartition {
+        param(
+            [string]$FileSystem,
+            [string]$Label,
+            [string]$DriveLetter,
+            [int]$SizeMB = 2000,
+            [string]$ClusterSize = ''
+        )
+
+        $volume = Get-CimInstance -ClassName Win32_Volume |
+            Where-Object { $_.FileSystem -eq $FileSystem -and $_.Label -eq $Label }
+
+        if ($null -ne $volume) {
+            .\Write-Info.ps1 "[OK] $FileSystem volume '$Label' already exists on $($volume.DriveLetter)" -ForegroundColor Green
+            return
+        }
+
+        .\Write-Info.ps1 "Creating $FileSystem partition ($Label -> ${DriveLetter}:)..." -ForegroundColor Yellow
+
+        $osDiskNum = (Get-Partition | Where-Object { $_.DriveLetter -eq $systemDrive[0] } | Select-Object -First 1).DiskNumber
+        $dataDisk = Get-Disk | Where-Object { $_.Number -ne $osDiskNum -and $_.OperationalStatus -eq 'Online' -and $_.Size -gt 5GB } | Select-Object -First 1
+
+        if ($null -eq $dataDisk) {
+            Write-Warning "No data disk found. $FileSystem partition will not be created. Attach a data disk >= 10GB."
+            return
+        }
+
+        $diskNum = $dataDisk.Number
+
+        # Initialize the disk if it's RAW (brand-new Azure data disk)
+        $partStyle = (Get-Disk -Number $diskNum).PartitionStyle
+        if ($partStyle -eq 'RAW') {
+            .\Write-Info.ps1 "  Initializing RAW disk $diskNum as GPT..." -ForegroundColor DarkGray
+            Initialize-Disk -Number $diskNum -PartitionStyle GPT -ErrorAction Stop
+            $partStyle = 'GPT'
+        }
+
+        $diskPartCmd = @("select disk $diskNum")
+        $diskPartCmd += "create partition primary size=$SizeMB"
+
+        $formatCmd = "format fs=$FileSystem quick label=$Label"
+        if ($ClusterSize) { $formatCmd += " unit=$ClusterSize" }
+        $diskPartCmd += $formatCmd
+        $diskPartCmd += "assign letter=$DriveLetter"
+
+        $diskPartCmd | diskpart.exe
+        Start-Sleep -Seconds 3
+        $verify = Get-CimInstance -ClassName Win32_Volume |
+            Where-Object { $_.FileSystem -eq $FileSystem -and $_.Label -eq $Label }
+        if ($null -eq $verify) { throw "Volume not created" }
+        .\Write-Info.ps1 "[OK] $FileSystem partition created on ${DriveLetter}:" -ForegroundColor Green
+    }
+
+    New-DataPartition -FileSystem 'ReFS' -Label 'REFS' -DriveLetter 'K' -SizeMB 2000 -ClusterSize '64K'
+    New-DataPartition -FileSystem 'FAT32' -Label 'FAT32' -DriveLetter 'J' -SizeMB 2000
+    $diskOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] Disk partitioning failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 2. DATA DISK SMB SHARES
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Creating data disk SMB shares' -LastCheckpoint 'Data disk partitioning attempted'
+    $dataDiskShares = @(
+        @{ Drive = 'K:\'; Name = 'SMBReFSShare'; Path = 'K:\SMBReFSShare' },
+        @{ Drive = 'J:\'; Name = 'SMBFAT32Share'; Path = 'J:\SMBFAT32Share' }
+    )
+
+    foreach ($ds in $dataDiskShares) {
+        if (Test-Path $ds.Drive) {
+            $existing = Get-SmbShare -Name $ds.Name -ErrorAction SilentlyContinue
+            if ($null -eq $existing) {
+                New-Item -ItemType Directory -Path $ds.Path -Force | Out-Null
+                icacls $ds.Path /grant "BUILTIN\Administrators:(OI)(CI)(F)" | Out-Null
+                New-SmbShare -Name $ds.Name -Path $ds.Path -FullAccess 'BUILTIN\Administrators' -CachingMode None
+                .\Write-Info.ps1 "[OK] Created share $($ds.Name)" -ForegroundColor Green
+            } else {
+                .\Write-Info.ps1 "[OK] Share $($ds.Name) already exists" -ForegroundColor Green
+            }
+        } else {
+            Write-Warning "$($ds.Drive) not available -- skipping $($ds.Name)"
+        }
+    }
+    $dataShareOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] Data disk SMB shares failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 3. SYMBOLIC LINKS AND MOUNT POINTS
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Creating symbolic links' -LastCheckpoint 'Data disk shares attempted'
+    $symlinks = @(
+        @{ Link = "$systemDrive\SMBBasic\symboliclink";      Target = "$systemDrive\FileShare\" },
+        @{ Link = "$systemDrive\SMBBasic\sub\symboliclink2"; Target = "$systemDrive\FileShare\" }
+    )
+
+    foreach ($sl in $symlinks) {
+        New-Item -ItemType Directory -Path (Split-Path $sl.Link -Parent) -Force | Out-Null
+        New-Item -ItemType Directory -Path $sl.Target -Force | Out-Null
+        if (-not (Test-Path $sl.Link)) {
+            cmd /C "mklink /D `"$($sl.Link)`" `"$($sl.Target)`"" 2>&1 | .\Write-Info.ps1
+        } else {
+            .\Write-Info.ps1 "[OK] Symlink $($sl.Link) exists" -ForegroundColor Green
+        }
+    }
+    $symlinkOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] Symbolic links failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 4. FSA ENVIRONMENT -- ExistingFile, links, mount points, shadow copies
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Creating the FSA environment' -LastCheckpoint 'Symbolic links attempted'
+    function Set-FsaShareFolder {
+        param(
+            [string]$Path,
+            [string]$FolderName
+        )
+
+        $shareFolder = "$Path\$FolderName"
+        $driveLetter = $Path.TrimEnd(':', '\')
+        $volume = Get-CimInstance -ClassName Win32_Volume | Where-Object { $_.DriveLetter -eq "${driveLetter}:" }
+        $fileSystem = if ($volume) { $volume.FileSystem } else { 'Unknown' }
+
+        .\Write-Info.ps1 "Setting up FSA for $shareFolder (filesystem: $fileSystem)..." -ForegroundColor Yellow
+
+        New-Item -Type Directory -Path "$shareFolder\ExistingFolder" -Force | Out-Null
+        if (-not (Test-Path "$shareFolder\ExistingFile.txt")) {
+            New-Item -Type File -Path "$shareFolder\ExistingFile.txt" -Force | Out-Null
+        }
+
+        if ($fileSystem -ne 'FAT32' -and -not (Test-Path "$shareFolder\link.txt")) {
+            cmd /C "mklink `"$shareFolder\link.txt`" `"$shareFolder\ExistingFile.txt`"" 2>&1 | .\Write-Info.ps1
+        }
+
+        # Mount point (NTFS/ReFS only)
+        if ($fileSystem -notin @('FAT32')) {
+            $mpPath = "$shareFolder\MountPoint"
+            if (-not (Test-Path $mpPath)) {
+                New-Item -Type Directory -Path $mpPath -Force | Out-Null
+                $volumeInfo = (mountvol $Path /l 2>&1) | Select-Object -First 1
+                if ($volumeInfo -match '^\\\\\?\\') {
+                    cmd /C "mountvol `"$mpPath`" $volumeInfo" 2>&1 | .\Write-Info.ps1
+                }
+            }
+        }
+
+        # 8dot3 short names (NTFS only)
+        if ($fileSystem -eq 'NTFS') {
+            cmd /C "fsutil 8dot3name set $Path 0" 2>&1 | .\Write-Info.ps1
+        }
+
+        # Shadow copies (not FAT32)
+        if ($fileSystem -ne 'FAT32') {
+            $shadows = vssadmin list shadows /for=${Path}\ 2>&1
+            $shadowCount = ($shadows | Select-String 'Shadow Copy ID').Count
+            $needed = 3 - $shadowCount
+            for ($i = 0; $i -lt $needed; $i++) {
+                Get-ChildItem $shareFolder >> "$shareFolder\ExistingFile.txt"
+                vssadmin.exe Create Shadow /For=${Path}\ /AutoRetry=2 2>&1 | .\Write-Info.ps1
+            }
+            .\Write-Info.ps1 "[OK] $($shadowCount + $needed) shadow copies for ${Path}\" -ForegroundColor Green
+        }
+    }
+
+    Set-FsaShareFolder -Path 'C:' -FolderName 'FileShare'
+
+    if (Test-Path 'K:\') {
+        Set-FsaShareFolder -Path 'K:' -FolderName 'SMBReFSShare'
+    } else {
+        Write-Warning "K: (ReFS) not available -- skipping FSA for SMBReFSShare"
+    }
+
+    if (Test-Path 'J:\') {
+        Set-FsaShareFolder -Path 'J:' -FolderName 'SMBFAT32Share'
+    } else {
+        Write-Warning "J: (FAT32) not available -- skipping FSA for SMBFAT32Share"
+    }
+    $fsaOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] FSA environment setup failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 5. DFS NAMESPACES
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Creating DFS namespaces' -LastCheckpoint 'FSA environment attempted'
+    $computerName = $env:COMPUTERNAME
+
+    foreach ($commandName in @('dfsutil.exe', 'dfscmd.exe')) {
+        if (-not (Get-Command $commandName -ErrorAction SilentlyContinue)) {
+            throw "$commandName is unavailable. Install FS-DFS-Namespace and RSAT-DFS-Mgmt-Con before Phase 3."
+        }
+    }
+
+    $dfsSvc = Get-Service dfs -ErrorAction SilentlyContinue
+    if ($null -ne $dfsSvc -and $dfsSvc.Status -ne 'Running') {
+        Start-Service dfs -ErrorAction SilentlyContinue
+    }
+
+    $dfsRoot = "\\$computerName\SMBDfs"
+    $dfsCheck = dfsutil root $dfsRoot 2>&1
+    if ($dfsCheck -match 'error|not found|does not exist') {
+        .\Write-Info.ps1 "Creating DFS namespace $dfsRoot..." -ForegroundColor Yellow
+        dfsutil root addstd $dfsRoot 2>&1 | .\Write-Info.ps1
+        dfscmd /map "$dfsRoot\SMBDfsLink" "\\$computerName\SMBBasic" /restore 2>&1 | .\Write-Info.ps1
+    } else {
+        .\Write-Info.ps1 "[OK] DFS namespace $dfsRoot exists" -ForegroundColor Green
+    }
+
+    $standaloneRoot = "\\$computerName\Standalone"
+    $saCheck = dfsutil root $standaloneRoot 2>&1
+    if ($saCheck -match 'error|not found|does not exist') {
+        .\Write-Info.ps1 "Creating DFS namespace $standaloneRoot..." -ForegroundColor Yellow
+        dfsutil root addstd $standaloneRoot 2>&1 | .\Write-Info.ps1
+        dfscmd /map "$standaloneRoot\DFSLink" "\\$computerName\FileShare" /restore 2>&1 | .\Write-Info.ps1
+        dfscmd /map "$standaloneRoot\Interlink" "$dfsRoot\SMBDfsLink" /restore 2>&1 | .\Write-Info.ps1
+    } else {
+        .\Write-Info.ps1 "[OK] DFS namespace $standaloneRoot exists" -ForegroundColor Green
+    }
+    $dfsOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] DFS namespace setup failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# 6. QUIC ENVIRONMENT (Azure Edition only)
+# ===========================================================================
+
+try {
+    Set-ImperativeHeartbeat -Operation 'Configuring SMB over QUIC' -LastCheckpoint 'DFS namespaces attempted'
+    $osName = (Get-CimInstance Win32_OperatingSystem).Name
+    if ($osName -match 'Azure Edition') {
+
+        $sutName = $env:COMPUTERNAME
+        $sutComputerName = $sutName  # Workgroup -- no domain suffix
+
+        $existingMapping = Get-SmbServerCertificateMapping -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq $sutComputerName }
+
+        if ($null -eq $existingMapping) {
+            .\Write-Info.ps1 "Configuring QUIC certificate for $sutName..." -ForegroundColor Yellow
+            $cert = New-SelfSignedCertificate -Subject $sutName `
+                -FriendlyName "SMB over QUIC for File Servers" `
+                -KeyUsageProperty Sign -KeyUsage DigitalSignature `
+                -CertStoreLocation Cert:\LocalMachine\My `
+                -HashAlgorithm SHA256 `
+                -Provider "Microsoft Software Key Storage Provider" `
+                -KeyAlgorithm ECDSA_P256 -KeyLength 256 `
+                -DnsName @($sutComputerName, $sutName)
+
+            New-SmbServerCertificateMapping -Name $sutComputerName `
+                -Thumbprint $cert.Thumbprint -StoreName My -Subject $cert.Subject
+
+            # Import to root store
+            if ($null -eq $config -or [string]::IsNullOrEmpty($config.Core.Password)) {
+                throw "Config.json Core.Password is required for QUIC certificate export"
+            }
+            $certPassword = ConvertTo-SecureString $config.Core.Password -AsPlainText -Force
+            Export-PfxCertificate -Cert $cert -FilePath "$systemDrive\QUICCert.pfx" -Password $certPassword | Out-Null
+            Import-PfxCertificate -FilePath "$systemDrive\QUICCert.pfx" -CertStoreLocation Cert:\LocalMachine\Root -Password $certPassword | Out-Null
+
+            Set-SmbServerConfiguration -DisableSmbEncryptionOnSecureConnection $false -Confirm:$false
+            Set-SmbServerConfiguration -RestrictNamedpipeAccessViaQuic $false -Confirm:$false
+            .\Write-Info.ps1 "[OK] QUIC configured" -ForegroundColor Green
+        } else {
+            .\Write-Info.ps1 "[OK] QUIC certificate mapping already exists for $sutComputerName" -ForegroundColor Green
+        }
+    } else {
+        .\Write-Info.ps1 "[SKIP] QUIC -- not Azure Edition" -ForegroundColor DarkGray
+    }
+    $quicOk = $true
+}
+catch {
+    .\Write-Info.ps1 "[FAIL] QUIC environment setup failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# ===========================================================================
+# Done
+# ===========================================================================
+.\Write-Info.ps1 ""
+Set-ImperativeHeartbeat -Operation 'Verifying imperative postconditions' -LastCheckpoint 'All imperative sections attempted'
+.\Write-Info.ps1 "=== SUT imperative steps completed (Accounts=$accountsOk, Disk=$diskOk, DataShares=$dataShareOk, Symlinks=$symlinkOk, FSA=$fsaOk, DFS=$dfsOk, QUIC=$quicOk) ===" -ForegroundColor Cyan
+
+# Critical sections: FSA and DFS must succeed for tests to work.
+# Throw if either failed so the parent orchestrator catches the failure.
+$criticalFailures = @()
+if (-not $accountsOk) { $criticalFailures += 'Accounts' }
+if (-not $symlinkOk) { $criticalFailures += 'Symlinks' }
+if (-not $fsaOk)  { $criticalFailures += 'FSA' }
+if (-not $dfsOk)  { $criticalFailures += 'DFS' }
+
+if ($criticalFailures.Count -gt 0) {
+    Stop-LocalTranscript
+    Pop-Location
+    throw "Critical section(s) failed: $($criticalFailures -join ', '). Check Invoke-SutImperativeSteps.log for details."
+}
+
+Stop-LocalTranscript
+Pop-Location

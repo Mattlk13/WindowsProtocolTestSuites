@@ -1,7 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Rdma;
 using System;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
@@ -48,7 +47,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
     public struct SmbdRequestResult
     {
         public int EntryIndex;
-        public RdmaNetworkDirectResult ResultInfo;
+#if WINDOWS
+        public NdResult ResultInfo;
+#else
+        public object ResultInfo;
+#endif
         public UInt64 ResultId;
     }
     /// <summary>
@@ -57,15 +60,27 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smbd
     public class SmbdMemoryWindow
     {
         public UInt64 MemoryHandlerId;
-        public RdmaMemoryWindow RdmaMW;
-        public RdmaBufferDescriptorV1 BufferDescriptor;
+#if WINDOWS
+        public INativeRdmaMemoryWindow RdmaMW;
+        public RdmaBufferDescriptor BufferDescriptor;
+#else
+        public object RdmaMW;
+        public object BufferDescriptor;
+#endif
         public UInt64 InvalidResultId;
         public bool IsValid;
     }
 
     public struct ReceiveEntry
     {
-        public RdmaSegment Segment;
+#if WINDOWS
+        public NdSegment Segment;
+#else
+        public object Segment; // Linux placeholder
+        public long LinuxMrHandle; // Linux: MR handle for receive buffer
+        public ulong LinuxBufferAddress; // Linux: Address of registered buffer
+        public byte[] LinuxBuffer; // Linux: The actual receive buffer
+#endif
         public bool IsOccupied;
     }
 }

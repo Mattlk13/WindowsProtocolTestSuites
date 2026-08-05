@@ -1,15 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Drawing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
-using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SkiaSharp;
 
 namespace Microsoft.Protocols.TestSuites.Rdpegfx
 {
@@ -21,6 +17,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can accept a RDPGFX_WIRE_TO_SURFACE_PDU_1 message with an uncompressed image.")]
         public void RDPEGFX_WireToSurface_PositiveTest()
         {
@@ -43,10 +41,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "The bitmap is sent to the client for frame {0}.", fid);
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+            SKImage bgImage;
+            SKBitmap compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
                                                 RdpegfxTestUtility.smallWidth, RdpegfxTestUtility.smallHeight, out bgImage);
-            fid = this.rdpegfxAdapter.SendUncompressedImage(compImage, RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
+            fid = this.rdpegfxAdapter.SendUncompressedImage(SKImage.FromBitmap(compImage), RdpegfxTestUtility.imgPos.x, RdpegfxTestUtility.imgPos.y, surf.Id, PixelFormat.PIXEL_FORMAT_XRGB_8888, compFlag, RdpegfxTestUtility.segmentPartSize);
             this.rdpegfxAdapter.ExpectFrameAck(fid);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Verify output on SUT Display if the verifySUTDisplay entry in PTF config is true.");
@@ -64,6 +62,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
         [TestCategory("Positive")]
         [TestCategory("RDP8.0")]
         [TestCategory("RDPEGFX")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify whether RDP client can process correctly when accept a RDPGFX_WIRE_TO_SURFACE_PDU_1 message with an uncompressed image whose specific borders are overlapped with surface.")]
         public void RDPEGFX_WireToSurface_PositiveTest_ImageBorderOverlapSurface()
         {
@@ -84,9 +84,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpegfx
             this.TestSite.Log.Add(LogEntryKind.Debug, "Surface is filled with solid color in frame: {0}.", fid);
             this.rdpegfxAdapter.ExpectFrameAck(fid);
 
-            Image bgImage;
-            Image compImage = RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
-                                                RdpegfxTestUtility.smallWidth, RdpegfxTestUtility.smallHeight, out bgImage);
+            SKImage bgImage;
+            SKImage compImage = SKImage.FromBitmap(RdpegfxTestUtility.captureFromImage(image_64X64, RdpegfxTestUtility.imgPos,
+                                                RdpegfxTestUtility.smallWidth, RdpegfxTestUtility.smallHeight, out bgImage));
             byte compFlag = (byte)PACKET_COMPR_FLAG.PACKET_COMPR_TYPE_RDP8;
 
             // Top-right corner

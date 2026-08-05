@@ -1,18 +1,16 @@
-#############################################################################
-## Copyright (c) Microsoft Corporation. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-###########################################################################################
-##
-## Microsoft Windows Powershell Scripting
-## File:           Configure-PROXY.ps1
-## Purpose:        Configure the proxy computer for Kerberos Server test suite.
-## Requirements:   Windows Powershell 2.0
-## Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
-##                 Windows Server 2016, and later.
-##
-###########################################################################################
+##############################################################################
+#
+# Microsoft Windows Powershell Scripting
+# File:           Configure-PROXY.ps1
+# Purpose:        Configure the proxy computer for Kerberos Server test suite.
+# Requirements:   Windows Powershell 2.0
+# Supported OS:   Windows Server 2008 R2, Windows Server 2012, Windows Server 2012 R2,
+#                 Windows Server 2016, and later.
+#
+##############################################################################
 
 #------------------------------------------------------------------------------------------
 # Parameters:
@@ -47,6 +45,7 @@ $SignalFileFullPath      = "$WorkingPath\Configure-PROXY.finished.signal"
 $LogFileFullPath         = "$ScriptFileFullPath.log"
 $DataFile                = "$WorkingPath\Scripts\ParamConfig.xml"
 [xml]$KrbParams          = $null
+$configFilePath          = "$WorkingPath\Protocol.xml"
 
 #------------------------------------------------------------------------------------------
 # Function: Display-Help
@@ -205,18 +204,27 @@ Function Config-Proxy()
 
 	#-----------------------------------------------------------------------------------------------
 	# Create self-signed certificate and bind
-	#-----------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------
+    if(Test-Path -Path $configFilePath)
+	{
+        [xml]$configFile = Get-Content -Path $configFilePath
+        $proxyNode = $configFile.lab.servers.vm | Where-Object{$_.role -match "PROXY01"}
+        $domainName = $proxyNode.domain
+        $hostname = $proxyNode.name
+    }
+    $DnsName = $hostname + "."+$domainName
+    $proxyCertFilePath = "c:\$DnsName.cer"
 	Write-ConfigLog "Create self-signed certificate and bind" -ForegroundColor Yellow
 	Import-Module WebAdministration
-	$cert = New-SelfSignedCertificate -DnsName localhost -CertStoreLocation cert:\LocalMachine\My
+	$cert = New-SelfSignedCertificate -DnsName $DnsName -CertStoreLocation cert:\LocalMachine\My
 	Push-Location IIS:\SslBindings
 	$IP = "*"
 	$certhash = $cert.GetCertHashString()
 	New-WebBinding -Name "Default Web Site" -IP $IP -Port 443 -Protocol https
-	Get-Item cert:\LocalMachine\MY\$certhash | new-item $IP!443
+    Get-Item cert:\LocalMachine\MY\$certhash | new-item $IP!443
+    Export-Certificate -Cert $cert -FilePath $proxyCertFilePath
 	Pop-Location
 }
-
 
 #------------------------------------------------------------------------------------------
 # Main Function

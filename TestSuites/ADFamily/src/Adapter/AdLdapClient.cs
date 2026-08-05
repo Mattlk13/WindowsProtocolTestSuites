@@ -14,14 +14,14 @@ using System.Security.Principal;
 using System.Security.AccessControl;
 using System.Text;
 
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts.Asn1CodecV3;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Transport;
 using Microsoft.Protocols.TestTools.StackSdk.Asn1;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
 {
@@ -1949,7 +1949,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
         /// <param name="rootDSEValues">The rootDSE attributes retreived</param>
         /// <param name="isWindows">whether the server is windows or not</param>
         public string SearchRootDSEValues(
-            out Dictionary<string, string> rootDSEValues,
+            out IDictionary<string, string> rootDSEValues,
             bool isWindows = true)
         {
             string result = string.Empty;

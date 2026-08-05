@@ -1,23 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// using Microsoft.Protocols.TestTools.ExtendedLogging;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr.Mcs;
+using Microsoft.Protocols.TestTools.StackSdk.Security.Cssp;
+using Microsoft.Protocols.TestTools.StackSdk.Transport;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Net;
 using System.Net.Security;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
-using Microsoft.Protocols.TestTools.ExtendedLogging;
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr.Mcs;
-using Microsoft.Protocols.TestTools.StackSdk.Security;
-using Microsoft.Protocols.TestTools.StackSdk.Transport;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 {
@@ -61,13 +56,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         private bool isClientToServerEncrypted;
 
         private List<string> warnings;
-
-        /// <summary>
-        /// This event is used to sync main thread and Receive thread.
-        /// It is used to block receive thread when the main thread want to make TLS handshake with RDP client.
-        /// If not block the receive thread, the receive thread will read bytes from network stream, which should be read by main thread for TLS handshake  
-        /// </summary>
-        public AutoResetEvent ReceiveThreadControlEvent = new AutoResetEvent(false);
 
         #endregion member
 
@@ -456,7 +444,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         /// An error occurred when The session has not been established.</exception>
         public void SendPdu(
             RdpbcgrServerSessionContext sessionContext,
-            RdpbcgrServerPdu pdu)
+            RdpbcgrServerPdu pdu,
+            bool isSendTLSHandshakeAfterX224ConnectionConfirmPdu = true)
         {
             if (pdu == null)
             {
@@ -483,25 +472,56 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             else if (this.encryptedProtocol == EncryptedProtocol.NegotiationTls ||
                 this.encryptedProtocol == EncryptedProtocol.NegotiationCredSsp)
             {
-                this.directedTransportStack.SendPacket(sessionContext.Identity, pdu);
-                if (pdu.GetType() == typeof(Server_X_224_Connection_Confirm_Pdu))
+                if (isSendTLSHandshakeAfterX224ConnectionConfirmPdu && pdu.GetType() == typeof(Server_X_224_Connection_Confirm_Pdu))
                 {
+                    var remoteEndPoint = sessionContext.Identity;
+
                     // If send a X224 Connection COnfirm Pdu, then should make TLS handshake
-                    UpdateTransport();
+                    if (encryptedProtocol == EncryptedProtocol.NegotiationTls)
+                    {
+                        directedTransportStack.UpdateConfig(remoteEndPoint, oldStream =>
+                        {
+                            directedTransportStack.SendPacket(sessionContext.Identity, pdu);
+
+                            var sslStream = new SslStream(new ETWStream(oldStream));
+
+                            sslStream.AuthenticateAsServer(cert);
+
+                            return sslStream;
+                        });
+                    }
+                    else if (encryptedProtocol == EncryptedProtocol.NegotiationCredSsp)
+                    {
+                        directedTransportStack.UpdateConfig(remoteEndPoint, oldStream =>
+                        {
+                            directedTransportStack.SendPacket(sessionContext.Identity, pdu);
+
+                            var localIpAddress = (sessionContext.LocalIdentity as IPEndPoint).Address;
+
+                            string targetSPN = ConstValue.CREDSSP_SERVER_NAME_PREFIX + localIpAddress.ToString();
+
+                            var csspServer = new CsspServer(new ETWStream(oldStream));
+
+                            var credSspStream = csspServer.GetStream();
+
+                            csspServer.Authenticate(cert, targetSPN);
+
+                            return credSspStream;
+                        });
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Unexpected value of encryptedProtocol!");
+                    }
+                }
+                else
+                {
+                    this.directedTransportStack.SendPacket(sessionContext.Identity, pdu);
                 }
             }
             else
             {
                 this.transportStack.SendPacket(sessionContext.Identity, pdu);
-            }
-
-
-            if (pdu.GetType() == typeof(Server_X_224_Connection_Confirm_Pdu) ||
-                pdu.GetType() == typeof(Server_X_224_Negotiate_Failure_Pdu))
-            {
-                // Receive thread will be blocked by ReceiveThreadControlEvent after receiving Client X224 Connection Request.
-                // If send a X224 Connection Confirm Pdu or X224 Negotiate Failure PDU, should signal the event to resume receive thread.
-                ReceiveThreadControlEvent.Set();
             }
 
             CheckEncryptionCount(sessionContext);
@@ -601,18 +621,21 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                     }
                     else
                     {
-                        pdu = (StackPacket)transportEvent.EventObject;
-                        if (transportEvent.EndPoint == sessionContext.Identity)
+                        if (transportEvent.EventObject is StackPacket packet)
                         {
-                            return pdu;
-                        }
-                        else
-                        {
-                            // Add the pdu into packet buffer of corresponding RDP session
-                            RdpbcgrServerSessionContext context = this.serverContext.LookupSession(transportEvent.EndPoint);
-                            if (context != null)
+                            pdu = packet;
+                            if (transportEvent.EndPoint == sessionContext.Identity)
                             {
-                                context.AddPacketToBuffer(pdu);
+                                return pdu;
+                            }
+                            else
+                            {
+                                // Add the pdu into packet buffer of corresponding RDP session
+                                RdpbcgrServerSessionContext context = this.serverContext.LookupSession(transportEvent.EndPoint);
+                                if (context != null)
+                                {
+                                    context.AddPacketToBuffer(pdu);
+                                }
                             }
                         }
                     }
@@ -906,7 +929,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                 if (sessionContext.RdpEncryptionMethod != EncryptionMethods.ENCRYPTION_METHOD_NONE)
                 {
                     string messageName = "RDPEDYC:ReceivedPDU";
-                    ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, pdu.GetType().Name, completePdu.virtualChannelData);
+                    // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, pdu.GetType().Name, completePdu.virtualChannelData);
                 }
 
             }
@@ -938,7 +961,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                 if (sessionContext.ClientEncryptionMethod != EncryptionMethods.ENCRYPTION_METHOD_NONE)
                 {
                     string messageName = "RDPEDYC:ReceivedPDU";
-                    ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, pdu.GetType().Name, rawPdu.virtualChannelData);
+                    // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, pdu.GetType().Name, rawPdu.virtualChannelData);
                 }
             }
 
@@ -1731,7 +1754,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                                      defaultSecurityHeaderFlag);
 
             TS_SYNCHRONIZE_PDU synchronizePduData = new TS_SYNCHRONIZE_PDU();
-            synchronizePduData.messageType = TS_SYNCHRONIZE_PDU_messageType_Values.SYNCMSGTYPE_SYNC ;
+            synchronizePduData.messageType = TS_SYNCHRONIZE_PDU_messageType_Values.SYNCMSGTYPE_SYNC;
             synchronizePduData.targetUser = (ushort)sessionContext.IOChannelId;
 
             RdpbcgrUtility.FillShareDataHeader(ref synchronizePduData.shareDataHeader,
@@ -2643,18 +2666,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_UPDATE_PDU fastpathOutputPdu = new TS_FP_UPDATE_PDU(sessionContext);
             List<TS_FP_UPDATE> outputUpdateList = new List<TS_FP_UPDATE>();
-            TS_FP_UPDATE outputUpdate = new TS_FP_UPDATE();
 
-            fastpathOutputPdu.fpOutputHeader =
-                (byte)(((int)nested_TS_FP_UPDATE_PDU_fpOutputHeader_actionCode_Values.FASTPATH_OUTPUT_ACTION_FASTPATH & 0x03)
-                | ((int)((int)reserved_Values.V1 & 0x0f) << 2));
+            fastpathOutputPdu.fpOutputHeader = new nested_TS_FP_UPDATE_PDU_fpOutputHeader();
 
             if (sessionContext.RdpEncryptionLevel != EncryptionLevel.ENCRYPTION_LEVEL_NONE)
             {
-                // encryptionFlags (2 bits): A higher 2-bit field containing the flags 
-                // that describe the cryptographic parameters of the PDU.
-                fastpathOutputPdu.fpOutputHeader |=
-                    (byte)((int)encryptionFlagsChgd_Values.FASTPATH_OUTPUT_ENCRYPTED << 6);
+                fastpathOutputPdu.fpOutputHeader.flags |= encryptionFlagsChgd_Values.FASTPATH_OUTPUT_ENCRYPTED;
             }
 
             fastpathOutputPdu.dataSignature = null;
@@ -2673,7 +2690,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             #region fill in TS_FP_UPDATE
 
             TS_FP_UPDATE_ORDERS updateOrders = new TS_FP_UPDATE_ORDERS();
-            updateOrders.updateHeader = 0;
+
+            updateOrders.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_ORDERS);
+
             updateOrders.compressionFlags = compressedType_Values.None;
             updateOrders.updateOrders = new byte[] { 0 };
             updateOrders.size = (ushort)(Marshal.SizeOf(updateOrders.updateHeader)
@@ -2685,9 +2704,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_UPDATE_PALETTE paletteUpdate = new TS_FP_UPDATE_PALETTE();
 
-            paletteUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_PALETTE & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            paletteUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_PALETTE);
+
             paletteUpdate.compressionFlags = compressedType_Values.None;
             paletteUpdate.paletteUpdateData.updateType = updateType_Values.UPDATETYPE_PALETTE;
             paletteUpdate.paletteUpdateData.numberColors = ConstValue.NUMBER_COLORS;
@@ -2715,9 +2733,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_UPDATE_BITMAP bitmapUpdate = new TS_FP_UPDATE_BITMAP();
 
-            bitmapUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_BITMAP & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            bitmapUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_BITMAP);
+
             bitmapUpdate.compressionFlags = compressedType_Values.None;
             bitmapUpdate.bitmapUpdateData.updateType = (ushort)updateType_Values.UPDATETYPE_BITMAP;
             bitmapUpdate.bitmapUpdateData.numberRectangles = 1;
@@ -2748,9 +2765,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_UPDATE_SYNCHRONIZE syncUpdate = new TS_FP_UPDATE_SYNCHRONIZE();
 
-            syncUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_SYNCHRONIZE & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            syncUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_SYNCHRONIZE);
+
             syncUpdate.compressionFlags = compressedType_Values.None;
 
             syncUpdate.size = 0;
@@ -2759,9 +2775,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_POINTERPOSATTRIBUTE ptrPosUpdate = new TS_FP_POINTERPOSATTRIBUTE();
 
-            ptrPosUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_PTR_POSITION & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            ptrPosUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_PTR_POSITION);
+
             ptrPosUpdate.compressionFlags = compressedType_Values.None;
 
             ptrPosUpdate.pointerPositionUpdateData.position.xPos = ConstValue.X_POS;
@@ -2776,9 +2791,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             TS_FP_SYSTEMPOINTERHIDDENATTRIBUTE ptrHiddenUpdate = new TS_FP_SYSTEMPOINTERHIDDENATTRIBUTE();
 
             // integrate update type, fragment sequencing and compression usage indication in to 1 byte update header
-            ptrHiddenUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_PTR_NULL & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            ptrHiddenUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_PTR_NULL);
+
             ptrHiddenUpdate.compressionFlags = compressedType_Values.None;
 
             ptrHiddenUpdate.size = 0;
@@ -2787,9 +2801,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_SYSTEMPOINTERDEFAULTATTRIBUTE ptrDefaultUpdate = new TS_FP_SYSTEMPOINTERDEFAULTATTRIBUTE();
 
-            ptrDefaultUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_PTR_DEFAULT & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            ptrDefaultUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_PTR_DEFAULT);
+
             ptrDefaultUpdate.compressionFlags = compressedType_Values.None;
 
             ptrDefaultUpdate.size = 0;
@@ -2798,9 +2811,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_COLORPOINTERATTRIBUTE colorPtrUpdate = new TS_FP_COLORPOINTERATTRIBUTE();
 
-            colorPtrUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_PTR_POSITION & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            colorPtrUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_COLOR);
+
             colorPtrUpdate.compressionFlags = compressedType_Values.None;
 
             colorPtrUpdate.colorPointerUpdateData.cacheIndex = ConstValue.CACHE_INDEX;
@@ -2820,9 +2832,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_POINTERATTRIBUTE newPtrUpdate = new TS_FP_POINTERATTRIBUTE();
 
-            newPtrUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_POINTER & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            newPtrUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_POINTER);
+
             newPtrUpdate.compressionFlags = compressedType_Values.None;
 
             newPtrUpdate.newPointerUpdateData.xorBpp = ConstValue.XOR_BPP;
@@ -2843,9 +2854,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_CACHEDPOINTERATTRIBUTE cachedPtrUpdate = new TS_FP_CACHEDPOINTERATTRIBUTE();
 
-            cachedPtrUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_CACHED & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            cachedPtrUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_CACHED);
+
             cachedPtrUpdate.compressionFlags = compressedType_Values.None;
 
             cachedPtrUpdate.cachedPointerUpdateData.cacheIndex = ConstValue.CACHE_INDEX;
@@ -2857,9 +2867,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_SURFCMDS surfCmdsUpdate = new TS_FP_SURFCMDS();
 
-            surfCmdsUpdate.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
+            surfCmdsUpdate.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS);
+
             surfCmdsUpdate.compressionFlags = compressedType_Values.None;
             TS_SURFCMD_SET_SURF_BITS surfBitsCmd = new TS_SURFCMD_SET_SURF_BITS();
             surfBitsCmd.cmdType = cmdType_Values.CMDTYPE_SET_SURFACE_BITS;
@@ -2915,16 +2924,11 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             TS_FP_UPDATE_PDU fastpathOutputPdu = new TS_FP_UPDATE_PDU(sessionContext);
 
-            fastpathOutputPdu.fpOutputHeader =
-                (byte)(((int)nested_TS_FP_UPDATE_PDU_fpOutputHeader_actionCode_Values.FASTPATH_OUTPUT_ACTION_FASTPATH & 0x03)
-                | ((int)((int)reserved_Values.V1 & 0x0f) << 2));
+            fastpathOutputPdu.fpOutputHeader = new nested_TS_FP_UPDATE_PDU_fpOutputHeader();
 
             if (sessionContext.RdpEncryptionLevel != EncryptionLevel.ENCRYPTION_LEVEL_NONE && sessionContext.RdpEncryptionLevel != EncryptionLevel.ENCRYPTION_LEVEL_LOW)
             {
-                // encryptionFlags (2 bits): A higher 2-bit field containing the flags 
-                // that describe the cryptographic parameters of the PDU.
-                fastpathOutputPdu.fpOutputHeader |=
-                    (byte)((int)encryptionFlagsChgd_Values.FASTPATH_OUTPUT_ENCRYPTED << 6);
+                fastpathOutputPdu.fpOutputHeader.flags |= encryptionFlagsChgd_Values.FASTPATH_OUTPUT_ENCRYPTED;
             }
 
             fastpathOutputPdu.dataSignature = null;
@@ -3799,10 +3803,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         {
             if (sessionContext.SVCManager != null)
             {
-                if (!sessionContext.SVCManager.IsRunning)
-                {
-                    sessionContext.SVCManager.Start();
-                }
+                sessionContext.SVCManager.Start();
             }
         }
 
@@ -3814,10 +3815,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         {
             if (sessionContext.SVCManager != null)
             {
-                if (sessionContext.SVCManager.IsRunning)
-                {
-                    sessionContext.SVCManager.Stop();
-                }
+                sessionContext.SVCManager.Stop();
             }
         }
 
@@ -4457,9 +4455,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             else
             {
                 SocketTransportConfig config = new SocketTransportConfig();
-
-                IPHostEntry heserver = Dns.GetHostEntry(Dns.GetHostName());
-
                 config.LocalIpAddress = address;
                 config.Type = StackTransportType.Tcp;
                 config.Role = Role.Server;
@@ -4471,30 +4466,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 #endif
         }
 
-
-        /// <summary>
-        /// Update transport to an Negotiation-Based Security-Enhanced transport.
-        /// </summary>
-        internal void UpdateTransport()
-        {
-            try
-            {
-                if (encryptedProtocol == EncryptedProtocol.NegotiationTls)
-                {
-                    this.directedTransportStack.UpdateConfig(SecurityStreamType.Ssl);
-                }
-                else if (encryptedProtocol == EncryptedProtocol.NegotiationCredSsp)
-                {
-                    this.directedTransportStack.UpdateConfig(SecurityStreamType.CredSsp);
-                }
-            }
-            catch (IOException)
-            {
-                // IOException may occured in some negative cases
-            }
-
-            return;
-        }
         #endregion
 
 

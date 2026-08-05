@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Permissions;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Transport
 {
@@ -160,7 +159,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Transport
             switch (transportConfig.Type)
             {
                 case StackTransportType.Tcp:
-
                     if (transportConfig.Role == Role.Client)
                     {
                         this.transport = new TcpClientTransport(transportConfig, decodePacketCallback);
@@ -211,6 +209,23 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Transport
                     else
                     {
                         this.transport = new UdpClientTransport(transportConfig, decodePacketCallback);
+                    }
+
+                    break;
+
+                case StackTransportType.Quic:
+                    if(transportConfig.Role == Role.Server)
+                    {
+                        this.transport = new QuicServerTransport(transportConfig, decodePacketCallback);
+                    }
+                    else if (transportConfig.Role == Role.Client)
+                    {
+                        this.transport = new QuicClientTransport(transportConfig, decodePacketCallback);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException(
+                            "Role is invalid for transport type is Quic, it must be Server or Client.");
                     }
 
                     break;
@@ -1696,7 +1711,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Transport
         /// </summary>
         /// <param name="transportType">Tcp or Udp</param>
         /// <param name="localServerEndpoint">the lsp hooked server endpoint</param>
-        [SecurityPermission(SecurityAction.Demand)]
         static public void ChangeToBlockingMode(StackTransportType transportType, IPEndPoint localServerEndpoint)
         {
             LspConsole.Instance.ChangeToBlockingMode(localServerEndpoint, transportType);
@@ -1719,7 +1733,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Transport
         /// </summary>
         /// <param name="transportType">Tcp or Udp</param>
         /// <param name="localServerEndpoint">the lsp hooked server endpoint</param>
-        [SecurityPermission(SecurityAction.Demand)]
         static public void UnblockTraffic(StackTransportType transportType, IPEndPoint localServerEndpoint)
         {
             LspConsole.Instance.UnblockTraffic(localServerEndpoint, transportType);

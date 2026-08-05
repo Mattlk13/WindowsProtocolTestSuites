@@ -50,6 +50,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
 
         #endregion Properties
 
+        #region Event
+        /// <summary>
+        /// Event for unhandled exception received.
+        /// </summary>
+        public event UnhandledExceptionReceivedDelegate UnhandledExceptionReceived;
+        #endregion
+
         #region Constructor
 
         /// <summary>
@@ -65,10 +72,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
             {
                 this.transportProtocol = Multitransport_Protocol_value.INITITATE_REQUEST_PROTOCOL_UDPFECL;
             }
-
-
-            EstablishTransportConnection();
-
 
             decoder = new ClientDecodingPduBuilder();
             pduBuilder = new PduBuilder();
@@ -140,7 +143,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
                 port = portL;
             }
 
-            if(cookie == null)
+            if (cookie == null)
             {
                 // Not receive a Server Initiate Multitransport Request PDU
                 throw new InvalidOperationException("Cannot establish the connection, since the corresponding Server Initiate Multitransport Request PDU wasn't received!");
@@ -148,17 +151,21 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc
 
             IPEndPoint localEndpoint = new IPEndPoint(((IPEndPoint)clientSessionContext.LocalIdentity).Address, port);
             rdpeudpClient = new RdpeudpClient(localEndpoint, (IPEndPoint)clientSessionContext.RemoteIdentity, udpTransportMode);
-            if (!rdpeudpClient.Running)
+
+            rdpeudpClient.UnhandledExceptionReceived += (ex) =>
             {
-                rdpeudpClient.Start();
-            }
+                UnhandledExceptionReceived?.Invoke(ex);
+            };
+
+            rdpeudpClient.Start();
+
             rdpeudpClient.Connect(timeout);
 
             rdpemtClient = new RdpemtClient(rdpeudpClient.Socket, ((IPEndPoint)clientSessionContext.RemoteIdentity).Address.ToString(), false);
             rdpemtClient.Received += ReceivedBytes;
 
             rdpemtClient.Connect(requestId, cookie, timeout);
-            
+
         }
 
         #endregion Private Methods

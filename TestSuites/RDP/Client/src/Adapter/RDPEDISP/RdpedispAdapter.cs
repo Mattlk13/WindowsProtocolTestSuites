@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Collections.Generic;
-using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestSuites.Rdp;
-using Microsoft.Protocols.TestSuites.Rdpegfx;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
-using System.Drawing;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.Protocols.TestSuites.Rdpegfx;
 using Microsoft.Protocols.TestSuites.Rdprfx;
+using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedisp;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpegfx;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
+using SkiaSharp;
+using System;
 
 
 namespace Microsoft.Protocols.TestSuites.Rdpedisp
@@ -24,7 +22,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         #region Private Variables
 
         const String RdpedispChannelName = "Microsoft::Windows::RDS::DisplayControl";
-        
+
         RdpedispServer rdpedispServer;
         TimeSpan waitTime;
         IRdpegfxAdapter rdpegfxAdapter;
@@ -43,8 +41,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             rdpbcgrAdapter = null;
 
             #region WaitTime
-            string strWaitTime = Site.Properties["WaitTime"];
-            if (strWaitTime != null)
+            string strWaitTime;
+            PtfPropUtility.GetPtfPropertyValue(Site, "WaitTime", out strWaitTime);
+            if (!string.IsNullOrEmpty(strWaitTime))
             {
                 int waitSeconds = Int32.Parse(strWaitTime);
                 waitTime = new TimeSpan(0, 0, waitSeconds);
@@ -59,7 +58,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
 
         public override void Reset()
         {
-            base.Reset();        
+            base.Reset();
             rdpegfxAdapter = null;
             rdprfxAdapter = null;
             rdpbcgrAdapter = null;
@@ -146,7 +145,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         /// <returns></returns>
         public DISPLAYCONTROL_MONITOR_LAYOUT_PDU expectMonitorLayoutPDU()
         {
-            DISPLAYCONTROL_MONITOR_LAYOUT_PDU MonitorLayoutPDU = rdpedispServer.ExpectRdpedispPdu<DISPLAYCONTROL_MONITOR_LAYOUT_PDU>(waitTime);            
+            DISPLAYCONTROL_MONITOR_LAYOUT_PDU MonitorLayoutPDU = rdpedispServer.ExpectRdpedispPdu<DISPLAYCONTROL_MONITOR_LAYOUT_PDU>(waitTime);
             return MonitorLayoutPDU;
         }
 
@@ -176,7 +175,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
         /// <param name="imagefile">Image to send</param>
         /// <param name="width">Width of image to send</param>
         /// <param name="height">Height of image to send</param>
-        public bool RdprfxSendImage(Image image, ushort width, ushort height)
+        public bool RdprfxSendImage(SKImage image, ushort width, ushort height)
         {
             uint frameId = 0; //The index of the sending frame.
             OperationalMode opMode = OperationalMode.ImageMode;
@@ -185,11 +184,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             ushort destTop = 0; //the top bound of the frame.
 
             // Crop Image
-            Bitmap bitmap = new Bitmap(width, height);
-            Graphics graphics = Graphics.FromImage(bitmap);
-            Rectangle section = new Rectangle(0, 0, width, height);
-            graphics.DrawImage(image, 0, 0, section, GraphicsUnit.Pixel);
-
+            SKBitmap bitmap = new SKBitmap(width, height);
+            SKCanvas canvas = new SKCanvas(bitmap);
+            SKRect section = new SKRect(0, 0, width, height);
+            SKRect section2 = new SKRect(0, 0, width, height);
+            canvas.DrawImage(image, section, section2);
             //Check if the above setting is supported by the client.
             if (!this.rdprfxAdapter.CheckIfClientSupports(opMode, enAlgorithm))
             {
@@ -197,7 +196,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             }
             rdpbcgrAdapter.SendFrameMarkerCommand(frameAction_Values.SURFACECMD_FRAMEACTION_BEGIN, frameId);
 
-            rdprfxAdapter.SendImageToClient(bitmap, opMode, enAlgorithm, destLeft, destTop);
+            rdprfxAdapter.SendImageToClient(SKImage.FromBitmap(bitmap), opMode, enAlgorithm, destLeft, destTop);
             rdpbcgrAdapter.SendFrameMarkerCommand(frameAction_Values.SURFACECMD_FRAMEACTION_END, frameId);
             rdprfxAdapter.ExpectTsFrameAcknowledgePdu(frameId, waitTime);
             return true;
@@ -218,7 +217,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpedisp
             // Send solid fill request to client to fill surface with green color
             RDPGFX_RECT16 fillSurfRect = new RDPGFX_RECT16(0, 0, width, height);
             RDPGFX_RECT16[] fillRects = { fillSurfRect };  // Relative to surface
-            uint fid = this.rdpegfxAdapter.SolidFillSurface(surf, new RDPGFX_COLOR32(Color.Green.R, Color.Green.G, Color.Green.B, Color.Green.A), fillRects);
+            uint fid = this.rdpegfxAdapter.SolidFillSurface(surf, new RDPGFX_COLOR32(SKColors.Green.Red, SKColors.Green.Green, SKColors.Green.Blue, SKColors.Green.Alpha), fillRects);
             // Expect the client to send a frame acknowledge pdu
             // If the server receives the message, it indicates that the client has been successfully decoded the logical frame of graphics commands
             this.rdpegfxAdapter.ExpectFrameAck(fid);

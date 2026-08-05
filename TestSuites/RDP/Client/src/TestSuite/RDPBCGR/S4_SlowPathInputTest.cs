@@ -19,6 +19,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection when received a Server-to-Client PDU when the length field within tpktHeader is invalid.")]
         public void S4_SlowPathInputTest_NegativeTest_ServerToClientSlowPath_InvalidTPKTLength()
         {
@@ -39,7 +41,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             #region Trigger client to connect
             //Trigger client to connect.
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -55,7 +57,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Slow-Path output PDU to SUT and the length field within tpktHeader is set to an invalid value.");
             this.rdpbcgrAdapter.SendSlowPathOutputPdu(SlowPathTest_InvalidType.InvalidTPKTLength);
@@ -73,6 +75,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection when received a Server-to-Client PDU when the length field within mcsSDin is invalid.")]
         public void S4_SlowPathInputTest_NegativeTest_ServerToClientSlowPath_InvalidMCSLength()
         {
@@ -94,7 +98,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             #region Trigger client to connect
             //Trigger client to connect.
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -110,7 +114,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Slow-Path output PDU to SUT and the length field of mcsSDin is set to an invalid value.");
             this.rdpbcgrAdapter.SendSlowPathOutputPdu(SlowPathTest_InvalidType.InvalidMCSLength);
@@ -127,6 +131,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection when received a Server-to-Client PDU when the signature field within security is invalid.")]
         public void S4_SlowPathInputTest_NegativeTest_ServerToClientSlowPath_InvalidSignature()
         {
@@ -153,7 +159,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             #region Trigger client to connect
             //Trigger client to connect.
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -169,7 +175,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Slow-Path output PDU to SUT and the signature within securityHeader is set to an invalid value.");
             this.rdpbcgrAdapter.SendSlowPathOutputPdu(SlowPathTest_InvalidType.InvalidSignature);
@@ -183,6 +189,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection when received a Server-to-Client PDU when the SEC_ENCRYPT flag within securityHeader is set")]
         public void S4_SlowPathInputTest_NegativeTest_ServerToClientSlowPath_InvalidEncryptFlag()
         {
@@ -209,7 +217,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             #region Trigger client to connect
             //Trigger client to connect.
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -225,7 +233,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Slow-Path output PDU to SUT and the SEC_ENCRYPT flag within securityHeader is set.");
             this.rdpbcgrAdapter.SendSlowPathOutputPdu(SlowPathTest_InvalidType.InvalidEncryptFlag);
@@ -238,6 +246,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection when received a Server-to-Client PDU when the totalLength field within shareDataHeader is invalid.")]
         public void S4_SlowPathInputTest_NegativeTest_ServerToClientSlowPath_InvalidTotalLenth()
         {
@@ -259,7 +269,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             #region Trigger client to connect
             //Trigger client to connect.
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -275,7 +285,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Slow-Path output PDU to SUT and the totalLength field within shareDataHeader is inconsistent with the sent data.");
             this.rdpbcgrAdapter.SendSlowPathOutputPdu(SlowPathTest_InvalidType.InvalidTotalLength);
@@ -293,6 +303,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("Interactive")]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to verify the Client Input Events when Slow-Path is enabled.")]
         public void BVT_ClientInputTest_SlowPath()
         {
@@ -322,7 +333,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -338,7 +349,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, @"Triggering SUT to generate input events, including Keyboard Event or Unicode Keyboard Event, Mouse Event or 
             Extended Mouse Event, Synchronize Event, Client Refresh Rect and Client Suppress Output.");
@@ -376,9 +387,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             bool bMouseEventPassed = bMouseEventReceived || bExtendedMouseEventReceived;
             bool bKeyboardEventPassed = bKeyboardEventReceived || bUnicodeKeyboardEventReceived;
-            bool bControlServerGrphicsOutputPassed = bClientSuppressOutputPDUReceived;
+            bool bControlServerGraphicsOutputPassed = bClientSuppressOutputPDUReceived;
 
-            this.TestSite.Assert.IsTrue(bMouseEventPassed && bKeyboardEventPassed && bSynchronizeEventReceived && bControlServerGrphicsOutputPassed,
+            this.TestSite.Assert.IsTrue(bMouseEventPassed && bKeyboardEventPassed && bSynchronizeEventReceived && bControlServerGraphicsOutputPassed,
                 @"Successfully received the followings: Keyboard Event or Unicode Keyboard Event, Mouse Event or Extended Mouse Event, Synchronize Event, 
                   Client Refresh Rect and Client Suppress Output.");
 

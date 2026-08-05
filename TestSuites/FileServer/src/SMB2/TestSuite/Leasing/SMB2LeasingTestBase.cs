@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
-using Microsoft.Protocols.TestSuites.FileSharing.SMB2.Adapter;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using System.Threading;
@@ -18,9 +17,9 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         protected LEASE_BREAK_Notification_Packet receivedLeaseBreakNotify;
 
         /// <summary>
-        /// ManualResetEvent instance for signal
+        /// AutoResetEvent instance for signal
         /// </summary>
-        protected ManualResetEvent notificationReceived = new ManualResetEvent(false);
+        protected AutoResetEvent notificationReceived = new AutoResetEvent(false);
 
         /// <summary>
         /// Expected new lease state in LEASE_BREAK_Notification
@@ -110,21 +109,33 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite
         /// TimerCallback to be executed to acknowledge LeaseBreakNotification
         /// </summary>
         /// <param name="obj"></param>
-        protected virtual void CheckBreakNotification(object obj)
+        /// <param name="isNotificationExpected"></param>
+        protected virtual void CheckBreakNotification(object obj, bool isNotificationExpected = true)
         {
             BaseTestSite.Log.Add(
                 LogEntryKind.Debug,
                 "Check if client received lease break notification");
-            BaseTestSite.Assert.IsTrue(
-                // Wait for notification arrival
-                notificationReceived.WaitOne(TestConfig.WaitTimeoutInMilliseconds),
+            // Wait for notification arrival
+            var isNotificationReceived = notificationReceived.WaitOne(TestConfig.WaitTimeoutInMilliseconds);
+
+            if (isNotificationExpected)
+            {
+                BaseTestSite.Assert.IsTrue(
+                isNotificationReceived,
                 "LeaseBreakNotification should be raised.");
 
-            uint treeId = (uint)obj;
-            BaseTestSite.Log.Add(
-                LogEntryKind.Debug,
-                "Client attempts to acknowledge the lease break");
-            AcknowledgeLeaseBreak(clientToAckLeaseBreak, treeId, receivedLeaseBreakNotify);
+                uint treeId = (uint)obj;
+                BaseTestSite.Log.Add(
+                    LogEntryKind.Debug,
+                    "Client attempts to acknowledge the lease break");
+                AcknowledgeLeaseBreak(clientToAckLeaseBreak, treeId, receivedLeaseBreakNotify);
+            }
+            else
+            {
+                BaseTestSite.Assert.IsFalse(
+                    isNotificationReceived,
+                    "Server should not send lease break notification");
+            }
         }
         #endregion
     }

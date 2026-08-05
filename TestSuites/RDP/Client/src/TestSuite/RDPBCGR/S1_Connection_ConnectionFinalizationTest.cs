@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Text;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -16,6 +13,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(0)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]        
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to ensure SUT can complete the Connection Finalization phase successfully 
                        when the server doesn't advertised support for the Bitmap Host Cache Support Capability Set.")]
         public void S1_ConnectionTest_ConnectionFinalization_PositiveTest_BitmapHostCacheNotSupported()
@@ -48,7 +47,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -175,6 +174,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to ensure SUT can complete the Connection Finalization phase successfully with a valid sending and receiving PDU sequences.
                         The concrete sequences is: Server Synchronize PDU -> Client Synchronize PDU -> Client Control PDU ?Cooperate 
                         -> Server Control PDU ?Cooperate -> Client Control PDU - Request Control -> Client Persistent Key List PDU 
@@ -209,7 +210,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -311,7 +312,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Control PDU - Request Control.");
             this.rdpbcgrAdapter.WaitForPacket<Client_Control_Pdu_Request_Control>(waitTime);
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -339,6 +340,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to ensure SUT can complete the Connection Finalization phase successfully with a valid sending and receiving PDU sequences. 
                         The concrete sequences is: Client Synchronize PDU -> Client Control PDU ?Cooperate -> Server Synchronize PDU 
                         -> Client Control PDU - Request Control -> Server Control PDU ?Cooperate -> Client Persistent Key List PDU 
@@ -373,7 +376,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -475,7 +478,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Server Control Cooperate PDU to SUT.");
             this.rdpbcgrAdapter.ServerControlCooperate();
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");
@@ -502,6 +505,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description(@"This test case is used to ensure SUT can complete the Connection Finalization phase successfully with a valid sending and receiving PDU sequences.  
                         The concrete sequences is: Server Synchronize PDU ->  Server Control PDU ?Cooperate -> Client Synchronize PDU 
                         -> Client Control PDU ?Cooperate -> Client Control PDU - Request Control -> Client Persistent Key List PDU 
@@ -536,7 +541,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request
@@ -638,7 +643,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Control PDU - Request Control.");
             this.rdpbcgrAdapter.WaitForPacket<Client_Control_Pdu_Request_Control>(waitTime);
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");

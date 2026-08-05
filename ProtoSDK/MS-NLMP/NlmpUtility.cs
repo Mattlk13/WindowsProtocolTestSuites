@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Protocols.TestTools.StackSdk.Security.Cryptographic;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
 {
@@ -384,49 +385,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             )]
         public static VERSION GetVersion()
         {
-            VERSION version = new VERSION();
-
-            // For Windows XP SP2 and Windows Server 2003, 
-            // the value of this field is WINDOWS_MAJOR_VERSION_5.
-            if (Environment.OSVersion.Version.Major <= 5)
+            VERSION version = new VERSION()
             {
-                version.ProductMajorVersion = VERSION_MAJOR.WINDOWS_MAJOR_VERSION_5;
-            }
-            // For Windows Vista, Windows Server 2008, Windows 7, and Windows Server 2008 R2, 
-            // the value of this field is WINDOWS_MAJOR_VERSION_6.
-            else
-            {
-                version.ProductMajorVersion = VERSION_MAJOR.WINDOWS_MAJOR_VERSION_6;
-            }
-
-            // For Windows XP SP2 and Windows Server 2003, 
-            // the value of this field is WINDOWS_MAJOR_VERSION_5.
-            if (Environment.OSVersion.Version.Major == 5)
-            {
-                // For Windows XP SP2, the value of this field is WINDOWS_MINOR_VERSION_1.
-                if (Environment.OSVersion.Version.Minor == 1)
-                {
-                    version.ProductMinorVersion = VERSION_MINOR.WINDOWS_MINOR_VERSION_1;
-                }
-                // For Windows Server 2003, the value of this field is WINDOWS_MINOR_VERSION_2.
-                else
-                {
-                    version.ProductMinorVersion = VERSION_MINOR.WINDOWS_MINOR_VERSION_2;
-                }
-            }
-            // For Windows Vista, Windows Server 2008, Windows 7, and Windows Server 2008 R2, 
-            // the value of this field is WINDOWS_MINOR_VERSION_0.
-            else
-            {
-                version.ProductMinorVersion = VERSION_MINOR.WINDOWS_MINOR_VERSION_0;
-            }
-
-            version.ProductBuild = (ushort)Environment.OSVersion.Version.Build;
-
-            // For Windows XP SP2, Windows Server 2003, Windows Vista, Windows Server 2008, 
-            // Windows 7, and Windows Server 2008 R2 the value of this field is NTLMSSP_REVISION_W2K3.
-            // NTLMSSP_REVISION_W2K3 = 0x0F
-            version.NTLMRevisionCurrent = VERSION_REVERSION.NTLMSSP_REVISION_W2K3;
+                NTLMRevisionCurrent = VERSION_REVERSION.NTLMSSP_REVISION_W2K3,
+                ProductMajorVersion = VERSION_MAJOR.MAJOR_VERSION_10,
+                ProductMinorVersion = VERSION_MINOR.MINOR_VERSION_0
+            };
 
             return version;
         }
@@ -1828,8 +1792,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
                     string.Format("the length of key must be 8 bytes, actually {0} bytes", key.Length), "key");
             }
 
-            DES des = System.Security.Cryptography.DES.Create();
-            des.Mode = CipherMode.ECB;
+            DES des = System.Security.Cryptography.DES.Create(); // CodeQL [SM02192] Required by [MS-NLMP] section 6: the NTLM DES(K,D) primitive is defined as a single 8-byte DES-ECB block, used to build NTOWFv1 and LM challenge response. Protocol-test interop code.
+            des.Mode = CipherMode.ECB; // CodeQL [SM00395, SM02199] Required by [MS-NLMP] section 6: the NTLM DES(K,D) primitive is defined as a single 8-byte DES-ECB block; used to build NTOWFv1 / LM challenge response in protocol-test interop code.
             des.Key = key;
 
             return des.CreateEncryptor(des.Key, des.IV).TransformFinalBlock(data, 0, data.Length);
@@ -1879,7 +1843,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             byte[] data
             )
         {
-            return new HMACMD5(key).ComputeHash(data);
+            return new HMACMD5(key).ComputeHash(data); // CodeQL [SM02200] Required by [MS-NLMP] section 6: HMAC_MD5 is the primitive used throughout NTLMv2 for NTOWFv2/LMOWFv2 derivation and MIC computation. Protocol-test interop code, not a security boundary.
         }
 
 
@@ -1911,7 +1875,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Nlmp
             byte[] data
             )
         {
-            return System.Security.Cryptography.MD5.Create().ComputeHash(data);
+            return System.Security.Cryptography.MD5.Create().ComputeHash(data); // CodeQL [SM02196] Required by [MS-NLMP] section 6 / RFC 1321: MD5 is part of NTLMv1/v2 key and checksum derivation. Protocol-test interop code, not a security boundary.
         }
 
 

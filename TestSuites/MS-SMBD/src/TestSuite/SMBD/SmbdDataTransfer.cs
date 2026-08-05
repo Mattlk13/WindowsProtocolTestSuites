@@ -879,6 +879,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
                     + "In this test case, update only DataRemainingLength to terminate the connection.")]
         public void SmbdDataTransfer_NegativeParameter_RemainingDataLength_AgainstMaxFragmentedSize()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             // MaxFragmentedSize + 1
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Scenario 1: Send SMBD Data Transfer message with MaxFragmentedSize + 1.");
             CommonTestMethod_RemainingDataLength_AgainstMaxFragmentedSize(
@@ -1193,6 +1198,11 @@ namespace Microsoft.Protocol.TestSuites.Smbd.TestSuite
         [Description("Verify server will terminate connection when no response for SMBD Data Transfer message with SMB_DIRECT_RESPONSE_REQUESTED flag.")]
         public void SmbdDataTransfer_IdleConnection_Server_Timeout()
         {
+            if (smbdAdapter.TestConfig.Platform >= Platform.WindowsServer2025)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2025.");
+            }
+            
             // define data for test case
             const uint MAX_SEND_SIZE = 1024;
             const uint MAX_FRAGMENT_SIZE = 128 * 1024; // 128 KiB

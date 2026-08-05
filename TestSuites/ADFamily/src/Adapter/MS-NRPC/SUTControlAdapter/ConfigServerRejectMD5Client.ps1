@@ -1,7 +1,5 @@
-#############################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#############################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 $computerName = $PTFProp_Common_WritableDC1_NetbiosName
 
@@ -41,9 +39,10 @@ finally
 try
 {
 	##get service object
-	$serviceObj = get-service -computername $computerName Netlogon
-	##restart.
-	Restart-Service -inputObject $serviceObj -force
+	Invoke-Command -Computername $computerName -Scriptblock { $serviceObj = Get-Service Netlogon
+		##restart.
+		Restart-Service -inputObject $serviceObj -force
+	}
 }
 catch
 {
@@ -51,7 +50,6 @@ catch
 }
 finally
 {
-	$serviceObj.Close()
 
 	[System.GC]::Collect();
 	[System.GC]::WaitForPendingFinalizers();

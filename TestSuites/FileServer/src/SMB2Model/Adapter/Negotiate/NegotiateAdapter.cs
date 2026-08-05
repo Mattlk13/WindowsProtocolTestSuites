@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter.Negotiate
@@ -80,8 +80,15 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter.Negotiate
                     Site.Log.Add(LogEntryKind.Debug, "Connect to server {0} over NetBios", testConfig.SutComputerName);
                     smb2Client.ConnectOverNetbios(testConfig.SutComputerName);
                     break;
+                case Smb2TransportType.Quic:
+                    Site.Assert.IsTrue(
+                        testConfig.SutIPAddress != null && testConfig.SutIPAddress != System.Net.IPAddress.None,
+                        "Server IP should not be empty when transport type is QUIC.");
+                    Site.Log.Add(LogEntryKind.Debug, "Connect to server {0} over QUIC", testConfig.SutIPAddress.ToString());
+                    smb2Client.ConnectOverQuic(testConfig.SutComputerName, testConfig.SutIPAddress);
+                    break;
                 default:
-                    Site.Assert.Fail("The transport type is {0}, but currently only Tcp and NetBIOS are supported.", testConfig.UnderlyingTransport);
+                    Site.Assert.Fail("The transport type is {0}, but currently only Tcp, Quic and NetBIOS are supported.", testConfig.UnderlyingTransport);
                     break;
             }
             smb2Client.Disconnected += new Action(OnServerDisconnected);
@@ -98,7 +105,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter.Negotiate
             }
         }
 
-        public void ComNegotiateRequest(Sequence<string> dialects)
+        public void ComNegotiateRequest(List<string> dialects)
         {
             Packet_Header responseHeader = new Packet_Header();
             DialectRevision selectedDialect = DialectRevision.Smb2Unknown;
@@ -125,7 +132,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2Model.Adapter.Negotiate
 
         }
 
-        public void NegotiateRequest(Sequence<DialectRevision> dialects)
+        public void NegotiateRequest(List<DialectRevision> dialects)
         {
             Smb2NegotiateRequestPacket negotiateRequest;
             Smb2NegotiateResponsePacket negotiateResponse;

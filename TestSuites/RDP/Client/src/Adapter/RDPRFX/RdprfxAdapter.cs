@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Drawing;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
 using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
+using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 
 namespace Microsoft.Protocols.TestSuites.Rdprfx
@@ -66,7 +66,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         private RdprfxNegativeType currentTestType;
 
         #endregion
-        
+
         #region IAdapter Methods
 
         public override void Initialize(ITestSite testSite)
@@ -99,6 +99,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             if (this.rdpbcgrServerStack != null)
             {
                 this.rdpbcgrServerStack.Dispose();
+                rdpbcgrSessionContext = null;
             }
         }
 
@@ -149,7 +150,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         {
             supportedRfxCaps = null;
             s2cMaxRequestSize = serverMaxRequestSize;
-            ConfirmCapabilitySets =  this.rdpbcgrSessionContext.ConfirmCapabilitySets;
+            ConfirmCapabilitySets = this.rdpbcgrSessionContext.ConfirmCapabilitySets;
             foreach (ITsCapsSet capSet in ConfirmCapabilitySets)
             {
                 if (capSet is TS_MULTIFRAGMENTUPDATE_CAPABILITYSET)
@@ -191,7 +192,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                         {
                             is_TS_RFX_CLNT_CAPS_CONTAINER_Received = true;
                             remoteFXCodecID = codec.codecID;
-                            this.client_RFX_Caps_Container =  rdprfxServerDecoder.Decode_TS_RFX_CLNT_CAPS_CONTAINER(codec.codecProperties);
+                            this.client_RFX_Caps_Container = rdprfxServerDecoder.Decode_TS_RFX_CLNT_CAPS_CONTAINER(codec.codecProperties);
                             supportedRfxCaps = this.client_RFX_Caps_Container.capsData.capsetsData[0].icapsData;
                             break;
                         }
@@ -308,7 +309,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <summary>
         /// Method to send TS_RFX_CODEC_VERSIONS to client.
         /// </summary>
-        public void SendTsRfxCodecVersions() 
+        public void SendTsRfxCodecVersions()
         {
             TS_RFX_CODEC_VERSIONS rfxVersions = rdprfxServer.CreateTsRfxCodecVersions();
             if (currentTestType == RdprfxNegativeType.TsRfxCodecVersions_InvalidCodecId)
@@ -327,7 +328,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <summary>
         /// Method to send TS_RFX_CHANNELS to client.
         /// </summary>
-        public void SendTsRfxChannels() 
+        public void SendTsRfxChannels()
         {
             TS_RFX_CHANNELS rfxChannels = rdprfxServer.CreateTsRfxChannels();
             if (this.currentTestType == RdprfxNegativeType.TsRfxChannelT_InvalidWidth_TooSmall)
@@ -411,7 +412,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// Method to send TS_RFX_FRAME_BEGIN to client.
         /// </summary>
         /// <param name="frameIdx">The frame index.</param>
-        public void SendTsRfxFrameBegin(uint frameIdx) 
+        public void SendTsRfxFrameBegin(uint frameIdx)
         {
             this.admFrameIndex = frameIdx;
             TS_RFX_FRAME_BEGIN rfxBegin = rdprfxServer.CreateTsRfxFrameBegin(frameIdx);
@@ -436,14 +437,14 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// </summary> 
         /// <param name="rects">Array of rects, if this parameter is null, will send a 64*64 rect </param>
         /// <param name="numRectsZero">A boolean varialbe to indicate whether the numRectsZero field of TS_RFX_REGION is zero</param>
-        public void SendTsRfxRegion(Rectangle[] rects = null, bool numRectsZero = false) 
+        public void SendTsRfxRegion(SKRect[] rects = null, bool numRectsZero = false)
         {
             TS_RFX_REGION rfxRegion = rdprfxServer.CreateTsRfxRegion(rects, numRectsZero);
             if (this.currentTestType == RdprfxNegativeType.TsRfxRegion_InvalidRegionFlags)
             {
                 rfxRegion.regionFlags = 0x00; //set to an invalid value other than 0x01.
             }
-            else if(this.currentTestType == RdprfxNegativeType.TsRfxRegion_InvalidRegionType)
+            else if (this.currentTestType == RdprfxNegativeType.TsRfxRegion_InvalidRegionType)
             {
                 rfxRegion.regionType = 0xBBBB; //set to an invalid value other than 0xCAC1.
             }
@@ -466,7 +467,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <param name="quantIdxY">Index of Y component in Quant value array</param>
         /// <param name="quantIdxCb">Index of Cb component in Quant value array</param>
         /// <param name="quantIdxCr">Index of Cr component in Quant value array</param>
-        public void SendTsRfxTileSet(OperationalMode opMode, EntropyAlgorithm entropy, Image tileImage,
+        public void SendTsRfxTileSet(OperationalMode opMode, EntropyAlgorithm entropy, SKImage tileImage,
             TS_RFX_CODEC_QUANT[] codecQuantVals = null, byte quantIdxY = 0, byte quantIdxCb = 0, byte quantIdxCr = 0)
         {
             this.admEntropyAlgorithm = entropy;
@@ -522,7 +523,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <param name="quantIdxYs">Index array of Y component in Quant value array</param>
         /// <param name="quantIdxCbs">Index array of Cb component in Quant value array</param>
         /// <param name="quantIdxCrs">Index array of Cr component in Quant value array</param>
-        public void SendTsRfxTileSet(OperationalMode opMode, EntropyAlgorithm entropy, Image[] tileImages, TILE_POSITION[] positions,
+        public void SendTsRfxTileSet(OperationalMode opMode, EntropyAlgorithm entropy, SKImage[] tileImages, TILE_POSITION[] positions,
             TS_RFX_CODEC_QUANT[] codecQuantVals = null, byte[] quantIdxYs = null, byte[] quantIdxCbs = null, byte[] quantIdxCrs = null)
         {
             this.admEntropyAlgorithm = entropy;
@@ -570,7 +571,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <summary>
         /// Method to send TS_RFX_FRAME_END to client.
         /// </summary>
-        public void SendTsRfxFrameEnd() 
+        public void SendTsRfxFrameEnd()
         {
             TS_RFX_FRAME_END rfxEnd = rdprfxServer.CreateTsRfxFrameEnd();
             AddToPendingList(rfxEnd);
@@ -586,7 +587,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <param name="entropy">Indicates the entropy algorithm.</param>
         /// <param name="destLeft">Left bound of the frame.</param>
         /// <param name="destTop">Left bound of the frame.</param>
-        public void SendImageToClient(System.Drawing.Image image, OperationalMode opMode, EntropyAlgorithm entropy, ushort destLeft, ushort destTop)
+        public void SendImageToClient(SKImage image, OperationalMode opMode, EntropyAlgorithm entropy, ushort destLeft, ushort destTop)
         {
             if (image == null)
             {
@@ -626,7 +627,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         /// <param name="entropy">Indicates the entropy algorithm.</param>
         /// <param name="destLeft">Left bound of the frame.</param>
         /// <param name="destTop">Left bound of the frame.</param>
-        public void SendImageToClientWithoutEncoding(System.Drawing.Image image, ushort destLeft, ushort destTop)
+        public void SendImageToClientWithoutEncoding(SKImage image, ushort destLeft, ushort destTop)
         {
             if (image == null)
             {
@@ -635,19 +636,23 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             }
 
             TS_SURFCMD_STREAM_SURF_BITS surfStreamCmd = Create_TS_SURFCMD_STREAM_SURF_BITS(TSBitmapDataExFlags_Values.None, 0);
-            MemoryStream memoryStream = new MemoryStream();
-            image.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Bmp);
-            Byte[] byteImage = memoryStream.ToArray();
 
-            // remove the BITMAP header data at the beginning
+            var bitmap = SKBitmap.FromImage(image);
             int rgbLength = RgbTile.TileSize * RgbTile.TileSize * 4;
             Byte[] rgbArray = new Byte[rgbLength];
-            int delta = byteImage.Length - rgbLength;
-            for (int i = 0; i < rgbLength; i++)
+            var currIdx = 0;
+            for (int y = 0; y < RgbTile.TileSize; y++)
             {
-                rgbArray[i] = byteImage[delta + i];
+                for (int x = 0; x < RgbTile.TileSize; x++)
+                {
+                    var pixel = bitmap.GetPixel(x, y);
+                    rgbArray[currIdx++] = pixel.Red;
+                    rgbArray[currIdx++] = pixel.Green;
+                    rgbArray[currIdx++] = pixel.Blue;
+                    rgbArray[currIdx++] = 0;
+                }
             }
-
+            
             surfStreamCmd.bitmapData.bitmapDataLength = (uint)rgbArray.Length;
             surfStreamCmd.bitmapData.bitmapData = rgbArray;
 
@@ -708,7 +713,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                     surfStreamCmd.bitmapData.height = height;
                     SendSurfaceCmd_StreamSurfBits(surfStreamCmd);
 
-                } 
+                }
             }
 
             if (this.rdpbcgrAdapter.SimulatedScreen != null)
@@ -725,7 +730,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
         {
             lock (syncLocker)
             {
-               return pendingBuffer.ToArray();
+                return pendingBuffer.ToArray();
             }
         }
 
@@ -752,7 +757,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                     if (opMode == OperationalMode.ImageMode)
                         return true;
                 }
-                
+
             }
             return false;
         }
@@ -783,22 +788,20 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                 //frameMakerCmdEnd.frameId = frameIndex++;
 
                 TS_FP_SURFCMDS surfCmds = new TS_FP_SURFCMDS();
-                surfCmds.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS & 0x0f)
-                | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-                | ((int)compressedType_Values.None << 6));
-                surfCmds.compressionFlags = compressedType_Values.None;
-                int subLength = 8 + 8 + 22;
-                if(surfStreamCmd.bitmapData.exBitmapDataHeader != null)
-                {
-                    subLength += 24;
-                }
-                surfCmds.size = (ushort)(subLength + surfStreamCmd.bitmapData.bitmapDataLength);//size of TS_SURFCMD_STREAM_SURF_BITS;
+
+                surfCmds.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS);
+
+                surfCmds.AssignUpdateDataAndSize();
+
                 surfCmds.surfaceCommands = new TS_SURFCMD[1];
                 surfCmds.surfaceCommands[0] = surfStreamCmd;
 
                 TS_FP_UPDATE_PDU fpOutput;
                 TS_FP_UPDATE[] updates = new TS_FP_UPDATE[1];
                 updates[0] = surfCmds;
+
+                surfCmds.updateData = surfCmds.EncodeBody();
+
                 fpOutput = rdpbcgrServerStack.CreateFastPathUpdatePdu(rdpbcgrSessionContext, updates);
                 rdpbcgrServerStack.SendPdu(rdpbcgrSessionContext, fpOutput);
             }
@@ -832,7 +835,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
                 (guidObj.codecGUID8 == 0x9C) &&
                 (guidObj.codecGUID9 == 0x6F) &&
                 (guidObj.codecGUID10 == 0x78) &&
-                (guidObj.codecGUID11== 0x86);
+                (guidObj.codecGUID11 == 0x86);
 
             return rtnValue;
         }
@@ -859,7 +862,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             tsBitmapDataEx.width = 0;
             tsBitmapDataEx.height = 0;
             // bitmapDataLength and bitmapData was handled in call method. 
-            if(flags.HasFlag(TSBitmapDataExFlags_Values.EX_COMPRESSED_BITMAP_HEADER_PRESENT))
+            if (flags.HasFlag(TSBitmapDataExFlags_Values.EX_COMPRESSED_BITMAP_HEADER_PRESENT))
             {
                 tsBitmapDataEx.exBitmapDataHeader = Create_TS_COMPRESSED_BITMAP_HEADER_EX();
             }
@@ -872,7 +875,7 @@ namespace Microsoft.Protocols.TestSuites.Rdprfx
             TS_COMPRESSED_BITMAP_HEADER_EX tsCompressedBitmapHeaderEx = new TS_COMPRESSED_BITMAP_HEADER_EX();
             tsCompressedBitmapHeaderEx.highUniqueId = (uint)rnd.Next();
             tsCompressedBitmapHeaderEx.lowUniqueId = (uint)rnd.Next();
-            ulong creatTime = (ulong)DateTime.UtcNow.ToUniversalTime().Subtract(new DateTime(1970,1,1,0,0,0, DateTimeKind.Utc)).TotalMilliseconds;
+            ulong creatTime = (ulong)DateTime.UtcNow.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
             tsCompressedBitmapHeaderEx.tmMilliseconds = creatTime % 1000;
             tsCompressedBitmapHeaderEx.tmSeconds = creatTime / 1000;
             return tsCompressedBitmapHeaderEx;

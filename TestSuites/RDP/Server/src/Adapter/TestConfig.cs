@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Security.Authentication;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Protocols.TestSuites.Rdp
 {
@@ -18,6 +19,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
     public class TestConfig
     {
         public TimeSpan timeout;
+        public TimeSpan multiTransportTimeout;
         public string domain;
         public string serverName;
         public int serverPort;
@@ -32,7 +34,8 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         public requestedProtocols_Values requestProtocol;
         public Version rdpVersion;
         public bool isEDYCSupported;
-
+        public string windowsOSVersion;
+        public int windowsOSBuildNumber = 0;
         public bool isELESupported;
         public bool issueTemporaryLicenseForTheFirstTime;
 
@@ -99,12 +102,31 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             }
             timeout = new TimeSpan(0, 0, waitTime);
 
+            if (!PtfPropUtility.GetIntPtfProperty(Site, "MultiTransportTimeout", out waitTime))
+            {
+                AssumeFailForInvalidPtfProp("MultiTransportTimeout");
+            }
+            multiTransportTimeout = new TimeSpan(0, 0, waitTime);
+
             PtfPropUtility.GetBoolPtfProperty(Site, "IsWindowsImplementation", out isWindowsImplementation);
             PtfPropUtility.GetBoolPtfProperty(Site, "VerifyRdpbcgrMessages", out verifyPduEnabled);
             PtfPropUtility.GetBoolPtfProperty(Site, "VerifyShouldBehaviors", out verifyShouldBehaviors);
             PtfPropUtility.GetBoolPtfProperty(Site, "RDPEDYCSupported", out isEDYCSupported);
             PtfPropUtility.GetBoolPtfProperty(Site, "RDPELESupported", out isELESupported);
             PtfPropUtility.GetBoolPtfProperty(Site, "IssueTemporaryLicenseForTheFirstTime", out issueTemporaryLicenseForTheFirstTime);
+            
+            PtfPropUtility.GetStringPtfProperty(Site, "RDP.WindowsVersion", out windowsOSVersion);
+
+            //Default Windows Server 2000 Build Number
+            string stringBuildNumber = "2195";
+            var versionSplitArray = windowsOSVersion.Split(":");
+
+            if (versionSplitArray.Length > 1)
+            {
+                stringBuildNumber = versionSplitArray[1].Trim();
+            }
+
+            int.TryParse(stringBuildNumber, out windowsOSBuildNumber);
 
             if (PtfPropUtility.GetStringPtfProperty(Site, "RDP.Version", out tempStr))
             {
@@ -195,6 +217,18 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 AssumeFailForInvalidPtfProp("RDP.Security.Protocol");
             }
 
+            if (windowsOSVersion.Contains("Microsoft Windows Server") && windowsOSBuildNumber >= 19042)
+            {
+                requestProtocol = requestedProtocols_Values.PROTOCOL_SSL_FLAG | requestedProtocols_Values.PROTOCOL_HYBRID_FLAG | requestedProtocols_Values.PROTOCOL_HYBRID_EX;
+                if (isNegotiationBased)
+                {
+                    transportProtocol = EncryptedProtocol.NegotiationCredSsp;
+                }
+                else
+                {
+                    transportProtocol = EncryptedProtocol.DirectCredSsp;
+                }
+            }
             #endregion
         }
 

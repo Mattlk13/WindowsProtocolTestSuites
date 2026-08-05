@@ -1,15 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using Microsoft.Protocols.TestTools;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestSuites.Rdp;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
-
+using System.Linq;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -18,7 +16,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestMethod]
         [Priority(1)]
         [TestCategory("RDP7.0")]
-        [TestCategory("RDPBCGR")]        
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection if the length field within tpktHeader in Server Demand Active PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_CapabilityExchange_NegativeTest_DemandActive_InvalidTKPKLength()
         {
@@ -37,7 +37,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -120,7 +120,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestMethod]
         [Priority(2)]
         [TestCategory("RDP7.0")]
-        [TestCategory("RDPBCGR")]        
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection if the length field within the MCS Header in Server Demand Active PDU is not consistent with the received data.")]
         public void S1_ConnectionTest_CapabilityExchange_NegativeTest_DemandActive_InvalidMCSLength()
         {
@@ -139,7 +141,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -214,7 +216,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Server Demand Active PDU to SUT.");
             this.rdpbcgrAdapter.Server_Demand_Active(NegativeType.InvalidMCSLength);
 
-            RDPClientTryDropConnection("invalid MCS length in Server Demand Active PDU");            
+            RDPClientTryDropConnection("invalid MCS length in Server Demand Active PDU");
             #endregion
             #endregion
         }
@@ -222,7 +224,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestMethod]
         [Priority(1)]
         [TestCategory("RDP7.0")]
-        [TestCategory("RDPBCGR")]        
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection if the MAC signature field within securityHeader in Server Demand Active PDU is incorrect data.")]
         public void S1_ConnectionTest_CapabilityExchange_NegativeTest_DemandActive_IncorrectSignature()
         {
@@ -246,7 +250,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -321,7 +325,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Server Demand Active PDU to SUT.");
             this.rdpbcgrAdapter.Server_Demand_Active(NegativeType.InvalidSignatureInSecurityHeader);
 
-            RDPClientTryDropConnection("invalid MAC Signature in Server Demand Active pdu");            
+            RDPClientTryDropConnection("invalid MAC Signature in Server Demand Active pdu");
             #endregion
             #endregion
         }
@@ -329,7 +333,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestMethod]
         [Priority(1)]
         [TestCategory("RDP7.0")]
-        [TestCategory("RDPBCGR")]        
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT drop the connection if the total Length field within shareControlHeader in Server Demand Active PDU is invalid.")]
         public void S1_ConnectionTest_CapabilityExchange_NegativeTest_DemandActive_InvalidPDULength()
         {
@@ -348,7 +354,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -425,7 +431,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion
 
             #region Wait for Client to drop the connection
-            RDPClientTryDropConnection("invalid pdu length in Server Demand Active pdu");            
+            RDPClientTryDropConnection("invalid pdu length in Server Demand Active pdu");
             #endregion
             #endregion
         }
@@ -434,6 +440,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_GENERAL_CAPABILITYSET in Server Demand Active PDU correctly when OS type is set to Windows RT. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_GeneralCapSet_OSTypeWindowsRT()
         {
@@ -468,7 +476,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             capSetCollection.Add(generalCapset);
 
             // Establish RDP connection to test the capability sets
-            this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");            
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
             #endregion
         }
@@ -477,6 +485,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_GENERAL_CAPABILITYSET in Server Demand Active PDU correctly when OS type is set to unspecified. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_GeneralCapSet_OSTypeUnspecified()
         {
@@ -520,6 +530,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_GENERAL_CAPABILITYSET in Server Demand Active PDU correctly when fast-path output is not supported. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_GeneralCapSet_FPOutputNotSupported()
         {
@@ -562,6 +574,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_GENERAL_CAPABILITYSET in Server Demand Active PDU correctly when the Refresh Rect PDU is not supported.")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_GeneralCapSet_RefreshRectNotSupported()
         {
@@ -592,7 +606,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSTYPE_GENERAL);
 
             TS_GENERAL_CAPABILITYSET generalCapset = RdpbcgrCapSet.CreateGeneralCapSet(true, true, true, true, true, false, true, osMajorType_Values.OSMAJORTYPE_WINDOWS, osMinorType_Values.OSMINORTYPE_WINDOWS_NT);
-            capSetCollection.Add(generalCapset);            
+            capSetCollection.Add(generalCapset);
 
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
@@ -604,6 +618,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_GENERAL_CAPABILITYSET in Server Demand Active PDU correctly when Suppress output PDU is not supported.")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_GeneralCapSet_SuppressOutputNotSupported()
         {
@@ -646,6 +662,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_BITMAP_CAPABILITYSET in Server Demand Active PDU correctly when preferredBitsPerPixel is set to 24. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCapSet_24ColorDepth()
         {
@@ -689,6 +707,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_BITMAP_CAPABILITYSET in Server Demand Active PDU correctly when desktopWidth is set to the maximum allowed value on the server (8192). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCapSet_MaxDesktopWidth()
         {
@@ -720,7 +740,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             TS_BITMAP_CAPABILITYSET bitmapCapset = RdpbcgrCapSet.CreateBitmapCapSet(MaxDesktopWidth, DesktopHeightForCapTest, desktopResizeFlag_Values.TRUE, true, true, true);
             capSetCollection.Add(bitmapCapset);
-           
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -731,6 +751,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_BITMAP_CAPABILITYSET in Server Demand Active PDU correctly when desktopHeight is set to the maximum allowed value on the server (8192).")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCapSet_MaxDesktopHeight()
         {
@@ -762,7 +784,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             TS_BITMAP_CAPABILITYSET bitmapCapset = RdpbcgrCapSet.CreateBitmapCapSet(DesktopWidthForCapTest, MaxDesktopHeight, desktopResizeFlag_Values.TRUE, true, true, true);
             capSetCollection.Add(bitmapCapset);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -773,6 +795,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_BITMAP_CAPABILITYSET in Server Demand Active PDU correctly when desktopResizeFlag is set to False (0x0000). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCapSet_DesktopResizeNotSupported()
         {
@@ -804,7 +828,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             TS_BITMAP_CAPABILITYSET bitmapCapset = RdpbcgrCapSet.CreateBitmapCapSet(DesktopWidthForCapTest, DesktopHeightForCapTest, desktopResizeFlag_Values.FALSE, true, true, true);
             capSetCollection.Add(bitmapCapset);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -815,6 +839,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_BITMAP_CAPABILITYSET in Server Demand Active PDU correctly when drawingFlags is set to 0 (All not supported). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCapSet_DrawingFlagsNotSet()
         {
@@ -845,9 +871,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSTYPE_BITMAP);
 
             TS_BITMAP_CAPABILITYSET bitmapCapset = RdpbcgrCapSet.CreateBitmapCapSet(DesktopWidthForCapTest, DesktopHeightForCapTest, desktopResizeFlag_Values.TRUE, false, false, false);
-            bitmapCapset.drawingFlags = drawingFlags_Values.None; 
+            bitmapCapset.drawingFlags = drawingFlags_Values.None;
             capSetCollection.Add(bitmapCapset);
-            
 
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
@@ -859,6 +884,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_ORDER_CAPABILITYSET in Server Demand Active PDU correctly when SOLIDPATTERNBRUSHONLY flag is set on orderFlags. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_OrderCapSet_SolidPatternBrushOnly()
         {
@@ -888,12 +915,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             // Update TS_GENERAL_CAPABILITYSET
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSTYPE_ORDER);
 
-            TS_ORDER_CAPABILITYSET orderCapset = RdpbcgrCapSet.CreateOrderCapSet(new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 
-                         0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 
-                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 
+            TS_ORDER_CAPABILITYSET orderCapset = RdpbcgrCapSet.CreateOrderCapSet(new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01,
+                         0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
                          0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00}, true, true, true, true, true, true, true);
             capSetCollection.Add(orderCapset);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -904,6 +931,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_ORDER_CAPABILITYSET in Server Demand Active PDU correctly when ORDERFLAGS_EXTRA_FLAGS flag is not set on orderFlags. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_OrderCapSet_ExtraFlagNotValid()
         {
@@ -933,9 +962,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             // Update TS_GENERAL_CAPABILITYSET
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSTYPE_ORDER);
 
-            TS_ORDER_CAPABILITYSET orderCapset = RdpbcgrCapSet.CreateOrderCapSet(new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 
-                         0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 
-                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 
+            TS_ORDER_CAPABILITYSET orderCapset = RdpbcgrCapSet.CreateOrderCapSet(new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01,
+                         0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
                          0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00}, true, true, true, false, false, true, true);
             capSetCollection.Add(orderCapset);
 
@@ -949,6 +978,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_POINTER_CAPABILITYSET in Server Demand Active PDU correctly when colorPointerCacheSize is set to 0. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_PointerCapSet_ColorPointerCacheSize_0()
         {
@@ -991,6 +1022,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_POINTER_CAPABILITYSET in Server Demand Active PDU correctly when pointerCacheSize is set to 0. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_PointerCapSet_PointerCacheSize_0()
         {
@@ -1033,6 +1066,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_INPUT_CAPABILITYSET in Server Demand Active PDU correctly when inputFlags only set INPUT_FLAG_SCANCODES flag. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_InputCapSet_OnlySupportScanCodes()
         {
@@ -1075,6 +1110,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_VIRTUALCHANNEL_CAPABILITYSET in Server Demand Active PDU correctly when flags is set to VCCAPS_NO_COMPR flag. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_VirtualChannelCapSet_CompressionNotSupport()
         {
@@ -1117,6 +1154,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_VIRTUALCHANNEL_CAPABILITYSET in Server Demand Active PDU correctly when VCChunkSize is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_VirtualChannelCapSet_VCChunkSizeNotPresent()
         {
@@ -1159,6 +1198,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process TS_VIRTUALCHANNEL_CAPABILITYSET in Server Demand Active PDU correctly when VCChunkSize is set to max value. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_VirtualChannelCapSet_MaxVCChunkSize()
         {
@@ -1202,6 +1243,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_BITMAPCACHE_HOSTSUPPORT_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCacheHostSupportCapSet_NotPresent()
         {
@@ -1230,7 +1273,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             // Update TS_GENERAL_CAPABILITYSET
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSTYPE_BITMAPCACHE_HOSTSUPPORT);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -1241,6 +1284,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_FONT_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_FontCapSet_NotPresent()
         {
@@ -1280,6 +1325,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_MULTIFRAGMENTUPDATE_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_MultifragmentUpdateCapSet_NotPresent()
         {
@@ -1319,6 +1366,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when MaxRequestSize of TS_MULTIFRAGMENTUPDATE_CAPABILITYSET is set to a large value. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_MultifragmentUpdateCapSet_MaxRequestSizeLargeValue()
         {
@@ -1361,6 +1410,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_LARGE_POINTER_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_LargePointerCapSet_NotPresent()
         {
@@ -1389,7 +1440,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             // Update TS_GENERAL_CAPABILITYSET
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSETTYPE_LARGE_POINTER);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -1400,6 +1451,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when largePointerSupportFlags of TS_LARGE_POINTER_CAPABILITYSET is set to 0. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_LargePointerCapSet_LargePointerNotSupport()
         {
@@ -1439,9 +1492,69 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         }
 
         [TestMethod]
+        [Priority(1)]
+        [TestCategory("RDP10.7")]
+        [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
+        [Description("This test case is used to ensure SUT support extra large pointer when largePointerSupportFlags of TS_LARGE_POINTER_CAPABILITYSET is set to include LARGE_POINTER_FLAG_384x384.")]
+        public void S1_ConnectionTest_CapabilityExchange_PositiveTest_LargePointerCapSet_ExtraLargePointerSupport()
+        {
+            #region Test Description
+            /*
+            This test case is used to ensure SUT support extra large pointer when largePointerSupportFlags of TS_LARGE_POINTER_CAPABILITYSET is set to include LARGE_POINTER_FLAG_384x384.
+            
+            Test Execution Steps:
+            1.	Trigger SUT to initiate a RDP connection and complete the Connection Initiation phase, Basic Setting Exchange phase, 
+                Channel Connection phase, RDP Security Commencement phase, Secure Setting Exchange phase and Licensing phase.
+            2.	Test Suite continues the connection with sending a Server Demand Active PDU to SUT, largePointerSupportFlags of TS_LARGE_POINTER_CAPABILITYSET is set to include LARGE_POINTER_FLAG_384x384.
+            3.	Test Suite expects SUT respond a Client confirm Active PDU. When received, Test Suite verifies this PDU. If LARGE_POINTER_FLAG_96x96 or LARGE_POINTER_FLAG_384x384 is not set, this test case will be inconclusive.
+            4.	Test Suite expects SUT continue the connection with sending a Synchronize PDU or input PDU.
+            */
+            #endregion
+
+            #region Test Sequence
+
+            // Set server capability.
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Setting Server Capability.");
+            this.rdpbcgrAdapter.SetServerCapability(true, true, true, true, true, true, true, true, true, true);
+
+            // Generate the capability sets
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Generate Capability sets, largePointerSupportFlags of TS_LARGE_POINTER_CAPABILITYSET is set to include LARGE_POINTER_FLAG_384x384.");
+            Collection<ITsCapsSet> capSetCollection = this.rdpbcgrAdapter.GenerateServerCapSet();
+
+            // Update TS_GENERAL_CAPABILITYSET
+            this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSETTYPE_LARGE_POINTER);
+
+            TS_LARGE_POINTER_CAPABILITYSET largePointerCap = RdpbcgrCapSet.CreateLargePointerCapSet(largePointerSupportFlags_Values.LARGE_POINTER_FLAG_96x96 | largePointerSupportFlags_Values.LARGE_POINTER_FLAG_384x384);
+            capSetCollection.Add(largePointerCap);
+
+            // Verify the confirm active PDU.
+            rdpbcgrAdapter.ConfirmActiveRequest += confirmActivePdu =>
+            {
+                var largePointerCapSets = confirmActivePdu.confirmActivePduData.capabilitySets.Where(cap => cap.GetCapabilityType() == capabilitySetType_Values.CAPSETTYPE_LARGE_POINTER);
+
+                TestSite.Assume.AreEqual(1, largePointerCapSets.Count(), "There should be one large pointer capability set in confirm active PDU if SUT supports extra large pointer.");
+
+                var largePointerCapSet = (TS_LARGE_POINTER_CAPABILITYSET)largePointerCapSets.First();
+
+                bool isLargePointerCapabilitySupported = largePointerCapSet.largePointerSupportFlags.HasFlag(largePointerSupportFlags_Values.LARGE_POINTER_FLAG_96x96 | largePointerSupportFlags_Values.LARGE_POINTER_FLAG_384x384);
+
+                TestSite.Assume.IsTrue(isLargePointerCapabilitySupported, "SUT should set LARGE_POINTER_FLAG_96x96 and LARGE_POINTER_FLAG_384x384 in largePointerSupportFlags if it supports extra large pointer.");
+            };
+
+            // Establish RDP connection to test the capability sets
+            this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
+            TestCapabilitySets(capSetCollection);
+            #endregion
+        }
+
+        [TestMethod]
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_COMPDESK_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_DesktopCompositionCapSet_NotPresent()
         {
@@ -1481,6 +1594,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when CompDeskSupportLevel of TS_COMPDESK_CAPABILITYSET is set to COMPDESK_NOT_SUPPORTED (0x0000). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_DesktopCompositionCapSet_CompositionNotSupport()
         {
@@ -1523,6 +1638,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_SURFCMDS_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_SurfaceCommandsCapSet_NotPresent()
         {
@@ -1551,7 +1668,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             // Update TS_GENERAL_CAPABILITYSET
             this.DeleteCapset(capSetCollection, capabilitySetType_Values.CAPSETTYPE_SURFACE_COMMANDS);
-                        
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -1562,6 +1679,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when cmdFlags of TS_SURFCMDS_CAPABILITYSET is set not support Stream Surface Bits Command. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_SurfaceCommandsCapSet_StreamSurfaceBitsNotSupported()
         {
@@ -1604,6 +1723,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_BITMAPCODECS_CAPABILITYSET is not present. ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCodecsCapSet_NotPresent()
         {
@@ -1643,6 +1764,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_BITMAPCODECS_CAPABILITYSET contains no codec (bitmapCodecCount of TS_BITMAPCODECS is 0). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCodecsCapSet_NoBitmapCodec()
         {
@@ -1676,7 +1799,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             codecCapset.supportedBitmapCodecs.bitmapCodecCount = 0;
             codecCapset.lengthCapability = 5;
             capSetCollection.Add(codecCapset);
-            
+
             // Establish RDP connection to test the capability sets
             this.TestSite.Log.Add(LogEntryKind.Comment, "Establish RDP connection to test capability sets.");
             TestCapabilitySets(capSetCollection);
@@ -1687,6 +1810,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(1)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_BITMAPCODECS_CAPABILITYSET contains many bitmap codecs (some are unknown codecs). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCodecsCapSet_BitmapCodecCount_LargeValue()
         {
@@ -1739,6 +1864,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [Priority(2)]
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
+        [TestCategory("BasicRequirement")]
+        [TestCategory("BasicFeature")]
         [Description("This test case is used to ensure SUT can process Server Demand Active PDU correctly when TS_BITMAPCODECS_CAPABILITYSET contains the max number of bitmap codecs (some are unknown codecs). ")]
         public void S1_ConnectionTest_CapabilityExchange_PositiveTest_BitmapCodecsCapSet_BitmapCodecCount_MaxValue()
         {
@@ -1802,7 +1929,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -1905,7 +2032,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending a Server Control Granted Control PDU to SUT.");
             this.rdpbcgrAdapter.ServerControlGrantedControl();
 
-            if (this.isclientSupportPersistentBitmapCache)
+            if (this.isClientSupportPersistentBitmapCache)
             {
                 //Expect a Client Persistent Key List PDU.
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Expecting SUT to send a Client Persistent Key List PDU.");

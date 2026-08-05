@@ -9,7 +9,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -202,6 +201,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         protected Dictionary<ulong, Smb2CryptoInfo> cryptoInfoTable = new Dictionary<ulong, Smb2CryptoInfo>();
         private Smb2CompressionInfo compressionInfo;
+        private SigningAlgorithm selectedSigningAlgorithm;
         private Smb2Decoder decoder;
 
         private bool disposed;
@@ -213,7 +213,10 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// </summary>
         private Exception exceptionWhenReceivingPacket;
 
-        private Thread thread;
+        CancellationTokenSource eventCts;
+        private Thread eventThread;
+
+        CancellationTokenSource notificationCts;
         private Thread notificationThread;
 
         private Queue<Smb2SinglePacket> receivedNotifications = new Queue<Smb2SinglePacket>();
@@ -342,6 +345,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 return compressionInfo;
             }
         }
+
+        public SigningAlgorithm SelectedSigningAlgorithm
+        {
+            get
+            {
+                return selectedSigningAlgorithm;
+            }
+        }
         #endregion
 
         #region Constructor
@@ -359,6 +370,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             hashId = PreauthIntegrityHashID.HashAlgorithm_NONE;
 
             cipherId = EncryptionAlgorithm.ENCRYPTION_NONE;
+
+            selectedSigningAlgorithm = SigningAlgorithm.HMAC_SHA256;
         }
 
         #endregion
@@ -389,10 +402,17 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// Notifications will be received in EventLoop but are handled in this method.
         /// NotificationEventLoop is called in a different thread from which EventLoop is called.
         /// </summary>
-        private void NotificationEventLoop()
+        private void NotificationEventLoop(object obj)
         {
+            CancellationToken ct = (CancellationToken)obj;
+
             while (true)
             {
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
                     if (notificationReceivedEvent.WaitOne())
@@ -429,7 +449,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                                 {
                                     uint outputBufferLength = changeNotifyResponse.PayLoad.OutputBufferLength;
                                     byte[] outputBuffer = new byte[outputBufferLength];
-                                    if (changeNotifyResponse.Error == null)
+                                    if (changeNotifyResponse.Error == null && outputBufferLength > 0)
                                     {
                                         Array.Copy(changeNotifyResponse.Buffer, changeNotifyResponse.PayLoad.OutputBufferOffset - changeNotifyResponse.BufferOffset, outputBuffer, 0, outputBufferLength);
                                     }
@@ -504,10 +524,17 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// <summary>
         /// Event loop to handle all received packets.
         /// </summary>
-        private void EventLoop()
+        private void EventLoop(object obj)
         {
+            CancellationToken ct = (CancellationToken)obj;
+
             while (true)
             {
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 TransportEvent transEvent = null;
                 try
                 {
@@ -563,16 +590,26 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                             return;
                     }
                 }
+                catch (TimeoutException)
+                {
+                    // Ignore timeout exceptions.
+                    continue;
+                }
                 catch (Exception exception)
                 {
                     // If throw the exception from this receive thread, QTAgent will crash.
                     // So save the exception to a member variable, and throw it when the case calls ExpectPacket.
                     // End the current thread.
-                    exceptionWhenReceivingPacket = exception;
-                    receivedPackets.Release();
-                    notificationReceivedEvent.Set();
+                    HandleException(exception);
                     return;
                 }
+            }
+
+            void HandleException(Exception exception)
+            {
+                exceptionWhenReceivingPacket = exception;
+                receivedPackets.Release();
+                notificationReceivedEvent.Set();
             }
         }
 
@@ -738,22 +775,32 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         #region Connecting and Disconnect
 
-        public void ConnectOverNetbios(string serverName)
+        public void ConnectOverNetbios(string serverName, ushort serverPort = 445)
         {
-            Connect(Smb2TransportType.NetBios, serverName, Environment.MachineName, null, null);
+            Connect(Smb2TransportType.NetBios, serverName, Environment.MachineName, null, null, serverPort);
         }
 
-        public void ConnectOverTCP(IPAddress serverIp)
+        public void ConnectOverTCP(IPAddress serverIp, ushort serverPort = 445)
         {
-            Connect(Smb2TransportType.Tcp, null, null, serverIp, null);
+            Connect(Smb2TransportType.Tcp, null, null, serverIp, null, serverPort);
         }
 
-        public void ConnectOverTCP(IPAddress serverIp, IPAddress clientIp)
+        public void ConnectOverQuic(string serverName, IPAddress serverIp, ushort serverPort = 443)
         {
-            Connect(Smb2TransportType.Tcp, null, null, serverIp, clientIp);
+            Connect(Smb2TransportType.Quic, serverName, null, serverIp, null, serverPort);
         }
 
-        private void Connect(Smb2TransportType transportType, string serverName, string clientName, IPAddress serverIp, IPAddress clientIp)
+        public void ConnectOverTCP(IPAddress serverIp, IPAddress clientIp, ushort serverPort = 445)
+        {
+            Connect(Smb2TransportType.Tcp, null, null, serverIp, clientIp, serverPort);
+        }
+
+        public void ConnectOverQuic(string serverName, IPAddress serverIP, IPAddress clientIP, ushort serverPort = 443)
+        {
+            Connect(Smb2TransportType.Quic, serverName, null, serverIP, clientIP, serverPort);
+        }
+
+        private void Connect(Smb2TransportType transportType, string serverName, string clientName, IPAddress serverIp, IPAddress clientIp, ushort serverPort)
         {
             this.transportType = transportType;
             decoder.TransportType = transportType;
@@ -767,7 +814,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                     {
                         LocalIpAddress = clientIp,
                         RemoteIpAddress = serverIp,
-                        RemoteIpPort = 445,
+                        RemoteIpPort = (int)serverPort,
                         Type = StackTransportType.Tcp,
                         Timeout = this.timeout,
                         BufferSize = Smb2Consts.MaxTcpBufferSize,
@@ -784,6 +831,18 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                         BufferSize = Smb2Consts.MaxNetbiosBufferSize,
                     };
                     break;
+                case Smb2TransportType.Quic:
+                    transportConfig = new SocketTransportConfig
+                    {
+                        LocalIpAddress = clientIp,
+                        RemoteIpAddress = serverIp,
+                        TargetName = serverName,
+                        RemoteIpPort = (int)serverPort,
+                        Type = StackTransportType.Quic,
+                        Timeout = this.timeout,
+                        BufferSize = Smb2Consts.MaxQuicBufferSize
+                    };
+                    break;
             }
 
             transportConfig.Role = Role.Client;
@@ -791,14 +850,16 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             transport = new TransportStack(transportConfig, decoder.Smb2DecodePacketCallback);
             transport.Connect();
 
-            thread = new Thread(new ThreadStart(EventLoop));
-            thread.IsBackground = true;
-            thread.Start();
+            eventCts = new CancellationTokenSource();
+            eventThread = new Thread(new ParameterizedThreadStart(EventLoop));
+            eventThread.IsBackground = true;
+            eventThread.Start(eventCts.Token);
             connected = true;
 
-            notificationThread = new Thread(new ThreadStart(NotificationEventLoop));
+            notificationCts = new CancellationTokenSource();
+            notificationThread = new Thread(new ParameterizedThreadStart(NotificationEventLoop));
             notificationThread.IsBackground = true;
-            notificationThread.Start();
+            notificationThread.Start(notificationCts.Token);
         }
 
         /// <summary>
@@ -817,16 +878,20 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 {
                     // Sometimes transport will throw an exception.
                 }
-                if (!thread.Join(new TimeSpan(0, 0, 2)))
+
+                if (!eventThread.Join(new TimeSpan(0, 0, 2)))
                 {
-                    thread.Abort();
+                    eventCts.Cancel();
                 }
-                thread = null;
+                eventThread = null;
+                eventCts.Dispose();
+
                 if (!notificationThread.Join(new TimeSpan(0, 0, 2)))
                 {
-                    notificationThread.Abort();
+                    notificationCts.Cancel();
                 }
                 notificationThread = null;
+                notificationCts.Dispose();
 
                 transport.Dispose();
 
@@ -903,7 +968,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                             DisableVerifySignature,
                             null,
                             preauthHashValue,
-                            cipherId));
+                            cipherId,
+                            selectedSigningAlgorithm));
                 }
                 else
                 {
@@ -1064,8 +1130,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
              PreauthIntegrityHashID[] preauthHashAlgs = null,
              EncryptionAlgorithm[] encryptionAlgs = null,
              CompressionAlgorithm[] compressionAlgorithms = null,
+             Smb2RDMATransformId[] rdmaTransformIds = null,
+             SMB2_COMPRESSION_CAPABILITIES_Flags compressionFlags = SMB2_COMPRESSION_CAPABILITIES_Flags.SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE,
              SMB2_NETNAME_NEGOTIATE_CONTEXT_ID netNameContext = null,
-             bool addDefaultEncryption = false
+             bool addDefaultEncryption = false,
+             SigningAlgorithm[] signingAlgorithms = null,
+             bool addTransportCapabilities = false
          )
         {
             request = new Smb2NegotiateRequestPacket();
@@ -1100,7 +1170,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
                 request.PayLoad.NegotiateContextCount++;
             }
-
+            
             if (encryptionAlgs != null)
             {
                 SMB2_ENCRYPTION_CAPABILITIES encryptionCap = new SMB2_ENCRYPTION_CAPABILITIES();
@@ -1119,7 +1189,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 compresssionCapbilities.Header.ContextType = SMB2_NEGOTIATE_CONTEXT_Type_Values.SMB2_COMPRESSION_CAPABILITIES;
                 compresssionCapbilities.CompressionAlgorithmCount = (ushort)compressionAlgorithms.Length;
                 compresssionCapbilities.Padding = 0;
-                compresssionCapbilities.Reserved = 0;
+                compresssionCapbilities.Flags = compressionFlags;
                 compresssionCapbilities.CompressionAlgorithms = compressionAlgorithms;
                 compresssionCapbilities.Header.DataLength = (ushort)(compresssionCapbilities.GetDataLength());
                 request.NegotiateContext_COMPRESSION = compresssionCapbilities;
@@ -1130,6 +1200,43 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             if (netNameContext != null)
             {
                 request.NegotiateContext_NETNAME = netNameContext;
+                request.PayLoad.NegotiateContextCount++;
+            }
+
+            if (signingAlgorithms != null)
+            {
+                SMB2_SIGNING_CAPABILITIES signingCapabilities = new SMB2_SIGNING_CAPABILITIES();
+                signingCapabilities.Header.ContextType = SMB2_NEGOTIATE_CONTEXT_Type_Values.SMB2_SIGNING_CAPABILITIES;
+                signingCapabilities.SigningAlgorithmCount = (ushort)signingAlgorithms.Length;
+                signingCapabilities.SigningAlgorithms = signingAlgorithms;
+                signingCapabilities.Header.DataLength = (ushort)(signingCapabilities.GetDataLength());
+                request.NegotiateContext_SIGNING = signingCapabilities;
+
+                request.PayLoad.NegotiateContextCount++;
+            }
+
+            if (rdmaTransformIds != null)
+            {
+                var rdmaTransformCapabilities = new SMB2_RDMA_TRANSFORM_CAPABILITIES();
+                rdmaTransformCapabilities.Header.ContextType = SMB2_NEGOTIATE_CONTEXT_Type_Values.SMB2_RDMA_TRANSFORM_CAPABILITIES;
+                rdmaTransformCapabilities.RDMATransformIds = rdmaTransformIds;
+                rdmaTransformCapabilities.Reserved1 = 0;
+                rdmaTransformCapabilities.Reserved2 = 0;
+                rdmaTransformCapabilities.TransformCount = (ushort)rdmaTransformCapabilities.RDMATransformIds.Length;
+                rdmaTransformCapabilities.Header.DataLength = (ushort)rdmaTransformCapabilities.GetDataLength();
+
+                request.NegotiateContext_RDMA = rdmaTransformCapabilities;
+                request.PayLoad.NegotiateContextCount++;
+            }
+
+            if (addTransportCapabilities)
+            {
+                var transportCapabilities = new SMB2_TRANSPORT_CAPABILITIES();
+                transportCapabilities.Header.ContextType = SMB2_NEGOTIATE_CONTEXT_Type_Values.SMB2_TRANSPORT_CAPABILITIES;
+                transportCapabilities.Flags = SMB2_TRANSPORT_CAPABILITIES_Flags.SMB2_ACCEPT_TRANSPORT_LEVEL_SECURITY;
+                transportCapabilities.Header.DataLength = (ushort)(transportCapabilities.GetDataLength());
+                request.NegotiateContext_TRANSPORT = transportCapabilities;
+                
                 request.PayLoad.NegotiateContextCount++;
             }
 
@@ -1163,6 +1270,15 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 if (response.NegotiateContext_COMPRESSION != null)
                 {
                     UpdateNegotiateContext(compressionAlgorithms, response);
+                }
+                if (response.NegotiateContext_SIGNING != null)
+                {
+                    if (response.NegotiateContext_SIGNING.Value.SigningAlgorithmCount != 1)
+                    {
+                        throw new InvalidOperationException($"Signing algorithm count should be 1, actual value is {response.NegotiateContext_SIGNING.Value.SigningAlgorithmCount}");
+                    } 
+
+                    this.selectedSigningAlgorithm = response.NegotiateContext_SIGNING.Value.SigningAlgorithms[0];
                 }
 
                 // In SMB 311, client use SMB2_ENCRYPTION_CAPABILITIES context to indicate whether it 
@@ -1199,14 +1315,18 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
              PreauthIntegrityHashID[] preauthHashAlgs = null,
              EncryptionAlgorithm[] encryptionAlgs = null,
              CompressionAlgorithm[] compressionAlgorithms = null,
+             Smb2RDMATransformId[] rdmaTransformIds = null,
+             SMB2_COMPRESSION_CAPABILITIES_Flags compressionFlags = SMB2_COMPRESSION_CAPABILITIES_Flags.SMB2_COMPRESSION_CAPABILITIES_FLAG_NONE,
              SMB2_NETNAME_NEGOTIATE_CONTEXT_ID netNameContext = null,
-             bool addDefaultEncryption = false
+             bool addDefaultEncryption = false,
+             SigningAlgorithm[] signingAlgorithms = null,
+             bool addTransportCapabilities = false
          )
         {
             Smb2NegotiateRequestPacket request;
             Smb2NegotiateResponsePacket response;
             Negotiate(creditCharge, creditRequest, flags, messageId, dialects, securityMode, capabilities, clientGuid, out selectedDialect, out gssToken, out request, out response,
-                channelSequence, preauthHashAlgs, encryptionAlgs, compressionAlgorithms, netNameContext, addDefaultEncryption);
+                channelSequence, preauthHashAlgs, encryptionAlgs, compressionAlgorithms, rdmaTransformIds, compressionFlags, netNameContext, addDefaultEncryption, signingAlgorithms, addTransportCapabilities);
 
             responseHeader = response.Header;
             responsePayload = response.PayLoad;
@@ -1216,12 +1336,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         private void UpdateNegotiateContext(CompressionAlgorithm[] compressionAlgorithms, Smb2NegotiateResponsePacket response)
         {
-            // If CompressionAlgorithmCount is zero, the client MUST return an error to the calling application.
-            if (response.NegotiateContext_COMPRESSION.Value.CompressionAlgorithmCount == 0)
-            {
-                throw new InvalidOperationException("CompressionAlgorithmCount should not be zero!");
-            }
-
             // If the length of the negotiate context is greater than DataLength of the negotiate context, the client MUST return an error to the calling application.
             if (response.NegotiateContext_COMPRESSION.Value.GetDataLength() > response.NegotiateContext_COMPRESSION.Value.Header.DataLength)
             {
@@ -1261,6 +1375,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 // Set CompressionAlgorithms to Connection.CompressionIds.
                 this.CompressionInfo.CompressionIds = response.NegotiateContext_COMPRESSION.Value.CompressionAlgorithms;
             }
+
+            // If SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED bit is set in Flags field and IsChainedCompressionSupported is TRUE, Connection.SupportsChainedCompression MUST be set to TRUE.
+            this.compressionInfo.SupportChainedCompression = response.NegotiateContext_COMPRESSION.Value.Flags.HasFlag(SMB2_COMPRESSION_CAPABILITIES_Flags.SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED);
         }
 
         #endregion
@@ -2366,6 +2483,29 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             return SetInfoResponse(messageId, out responseHeader, out responsePayload);
         }
 
+        public uint SetInfo_InvalidBufferLength(
+            ushort creditCharge,
+            ushort creditRequest,
+            Packet_Header_Flags_Values flags,
+            ulong messageId,
+            ulong sessionId,
+            uint treeId,
+            SET_INFO_Request_InfoType_Values infoType,
+            byte fileInfoClass,
+            SET_INFO_Request_AdditionalInformation_Values additionalInfo,
+            FILEID fileId,
+            byte[] inputBuffer,
+            out Packet_Header responseHeader,
+            out SET_INFO_Response responsePayload,
+            ushort channelSequence = 0
+            )
+        {
+            SetInfoRequest_InvalidBufferLength(creditCharge, creditRequest, flags, messageId, sessionId, treeId,
+                infoType, fileInfoClass, additionalInfo, fileId, inputBuffer, channelSequence);
+
+            return SetInfoResponse(messageId, out responseHeader, out responsePayload);
+        }
+
         public void SetInfoRequest(
             ushort creditCharge,
             ushort creditRequest,
@@ -2399,6 +2539,54 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             {
                 request.PayLoad.BufferOffset = request.BufferOffset;
                 request.PayLoad.BufferLength = (uint)inputBuffer.Length;
+                request.Buffer = inputBuffer;
+            }
+
+            request.PayLoad.AdditionalInformation = additionalInfo;
+            request.PayLoad.FileId = fileId;
+
+            SendPacket(request);
+        }
+
+        public void SetInfoRequest_InvalidBufferLength(
+            ushort creditCharge,
+            ushort creditRequest,
+            Packet_Header_Flags_Values flags,
+            ulong messageId,
+            ulong sessionId,
+            uint treeId,
+            SET_INFO_Request_InfoType_Values infoType,
+            byte fileInfoClass,
+            SET_INFO_Request_AdditionalInformation_Values additionalInfo,
+            FILEID fileId,
+            byte[] inputBuffer,
+            ushort channelSequence = 0
+            )
+        {
+            var request = new Smb2SetInfoRequestPacket();
+
+            request.Header.CreditCharge = creditCharge;
+            request.Header.Command = Smb2Command.SET_INFO;
+            request.Header.CreditRequestResponse = creditRequest;
+            request.Header.Flags = flags;
+            request.Header.MessageId = messageId;
+            request.Header.TreeId = treeId;
+            request.Header.SessionId = sessionId;
+            request.Header.Status = channelSequence;
+
+            request.PayLoad.InfoType = infoType;
+            request.PayLoad.FileInfoClass = fileInfoClass;
+
+            if (inputBuffer != null && inputBuffer.Length > 0)
+            {
+                request.PayLoad.BufferOffset = request.BufferOffset;
+                /*
+                 * If the size of the buffer is less than the size of
+                 * FILE_RENAME_INFORMATION_TYPE_2 as specified in [MS-FSCC]
+                 * section 2.4.41.2, the server MUST fail the request with
+                 * STATUS_INFO_LENGTH_MISMATCH.
+                 */
+                request.PayLoad.BufferLength = 0;
                 request.Buffer = inputBuffer;
             }
 
@@ -2455,7 +2643,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
 
         /// <summary>
-        /// Deconstructor
+        /// Destructor
         /// </summary>
         ~Smb2Client()
         {

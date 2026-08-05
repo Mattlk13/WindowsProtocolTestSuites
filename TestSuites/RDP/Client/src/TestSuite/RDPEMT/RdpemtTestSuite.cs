@@ -1,21 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestSuites.Rdp.Rdpefs;
 using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpefs;
-using Microsoft.Protocols.TestSuites.Rdp.Rdpefs;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Microsoft.Protocols.TestSuites.Rdpemt
 {
@@ -48,7 +45,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
 
         RTTMeasureDataStore rttDataStore;
         BandwidthDataStore bwDataStore;
-        
+
         uint autoDetectedBaseRTT;
         uint autoDetectedBandwidth;
         uint autoDetectedAverageRTT;
@@ -88,21 +85,21 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
         {
             base.TestCleanup();
 
-            rdpbcgrServer.Dispose();
+            rdpbcgrServer?.Dispose();
 
             if (rdpedycServer != null)
                 rdpedycServer.Dispose();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger client to close all RDP connections for clean up.");
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+
+            TriggerClientDisconnectAll();
 
             if (rdpemtServerL != null)
                 rdpemtServerL.Dispose();
 
             if (rdpemtServerR != null)
                 rdpemtServerR.Dispose();
-            if (rdpeudpServer != null && rdpeudpServer.Running)
+            if (rdpeudpServer != null)
                 rdpeudpServer.Stop();
             if (rdpeudpSocketR != null && rdpeudpSocketR.Connected)
                 rdpeudpSocketR.Close();
@@ -110,7 +107,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
                 rdpeudpSocketL.Close();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
         }
         #endregion
 
@@ -141,7 +138,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -166,12 +163,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
             }
 
             this.rdpbcgrAdapter.EstablishRDPConnection(
-                selectedProtocol, 
-                enMethod, 
-                enLevel, 
-                true, 
-                false, 
-                rdpServerVersion, 
+                selectedProtocol,
+                enMethod,
+                enLevel,
+                true,
+                false,
+                rdpServerVersion,
                 flags,
                 false,
                 false);
@@ -192,7 +189,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
             }
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
         }
@@ -207,7 +204,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
         {
             //Start UDP listening
             if (rdpeudpServer == null)
-            { 
+            {
                 rdpeudpServer = new RdpeudpServer((IPEndPoint)this.rdpbcgrAdapter.SessionContext.LocalIdentity, true);
 
                 rdpeudpServer.UnhandledExceptionReceived += (ex) =>
@@ -215,8 +212,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
                     Site.Log.Add(LogEntryKind.Debug, $"Unhandled exception from RdpeudpServer: {ex}");
                 };
             }
-            if (!rdpeudpServer.Running)
-                rdpeudpServer.Start();
+
+            rdpeudpServer.Start();
 
             //Send a Server Initiate Multitransport Request PDU
             byte[] securityCookie = new byte[16];
@@ -257,12 +254,15 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
                 rdpeudpSocket = rdpeudpSocketL;
             }
 
+            String certFile;
+            PtfPropUtility.GetPtfPropertyValue(Site, "CertificatePath", out certFile);
 
-            String certFile = this.Site.Properties["CertificatePath"];
-            String certPwd = this.Site.Properties["CertificatePassword"];
+            String certPwd;
+            PtfPropUtility.GetPtfPropertyValue(Site, "CertificatePassword", out certPwd);
+
             X509Certificate2 cert = new X509Certificate2(certFile, certPwd);
             RdpemtServer rdpemtServer = new RdpemtServer(rdpeudpSocket, cert, false);
-                        
+
             uint receivedRequestId;
             byte[] receivedSecurityCookie;
             if (!rdpemtServer.ExpectConnect(waitTime, out receivedRequestId, out receivedSecurityCookie))
@@ -274,7 +274,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
             {
                 VerifyTunnelCreateRequestPacket(receivedRequestId, receivedSecurityCookie);
             }
-            
+
             if (udpTransportMode == TransportMode.Reliable)
             {
                 rdpemtServerR = rdpemtServer;
@@ -307,11 +307,11 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
                 VerifyClientInitiateMultitransportResponsePDU(rdpbcgrAdapter.SessionContext.ClientInitiateMultitransportResponsePDU, requestIdList[0], HrResponse_Value.S_OK);
 
             #region Start EDYC soft sync
-            if(rdpedycServer == null)
+            if (rdpedycServer == null)
             {
                 rdpedycServer = new Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc.RdpedycServer(this.rdpbcgrAdapter.ServerStack, this.rdpbcgrAdapter.SessionContext);
             }
-   
+
             this.TestSite.Log.Add(LogEntryKind.Comment, "Start Dynamic VC Version Negotiation");
             rdpedycServer.ExchangeCapabilities(waitTime);
 
@@ -337,7 +337,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
             if (rdpefsAdapter == null)
             {
                 this.TestSite.Log.Add(LogEntryKind.Comment, "Create rdpefs adapter.");
-                this.rdpefsAdapter = (IRdpefsAdapter)this.TestSite.GetAdapter(typeof(IRdpefsAdapter));
+                this.rdpefsAdapter = this.TestSite.GetAdapter<IRdpefsAdapter>();
                 this.rdpefsAdapter.Reset();
                 this.rdpefsAdapter.AttachRdpbcgrAdapter(this.rdpbcgrAdapter);
             }
@@ -349,7 +349,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Start Dynamic VC Version Negotiation");
             ushort version = rdpedycServer.ExchangeCapabilities(waitTime);
-            if(version < 0x0003)
+            if (version < 0x0003)
             {
                 this.TestSite.Log.Add(LogEntryKind.TestError, "Client doesn's support Version 3 DYNVC.");
             }
@@ -514,7 +514,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
         /// <param name="sequenceNumber"></param>
         private void SendTunnelDataPdu_NetcharResult(Multitransport_Protocol_value requestedProtocol, ushort sequenceNumber)
         {
-            autoDetectedBaseRTT = (uint) (rttDataStore.responseTime - rttDataStore.requestTime).Milliseconds;
+            autoDetectedBaseRTT = (uint)(rttDataStore.responseTime - rttDataStore.requestTime).Milliseconds;
             autoDetectedAverageRTT = (uint)(rttDataStore.responseTime - rttDataStore.requestTime).Milliseconds;
             if (bwDataStore.timeDelta != 0)
             {
@@ -749,5 +749,20 @@ namespace Microsoft.Protocols.TestSuites.Rdpemt
         }
 
         #endregion
+
+        /// <summary>
+        /// Check platform compatibility.
+        /// </summary>
+        private void CheckPlatformCompatibility(TransportMode transportMode)
+        {
+            // Check lossy transport mode, which is currently only supported on Windows.
+            if (transportMode == TransportMode.Lossy)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    BaseTestSite.Assume.Inconclusive("The lossy transport mode is only supported on Windows.");
+                }
+            }
+        }
     }
 }

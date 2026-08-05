@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Protocols.TestTools.StackSdk.Compression.Mppc;
-using Microsoft.Protocols.TestTools.ExtendedLogging;
+// using Microsoft.Protocols.TestTools.ExtendedLogging;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 {
@@ -49,7 +50,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         /// Channel options
         /// </summary>
         protected Channel_Options channelOptions;
-                
+
         protected Compressor mppcCompressor;
         protected Decompressor mppcDecompressor;
 
@@ -67,6 +68,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         /// Contains the decompressed data.
         /// </summary>
         protected List<byte> decompressedBuffer;
+
+        private ConcurrentQueue<byte[]> cachedData = new ConcurrentQueue<byte[]>();
 
         #endregion Variables
 
@@ -119,7 +122,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         /// <param name="compressType">Compress Type</param>
         /// <param name="decompressType">Decompress Type</param>
         /// <param name="sender">Method used to send packet</param>
-        public  StaticVirtualChannel(UInt16 id, 
+        public  StaticVirtualChannel(UInt16 id,
                                 string name,
                                 Channel_Options options,
                                 uint chunkSize,
@@ -168,7 +171,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
 
             // ETW Provider Dump message
             string messageName = "RDPBCGR:SVC Sent Data";
-            ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, "RDPBCGR: Static Virtual Channel Sent Data", data);
+            // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, "RDPBCGR: Static Virtual Channel Sent Data", data);
         }
 
         /// <summary>
@@ -192,14 +195,23 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
         /// <param name="data"></param>
         protected void ProcessSVCData(byte[] data)
         {
-            if (this.Received != null)
+            if (Received == null)
             {
+                cachedData.Enqueue(data);
+            }
+            else
+            {
+                while (cachedData.TryDequeue(out var res))
+                {
+                    Received(res);
+                }
+
                 Received(data);
             }
 
             // ETW Provider Dump message
             string messageName = "RDPBCGR:SVC Received Data";
-            ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, "RDPBCGR: Static Virtual Channel Received Data", data);
+            // ExtendedLogger.DumpMessage(messageName, RdpbcgrUtility.DumpLevel_Layer1, "RDPBCGR: Static Virtual Channel Received Data", data);
         }
 
         #endregion Protected Methods
@@ -226,7 +238,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
             }
 
             ChannelChunk[] chunks = new ChannelChunk[chunkNum];
-            
+
             uint chunkSize = maxChunkSize;
 
             // fill the chunks except the last one
@@ -265,12 +277,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr
                     chunks[i].chunkData = chunkData;
                 }
             }
-            
+
             // set the first chunk CHANNEL_FLAG_FIRST
             chunks[0].channelPduHeader.flags |= CHANNEL_PDU_HEADER_flags_Values.CHANNEL_FLAG_FIRST;
             // the last chunk
             chunks[chunkNum - 1].channelPduHeader.flags |= CHANNEL_PDU_HEADER_flags_Values.CHANNEL_FLAG_LAST;
-            
+
 
             return chunks;
         }

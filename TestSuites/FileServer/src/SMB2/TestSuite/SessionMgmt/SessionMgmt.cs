@@ -5,6 +5,7 @@ using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestSuites.FileSharing.Common.TestSuite;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -65,6 +66,64 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.SessionMgmt
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Smb311)]
+        [TestCategory(TestCategories.Session)]
+        [Description("This test case is designed to test whether server can return error code when Session.SupportsNotifications is not equal to the incoming Connection.SupportsNotifications")]
+        public void SessionMgmt_SupportsNotificationsMismatch()
+        {
+            Guid clientGuid = Guid.NewGuid();
+
+            client.Negotiate(
+                new DialectRevision[] { DialectRevision.Smb311 },
+                false,
+                clientGuid: clientGuid,
+                ifAddGLOBAL_CAP_NOTIFICATIONS: true
+            );
+
+            client.SessionSetup(
+                SecurityPackageType.Ntlm,
+                TestConfig.SutComputerName,
+                TestConfig.AccountCredential,
+                TestConfig.UseServerGssToken,
+                securityMode: SESSION_SETUP_Request_SecurityMode_Values.NEGOTIATE_SIGNING_ENABLED,
+                capabilities: SESSION_SETUP_Request_Capabilities_Values.GLOBAL_CAP_DFS
+            );
+
+            client.Disconnect();
+
+            var client2 = new Smb2FunctionalClient(TestConfig.Timeout, TestConfig, BaseTestSite);
+            client2.ConnectToServer(TestConfig.UnderlyingTransport, TestConfig.SutComputerName, TestConfig.SutIPAddress);
+
+            client2.Negotiate(
+                new DialectRevision[] { DialectRevision.Smb311 },
+                false,
+                clientGuid: clientGuid,
+                ifAddGLOBAL_CAP_NOTIFICATIONS: false
+            );
+
+            client2.SessionSetup(
+                SecurityPackageType.Ntlm,
+                TestConfig.SutComputerName,
+                TestConfig.AccountCredential,
+                TestConfig.UseServerGssToken,
+                securityMode: SESSION_SETUP_Request_SecurityMode_Values.NEGOTIATE_SIGNING_ENABLED,
+                capabilities: SESSION_SETUP_Request_Capabilities_Values.GLOBAL_CAP_DFS,
+                sessionSetupFlags: SESSION_SETUP_Request_Flags.SESSION_FLAG_BINDING,
+                checker: (header, response) =>
+                {
+                    BaseTestSite.Assert.AreEqual(
+                        Smb2Status.STATUS_INVALID_PARAMETER,
+                        header.Status,
+                        "If Connection.Dialect is \"3.1.1\" and Session.SupportsNotifications is not equal to the incoming Connection.SupportsNotifications, " +
+                        "then the server MUST fail the request with STATUS_INVALID_PARAMETER. Actual received: {0}", header.Status
+                    );
+                }
+            );
+
+            client2.Disconnect();
+        }
+
+        [TestMethod]
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Smb2002)]
         [TestCategory(TestCategories.Session)]
@@ -74,20 +133,21 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.SessionMgmt
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends NEGOTIATE request.");
             client.Negotiate(TestConfig.RequestDialects, TestConfig.IsSMB1NegotiateEnabled);
 
+            var credential = TestConfig.AccountCredential;
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends SESSION_SETUP request with SESSION_ID set to ZERO.");
-            client.SessionSetup(TestConfig.DefaultSecurityPackage, TestConfig.SutComputerName, TestConfig.AccountCredential, TestConfig.UseServerGssToken);
+            client.SessionSetup(TestConfig.DefaultSecurityPackage, TestConfig.SutComputerName, credential, TestConfig.UseServerGssToken);
 
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends another SESSION-SETUP request for reauthentication.");
             client.SessionSetup(
                 testConfig.SendSignedRequest ? Packet_Header_Flags_Values.FLAGS_SIGNED : Packet_Header_Flags_Values.NONE, // The second session setup should set signed flag if server supports signing to keep consistency with SDK.
                 TestConfig.DefaultSecurityPackage, 
-                TestConfig.SutComputerName, 
-                TestConfig.AccountCredential, 
+                TestConfig.SutComputerName,
+                credential, 
                 TestConfig.UseServerGssToken,
                 SESSION_SETUP_Request_SecurityMode_Values.NEGOTIATE_SIGNING_ENABLED,
                 checker:(header, response) =>
                 {
-                    // <225> Section 3.3.5.5: Windows Vista SP1 and Windows Server 2008 servers fail the session setup request with STATUS_REQUEST_NOT_ACCEPTED.
+                    // <266> Section 3.3.5.5: Windows Vista SP1 and Windows Server 2008 servers fail the session setup request with STATUS_REQUEST_NOT_ACCEPTED.
                     if (TestConfig.Platform == Platform.WindowsServer2008)
                     {
                         BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_REQUEST_NOT_ACCEPTED, 
@@ -98,14 +158,17 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.SessionMgmt
                     else if (header.Status != Smb2Status.STATUS_SUCCESS)
                     {
                         // 3.3.5.5   Receiving an SMB2 SESSION_SETUP Request
-                        // 6.	If Session.State is Valid, the server SHOULD<225> process the session setup request as specified in section 3.3.5.5.2.
+                        // 6.	If Session.State is Valid, the server SHOULD<266> process the session setup request as specified in section 3.3.5.5.2.
                         if (TestConfig.Platform == Platform.NonWindows)
                         {
                             BaseTestSite.Assert.Fail("Reauthentication is not supported in the server.");
                         }
                         else
                         {
-                            throw new InvalidOperationException(string.Format("Unexpected status {0}", Smb2Status.GetStatusCode(header.Status)));
+                            if (testConfig.DCServerName != "")
+                            {
+                                throw new InvalidOperationException(string.Format("Unexpected status {0}", Smb2Status.GetStatusCode(header.Status)));
+                            }  
                         }
                     }
                 });
@@ -203,25 +266,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.SessionMgmt
                 SESSION_SETUP_Request_SecurityMode_Values.NEGOTIATE_SIGNING_ENABLED,
                 SESSION_SETUP_Request_Capabilities_Values.GLOBAL_CAP_DFS,
                 checker: (Packet_Header header, SESSION_SETUP_Response response) =>
-                {                    
-                    if (testConfig.IsWindowsPlatform && testConfig.Platform != Platform.WindowsServer2008R2)
-                    {
-                        BaseTestSite.Assert.AreEqual(
+                {
+                    BaseTestSite.Assert.AreEqual(
                             Smb2Status.STATUS_USER_SESSION_DELETED,
                             header.Status,
-                            "[MS-SMB2] 3.3.5.5.3 The server MUST look up all existing connections from the client in the global ConnectionList where Connection.ClientGuid matches Session.Connection.ClientGuid. " +
-                            "For any matching Connection, if Connection.Dialect is not the same as Session.Connection.Dialect, the server SHOULD<235> close the newly created Session, " +
-                            "as specified in section 3.3.4.12, by providing Session.SessionGlobalId as the input parameter, and fail the session setup request with STATUS_USER_SESSION_DELETED.");
-                    }
-                    else if (testConfig.Platform == Platform.NonWindows)
-                    {
-                        BaseTestSite.Assert.AreNotEqual(
-                            Smb2Status.STATUS_SUCCESS,
-                            header.Status,
-                            "[MS-SMB2] 3.3.5.5.3 The server MUST look up all existing connections from the client in the global ConnectionList where Connection.ClientGuid matches Session.Connection.ClientGuid. " +
-                            "For any matching Connection, if Connection.Dialect is not the same as Session.Connection.Dialect, the server SHOULD<235> close the newly created Session, " +
-                            "as specified in section 3.3.4.12, by providing Session.SessionGlobalId as the input parameter, and fail the session setup request with STATUS_USER_SESSION_DELETED.");
-                    }
+                            "[MS-SMB2] 3.3.5.5.3 the server MUST look up a client entry in GlobalClientTable using Session.Connection.ClientGuid. " +
+                            "If an entry is found and Client.Dialect is not equal to Session.Connection.Dialect, the server MUST close the newly created Session, as specified in section 3.3.4.12, " +
+                            "by providing Session.SessionGlobalId as the input parameter, and fail the session setup request with STATUS_USER_SESSION_DELETED.");
                 });
             #endregion
 

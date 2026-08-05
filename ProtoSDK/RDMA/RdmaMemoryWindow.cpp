@@ -12,7 +12,7 @@ using namespace System::Runtime::InteropServices;
 // Begin SMBD client Namespace
 BEGIN_RDMA_NAMESPACE
 /// <summary>
-/// Deconstructor
+/// Destructor
 /// </summary>
 RdmaMemoryWindow::~RdmaMemoryWindow()
 {
@@ -28,6 +28,7 @@ RdmaMemoryWindow::~RdmaMemoryWindow()
 RdmaMemoryWindow::RdmaMemoryWindow(INDMemoryWindow *memoryWindow)
 {
 	_memoryWindow = memoryWindow;
+	_remoteToken = 0;
 }
 
 END_RDMA_NAMESPACE

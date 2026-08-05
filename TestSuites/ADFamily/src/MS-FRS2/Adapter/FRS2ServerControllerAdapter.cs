@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.Messages;
-using Microsoft.Protocols.TestTools.Messages.Marshaling;
 using System.DirectoryServices.Protocols;
 using System.DirectoryServices;
 using System.Security.AccessControl;
@@ -357,9 +356,9 @@ namespace Microsoft.Protocols.TestSuites.MS_FRS2
 
 
                         }
-                        if (0 == string.Compare(from.ToLower(), fromServer.ToLower()))
-                            return guid;
                     }
+                    if (0 == string.Compare(from.ToLower(), fromServer.ToLower()))
+                        return guid;
                 }
             }
             throw new Exception("Failed to find replication partner's NTDS Connection guid");

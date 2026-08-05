@@ -1,8 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-##
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 param($workingDir = "$env:SystemDrive\Temp", $protocolConfigFile = "$workingDir\Protocol.xml")
 
@@ -85,33 +82,49 @@ Create-SMBShare.ps1 -name "ShareForceLevel2" -Path "$systemDrive\ShareForceLevel
 Write-Info.ps1 "Create share folder: $systemDrive\SMBEncrypted"
 Create-SMBShare.ps1 -name "SMBEncrypted" -Path "$systemDrive\SMBEncrypted" -FullAccess "$fullAccessAccount"  -EncryptData $true
 
+if ($OSVersion.Major -ge 10) {
+    Write-Info.ps1 "Create share folder: $systemDrive\SMBCompressed"
+    Create-SMBShare.ps1 -name "SMBCompressed" -Path "$systemDrive\SMBCompressed" -FullAccess "$fullAccessAccount" -CompressData $true
+}
+else {
+    Write-Info.ps1 "-CompressData only support on Win2004 or later version."
+}
+
 Write-Info.ps1 "Create Volume for SMBReFSShare"
 
-$volume = gwmi -Class Win32_volume | where {$_.FileSystem -eq "REFS" -and $_.Label -eq "REFS"}
+$volume = Get-WmiObject -Class Win32_Volume | Where-Object {$_.FileSystem -eq "REFS" -and $_.Label -eq "REFS"}
 if($volume -eq $null)
 {
-	Write-Info.ps1 "Create Volume for SMBReFSShare"
+    Write-Info.ps1 "Create Volume for SMBReFSShare"
     # Get disk and partition
-	$disk = Get-WmiObject -Class Win32_DiskDrive | sort DeviceID | Select-Object -first 1
-	$diskNum = $disk.Index
-    For ($i = 1; $i -le 20; $i++) {
-        $partition = Get-Partition -DiskNumber $diskNum -PartitionNumber $i
-        if ($partition -eq $null) {
-            $partitionId = $i - 1
+    $disk = Get-WmiObject -Class Win32_DiskDrive | Sort-Object DeviceID | Select-Object -First 1
+    $diskNum = $disk.Index
+    for ($i = 1; $i -le 20; $i++) {
+        $partition = Get-Partition -DiskNumber $diskNum -PartitionNumber $i -ErrorAction SilentlyContinue
+        if (($partition -ne $null) -and ($env:SystemDrive -match $partition.DriveLetter)) {
+            $partitionId = $i
+        }
+        elseif ($partition -eq $null) {
+            $newPartitionId = $i
             break
         }
     }
-	$newPartitionId = $partitionId + 1
 
     Write-Info.ps1 "Create partition using diskpart.exe"
 	$diskPartCmd = @()
 	$diskPartCmd += "select disk $diskNum"
 	$diskPartCmd += "select partition $partitionId"
 	$diskPartCmd += "shrink minimum=5120"
-    # the extended partition should be enough to contain both ReFS and FAT32
-	$diskPartCmd += "create partition extended size=4096"
+
     # assign 2000MB for ReFS, and save 2000MB for FAT32
-	$diskPartCmd += "create partition logical size=2000"
+    if((Get-Disk -Number $diskNum).PartitionStyle -eq "GPT") {
+        # Logical and extended partitions cannot be created on a GPT disk.
+        $diskPartCmd += "create partition primary size=2000"
+    } else {
+        # Only MBR supports extended disk, and the extended partition should be enough to contain both ReFS and FAT32
+        $diskPartCmd += "create partition extended size=4096"
+        $diskPartCmd += "create partition logical size=2000"
+    }
 	$diskPartCmd += "select partition $newPartitionId"
     if ($OSVersion.Major -ge 10)
     {

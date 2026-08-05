@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using Microsoft.VisualStudio.Setup.Configuration;
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -79,9 +80,9 @@ namespace Microsoft.Protocols.TestManager.Kernel
         public string DocDirectory { get; set; }
 
         /// <summary>
-        /// The location of the etc directory
+        /// The location of the Plugin directory
         /// </summary>
-        public string EtcDirectory { get; set; }
+        public string PluginDirectory { get; set; }
 
         /// <summary>
         /// The directory to save the data used by plugin.
@@ -156,11 +157,6 @@ namespace Microsoft.Protocols.TestManager.Kernel
         public string VSTestArguments;
 
         /// <summary>
-        /// The setting of test.
-        /// </summary>
-        public string TestSetting;
-
-        /// <summary>
         /// WelcomePage
         /// </summary>
         public List<string> TestSuiteIntroduction { get; set; }
@@ -203,14 +199,14 @@ namespace Microsoft.Protocols.TestManager.Kernel
             config.TestSuiteName = testSuiteName;
             config.TestSuiteVersion = testSuiteVersion;
             config.InitFolders(testSuiteDir, installDir);
-            config.PipeName = StringResource.PipeName;
+            config.PipeName = string.Format("{0}_{1}", StringResource.PipeName, Guid.NewGuid());
 
             XmlDocument doc = new XmlDocument();
             doc.XmlResolver = null;
             XmlReaderSettings settings = new XmlReaderSettings();
             settings.XmlResolver = null;
             settings.DtdProcessing = DtdProcessing.Prohibit;
-            XmlReader xmlReader = XmlReader.Create(System.IO.Path.Combine(config.EtcDirectory, StringResource.ConfigFilename), settings);
+            XmlReader xmlReader = XmlReader.Create(System.IO.Path.Combine(config.PluginDirectory, StringResource.ConfigFilename), settings);
             doc.Load(xmlReader);
             //Config File
             XmlNode ptfFileNamesNode = doc.DocumentElement.SelectSingleNode("PtfFileNames");
@@ -227,8 +223,10 @@ namespace Microsoft.Protocols.TestManager.Kernel
             {
                 foreach (XmlNode xn in ConfigFilePathNode.SelectNodes("PtfFileName"))
                 {
+                    string name = xn.InnerText.Trim();
+                    name = name.Replace('\\', Path.DirectorySeparatorChar);
                     config.PtfConfigFilesInSource.Add(
-                        Path.Combine(testSuiteDir, xn.InnerText.Trim()));
+                        Path.Combine(testSuiteDir, name));
                 }
             }
             // Group Order
@@ -255,27 +253,23 @@ namespace Microsoft.Protocols.TestManager.Kernel
             foreach (XmlNode xn in DllFileNamesNode.SelectNodes("DllFileName"))
             {
                 string name = xn.InnerText.Trim();
-                config.TestSuiteAssembly.Add(System.IO.Path.Combine(testSuiteDir, name));
+                config.TestSuiteAssembly.Add(System.IO.Path.Combine(testSuiteDir, "Bin", name));
             }
 
-            //TestSetting
-            config.TestSetting = doc.DocumentElement.SelectSingleNode("TestSetting").InnerText.Trim();
-
             //Config Test Engine
-            config.VSTestPath = LocateVSTestEngine();
+            config.VSTestPath = LoadTestEngine();
 
             config.VSTestArguments = "";
             foreach (string singleDllpath in config.TestSuiteAssembly)
             {
                 config.VSTestArguments += " " + singleDllpath;
             }
-            config.VSTestArguments += " /Settings:\"" + config.TestSetting + "\"";
 
             // TestCategories
             var testCategoryNode = doc.DocumentElement.SelectSingleNode("TestCategories");
             if (testCategoryNode != null)
             {
-                string categoryConfigFile = System.IO.Path.Combine(config.EtcDirectory, testCategoryNode.InnerText.Trim());
+                string categoryConfigFile = System.IO.Path.Combine(config.PluginDirectory, testCategoryNode.InnerText.Trim());
                 config.TestCategory = GetTestCategoryFromConfig(categoryConfigFile);
             }
             else
@@ -354,51 +348,24 @@ namespace Microsoft.Protocols.TestManager.Kernel
             return config;
         }
 
-        private static string LocateVSTestEngine()
+        private static string LoadTestEngine()
         {
-            bool foundVSTest = false;
-
-            var query = new SetupConfiguration();
-
-            var enumInstances = query.EnumAllInstances();
-
-            while (true)
+            string dotNet = "dotnet";
+            var psi = new ProcessStartInfo(dotNet, "--info") { RedirectStandardOutput = true };
+            try
             {
-                int count;
-                var instances = new ISetupInstance[1];
-                enumInstances.Next(1, instances, out count);
-                if (count == 0)
+                var proc = Process.Start(psi);
+                proc.WaitForExit();
+                if (proc.ExitCode != 0)
                 {
-                    break;
-                }
-                string vspath = instances[0].GetInstallationPath();
-                if (!String.IsNullOrEmpty(vspath))
-                {
-                    string vstest = Path.Combine(vspath, StringResource.VSTestLocation);
-                    if (File.Exists(vstest))
-                    {
-                        // Found test engine.
-                        foundVSTest = true;
-
-                        string htmltestlogger = Path.Combine(vspath, StringResource.HtmlTestLoggerLocation);
-                        if (File.Exists(htmltestlogger))
-                        {
-                            // Found html test logger.
-                            return vstest;
-                        }
-                    }
+                    throw new Exception(StringResource.CannotFindDotnet);
                 }
             }
-
-            if (foundVSTest == false)
+            catch
             {
-                // vstest Not found.
-                throw new Exception(StringResource.VSTestNotInstalled);
+                throw new Exception(StringResource.CannotFindDotnet);
             }
-            else
-            {
-                throw new Exception(StringResource.HtmlTestLoggerNotInstalled);
-            }
+            return dotNet;
         }
 
         private void InitFolders(string testSuiteDir, string installDir)
@@ -409,8 +376,8 @@ namespace Microsoft.Protocols.TestManager.Kernel
             }
             TestSuiteDirectory = testSuiteDir;
             PtmInstallDirectory = installDir;
-            DocDirectory = Path.Combine(installDir, "doc", TestSuiteName);
-            EtcDirectory = Path.Combine(installDir, "etc", TestSuiteName);
+            PluginDirectory = Path.Combine(testSuiteDir, "Plugin");
+            DocDirectory = Path.Combine(PluginDirectory, "doc");
             AppDataDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Protocol Test Manager",

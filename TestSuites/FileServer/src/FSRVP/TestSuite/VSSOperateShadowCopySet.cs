@@ -7,7 +7,8 @@ using Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Fsrvp;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -152,6 +153,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.FSRVP.TestSuite
         [Description("Check if the server supports the VSS provider to create a writable snapshot for remote files.")]
         public void BVT_VSSOperateShadowCopySet_WritableSnapshot_SingleNode()
         {
+            CheckDriverSupportsNRPC();
             List<string> shareUncPaths = new List<string>();
             shareUncPaths.Add(@"\\" + TestConfig.SutComputerName + @"\" + TestConfig.BasicFileShare);
             TestShadowCopySet((ulong)FsrvpContextValues.FSRVP_CTX_BACKUP | (ulong)FsrvpShadowCopyAttributes.FSRVP_ATTR_AUTO_RECOVERY,

@@ -7,8 +7,9 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Collections.Generic;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System.Text.RegularExpressions;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 {
@@ -57,7 +58,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
         // Flag of packet header.
         private Packet_Header_Flags_Values headerFlags = Packet_Header_Flags_Values.NONE;
-
         #endregion
 
         #region Constructor
@@ -175,9 +175,18 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             string password,
             AccessMask accessMask)
         {
-            IPHostEntry hostEntry = Dns.GetHostEntry(server);
-            client.ConnectOverTCP(hostEntry.AddressList[0]);
-            serverPrincipleName = Smb2Utility.GetPrincipleName(hostEntry.HostName);
+            IPAddress address = null;
+            if(IPAddress.TryParse(server, out address)) // server is a ip address
+            {
+                client.ConnectOverTCP(address);
+                serverPrincipleName = server;
+            }
+            else
+            {
+                IPHostEntry hostEntry = Dns.GetHostEntry(server);
+                client.ConnectOverTCP(hostEntry.AddressList[0]);
+                serverPrincipleName = Smb2Utility.GetPrincipleName(hostEntry.HostName);
+            }
 
             Packet_Header header;
             NEGOTIATE_Response negotiateResponse;
@@ -250,9 +259,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             } while (status == Smb2Status.STATUS_MORE_PROCESSING_REQUIRED);
 
             client.GenerateCryptoKeys(
-                sessionId, 
-                sspiClientGss.SessionKey, 
-                session_SigningRequired, 
+                sessionId,
+                sspiClientGss.SessionKey,
+                session_SigningRequired,
                 sessionSetupResponse.SessionFlags.HasFlag(SessionFlags_Values.SESSION_FLAG_ENCRYPT_DATA)); // Encrypt the session if server required.
 
             TREE_CONNECT_Response treeConnectResponse;
@@ -572,8 +581,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             bool useServerToken)
         {
             serverPrincipleName = server;
-            IPHostEntry hostEntry = Dns.GetHostEntry(server);
-            this.client.ConnectOverTCP(hostEntry.AddressList[0]);
+            this.client.ConnectOverTCP(Dns.GetHostAddresses(server).First());
             InternalConnectShare(domain, userName, password, IPC_CONNECT_STRING, timeout, securityPackage, useServerToken);
         }
 
@@ -724,12 +732,23 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         public override void ConnectShare(string serverName, int port, IpVersion ipVersion, string domain,
             string userName, string password, string shareName, SecurityPackageType securityPackage, bool useServerToken)
         {
-            IPHostEntry hostEntry = Dns.GetHostEntry(serverName);
-            serverPrincipleName = Smb2Utility.GetPrincipleName(hostEntry.HostName);
+            List<IPAddress> serverAddresses = new List<IPAddress>();
+            IPAddress ipAddress;
+            if (IPAddress.TryParse(serverName, out ipAddress)) // server is a ip address
+            {
+                serverPrincipleName = serverName;
+                serverAddresses.Add(ipAddress);
+            }
+            else
+            {
+                IPHostEntry hostEntry = Dns.GetHostEntry(serverName);
+                serverPrincipleName = Smb2Utility.GetPrincipleName(hostEntry.HostName);
+                serverAddresses.AddRange(hostEntry.AddressList);
+            }
 
             if (ipVersion == IpVersion.Ipv4)
             {
-                foreach (var ip in hostEntry.AddressList)
+                foreach (var ip in serverAddresses)
                 {
                     if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                     {
@@ -740,7 +759,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             }
             else if (ipVersion == IpVersion.Ipv6)
             {
-                foreach (var ip in hostEntry.AddressList)
+                foreach (var ip in serverAddresses)
                 {
                     if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                     {
@@ -754,7 +773,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 // if specified the IpVersion.Any, try ipv4 first, if failed, try ipv6
                 try
                 {
-                    foreach (var ip in hostEntry.AddressList)
+                    foreach (var ip in serverAddresses)
                     {
                         if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                         {
@@ -765,7 +784,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 }
                 catch (InvalidOperationException)
                 {
-                    foreach (var ip in hostEntry.AddressList)
+                    foreach (var ip in serverAddresses)
                     {
                         if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                         {
@@ -869,15 +888,15 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// <param name="status">Status of the response packet</param>
         /// <param name="contextResponse">Create contexts to be received in the create response</param>
         public void Create(
-            string fileName, 
-            FsFileDesiredAccess desiredAccess, 
+            string fileName,
+            FsFileDesiredAccess desiredAccess,
             ShareAccess_Values shareAccess,
             FsImpersonationLevel impersonationLevel,
-            FsFileAttribute fileAttribute, 
-            FsCreateDisposition createDisposition, 
+            FsFileAttribute fileAttribute,
+            FsCreateDisposition createDisposition,
             FsCreateOption createOption,
-            Smb2CreateContextRequest[] contextRequest, 
-            out uint status, 
+            Smb2CreateContextRequest[] contextRequest,
+            out uint status,
             out CREATE_Response contextResponse)
         {
             if (createOption.HasFlag(FsCreateOption.FILE_DIRECTORY_FILE))
@@ -1290,7 +1309,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 
             // 3.2.4.1.1 If Connection.Dialect is "3.1.1" and the message being sent is a TREE_CONNECT Request and the session identified by SessionId has Session.EncryptData equal to FALSE
             bool treeconnect_SigningRequired = session_SigningRequired || (selectedDialect >= DialectRevision.Smb311);
-            client.GenerateCryptoKeys(sessionId, sspiClientGss.SessionKey, treeconnect_SigningRequired, false);
+            client.GenerateCryptoKeys(sessionId, sspiClientGss.SessionKey, treeconnect_SigningRequired, sessionSetupResponse.SessionFlags.HasFlag(SessionFlags_Values.SESSION_FLAG_ENCRYPT_DATA));
 
             this.sessionId = header.SessionId;
 
@@ -1323,7 +1342,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             this.treeId = header.TreeId;
 
             // For the messages followed by TREE_CONNECT, set them as signed/not signed following the normal proces
-            client.EnableSessionSigningAndEncryption(sessionId, session_SigningRequired, false);
+            client.EnableSessionSigningAndEncryption(sessionId, session_SigningRequired, sessionSetupResponse.SessionFlags.HasFlag(SessionFlags_Values.SESSION_FLAG_ENCRYPT_DATA));
         }
 
 

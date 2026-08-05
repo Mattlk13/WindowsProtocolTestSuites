@@ -1,18 +1,16 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-##
-## Microsoft Windows Powershell Scripting
-## File:           Add-DFSFolder.ps1
-## Purpose:        Add a DFS folder.
-## Version:        1.1 (26 Jun, 2008)
-##
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+##############################################################################
+# Microsoft Windows Powershell Scripting
+# File:           Add-DFSFolder.ps1
+# Purpose:        Add a DFS folder.
+# Version:        1.1 (26 Jun, 2008)
+#
 ##############################################################################
 
 param(
-[Parameter(Mandatory=$true)]
 [string]$nsPath,
-[Parameter(Mandatory=$true)]
 [string]$folderPath
 )
 
@@ -45,6 +43,18 @@ if ($args[0] -match '-(\?|(h|(help)))')
 {
     Show-ScriptUsage 
     return
+}
+
+#----------------------------------------------------------------------------
+# Verify required parameters
+#----------------------------------------------------------------------------
+if ($nsPath -eq $null -or $nsPath -eq "")
+{
+    Throw "Parameter `$nsPath is required."
+}
+if ($folderPath -eq $null -or $folderPath -eq "")
+{
+    Throw "Parameter `$folderPath is required."
 }
 
 #----------------------------------------------------------------------------

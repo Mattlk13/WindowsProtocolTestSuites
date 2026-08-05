@@ -15,6 +15,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("RDSTLSAuthentication")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT can process server redirection through RDSTLS protocol successfully by returning redirection GUID obtained in server redirection PDU.")]
         public void BVT_RDSTLSAuthentication_PositiveTest_ServerRedirectionWithPasswordCredentials()
         {
@@ -55,6 +56,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("RDSTLSAuthentication")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT can handle auto-reconnect through RDSTLS protocol successfully after server redirection by returning cookie obtained in Server Save Session Info PDU.")]
         public void S11_RDSTLSAuthentication_PositiveTest_ServerRedirectionAndAutoReconnectWithCookie()
         {
@@ -94,7 +96,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             ExpectSecondConnectionWithRDSTLSAuthentication();
 
             // Send cookie for auto-reconnect
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.AutoReconnectCookie, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.AutoReconnectCookie);
 
             int iResult = this.sutControlAdapter.TriggerClientAutoReconnect(this.TestContext.TestName);
             TestSite.Assume.IsTrue(iResult >= 0, "SUT Control Adapter: TriggerClientAutoReconnect should be successful: {0}.", iResult);
@@ -113,7 +115,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocols_Values.PROTOCOL_RDSTLS, enMethod, enLevel, true, true, rdpServerVersion);
 
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #region Unregister Verification Methods.
             this.rdpbcgrAdapter.X224ConnectionRequest -= new X224ConnectioRequestHandler(this.CheckNegotiationFlag);
@@ -132,7 +134,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region First Connection
@@ -186,7 +188,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
         }
 
         private void CheckRDSTLSAuthentication_VerifyClientInfoFields(Client_Info_Pdu clientInfoPdu)

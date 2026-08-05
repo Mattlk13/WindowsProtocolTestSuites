@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>MS-WSP_ServerTestSuite</AssemblyName>
+    <RootNamespace>Microsoft.Protocols.TestSuites.WspTS</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\..\AssemblyInfo\SharedAssemblyInfo.cs">
+      <Link>SharedAssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+	  <PackageReference Include="Microsoft.Protocols.TestTools" Version="2.7.0" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+	  <PackageReference Include="MSTest.TestFramework" Version="3.9.1" />
+	  <PackageReference Include="MSTest.TestAdapter" Version="3.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\ProtoSDK\MS-WSP\Wsp.csproj" />
+    <ProjectReference Include="..\Adapter\MS-WSP_ServerAdapter.csproj" />
+  </ItemGroup>
+
+</Project>

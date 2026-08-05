@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Security.Permissions;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
 {
@@ -13,7 +13,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
     /// Supports DTLS 1.0
     /// Invokes InitializeSecurityContext function of SSPI
     /// </summary>
-    public class DtlsClientSecurityContext : SspiClientSecurityContext
+    public class DtlsClientSecurityContext : SspiClientSecurityContext, IDtlsClientSecurityContext
     {
         bool bStreamSizes;
         SecurityPackageContextStreamSizes dtlsStreamSizes;
@@ -34,7 +34,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// </summary>
         public SecurityPackageContextStreamSizes StreamSizes
         {
-            [SecurityPermission(SecurityAction.Demand)]
             get
             {
                 if (!bStreamSizes)
@@ -57,7 +56,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// <param name="contextAttributes">Context attributes</param>
         /// <param name="targetDataRep">The data representation, such as byte ordering, on the target. 
         /// This parameter can be either SECURITY_NATIVE_DREP or SECURITY_NETWORK_DREP.</param>
-        [SecurityPermission(SecurityAction.Demand)]
         public DtlsClientSecurityContext(
             SecurityPackageType packageType,
             CertificateCredential clientCredential,
@@ -87,7 +85,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// </summary>
         /// <param name="serverToken">Server Token</param>
         /// <exception cref="SspiException">If Initialize fail, this exception will be thrown.</exception>
-        [SecurityPermission(SecurityAction.Demand)]
         public override void Initialize(byte[] serverToken)
         {
             uint hResult;
@@ -105,14 +102,14 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
             {
                 //First Initialize, only token
                 outSecurityBuffers = new SecurityBuffer[1];
-                outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[NativeMethods.MAX_TOKEN_SIZE]);
+                outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[Consts.MAX_TOKEN_SIZE]);
             }
             else
             { 
                 //Token and Ablert
                 outSecurityBuffers = new SecurityBuffer[2];
-                outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[NativeMethods.MAX_TOKEN_SIZE]);
-                outSecurityBuffers[1] = new SecurityBuffer(SecurityBufferType.Alert, new byte[NativeMethods.MAX_TOKEN_SIZE]);
+                outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[Consts.MAX_TOKEN_SIZE]);
+                outSecurityBuffers[1] = new SecurityBuffer(SecurityBufferType.Alert, new byte[Consts.MAX_TOKEN_SIZE]);
             }
             SecurityBufferDescWrapper outBufferDescWrapper = new SecurityBufferDescWrapper(outSecurityBuffers);
             
@@ -211,6 +208,5 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
             }
             outBufferDescWrapper.FreeSecurityBufferDesc();
         }
-
     }
 }

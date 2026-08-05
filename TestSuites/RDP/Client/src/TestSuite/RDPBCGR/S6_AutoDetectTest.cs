@@ -17,6 +17,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("NetcharAutoDetect")]
+        [TestCategory("BasicRequirement")]
         [Description(@"This test case is used to ensure the SUT can complete an auto detection for rtt during connection phase")]
         public void S6_AutoDetection_ConnectTime_RTT()
         {
@@ -41,7 +42,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -128,6 +129,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("NetcharAutoDetect")]
+        [TestCategory("BasicRequirement")]
         [Description(@"This test case is used to ensure the SUT can complete an auto detection for bandwidth during connection phase")]
         public void S6_AutoDetection_ConnectTime_bandwidth()
         {
@@ -154,7 +156,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -251,6 +253,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("NetcharAutoDetect")]
+        [TestCategory("BasicRequirement")]
         [Description(@"This test case is used to ensure the SUT can complete an auto detection for rtt after connection phase")]
         public void S6_AutoDetection_Continuous_RTT()
         {
@@ -276,7 +279,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -292,7 +295,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
             
             #endregion
 
@@ -322,6 +325,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP8.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("NetcharAutoDetect")]
+        [TestCategory("BasicRequirement")]
         [Description(@"This test case is used to ensure the SUT can complete an auto detection for bandwidth after connection phase")]
         public void S6_AutoDetection_Continuous_bandwidth()
         {
@@ -349,7 +353,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Waiting for the transport level connection request.
@@ -365,7 +369,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -402,6 +406,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDPBCGR")]
         [TestCategory("NetcharAutoDetect")]
         [TestCategory("AutoReconnect")]
+        [TestCategory("BasicRequirement")]
         [Description(@"This test case is used to ensure the SUT can Sync its network characteristic with the server after autoReconnection")]
         public void S6_AutoDetection_NetworkCharacteristicsSync_After_AutoReconnect()
         {
@@ -429,7 +434,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to initiate a RDP connection
             //Trigger client to initiate a RDP connection.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             //Expect the transport layer connection request.
@@ -585,10 +590,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             this.rdpbcgrAdapter.ServerFontMap();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT with Auto-Reconnect information.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.AutoReconnectCookie, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.AutoReconnectCookie);
             #endregion
 
             #endregion

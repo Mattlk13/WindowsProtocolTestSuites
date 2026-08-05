@@ -10,7 +10,6 @@ using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Text;
 
-using Microsoft.Modeling;
 using Microsoft.Protocols.TestTools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -93,7 +92,7 @@ namespace Microsoft.Protocol.TestSuites.ActiveDirectory.Adts.Schema
 
                 Value valueOfSearchFlag = attributeObject["searchFlags"];
                 Type flagType = IntegerSymbols.GetSymbolEnumType("SearchFlags");
-                string searchFlag = Enum.Format(flagType, (uint)((int)valueOfSearchFlag), "g");
+                string searchFlag = Enum.Format(flagType, (uint)((int)valueOfSearchFlag), "f");
                 if(searchFlag.Contains("fANR"))
                 {
                     if (!searchFlag.Contains("fATTINDEX"))
@@ -264,7 +263,7 @@ namespace Microsoft.Protocol.TestSuites.ActiveDirectory.Adts.Schema
 
                 Value valueOfSearchFlag = attributeObject["searchFlags"];
                 Type flagType = IntegerSymbols.GetSymbolEnumType("SearchFlags");
-                string searchFlag = Enum.Format(flagType, (uint)((int)valueOfSearchFlag), "g");
+                string searchFlag = Enum.Format(flagType, (uint)((int)valueOfSearchFlag), "f");
                 if (searchFlag.Contains("fANR"))
                 {
                     if (!searchFlag.Contains("fATTINDEX"))

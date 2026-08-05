@@ -1,12 +1,12 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-##
-## Microsoft Windows Powershell Scripting
-## File:           Modify-ConfigFileNode.ps1
-## Purpose:        Modify the node value for the ".deployment.ptfconfig" file.
-## Version:        1.1 (26 June, 2008)
-##
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+##############################################################################
+# Microsoft Windows Powershell Scripting
+# File:           Modify-ConfigFileNode.ps1
+# Purpose:        Modify the node value for the ".deployment.ptfconfig" file.
+# Version:        1.1 (26 June, 2008)
+#
 ##############################################################################
 
 Param(
@@ -68,9 +68,7 @@ $IsFindNode = $false
 
 $ifFileExist = Test-Path $sourceFileName
 if($ifFileExist -eq $true)
-{
-    attrib -R $sourceFileName
-    
+{   
     [xml]$configContent = Get-Content $sourceFileName
     $PropertyNodes = $configContent.GetElementsByTagName("Property")
     foreach($node in $PropertyNodes)
@@ -85,14 +83,13 @@ if($ifFileExist -eq $true)
     
     if($IsFindNode)
     {
-        $configContent.save($sourceFileName)
+        Set-ItemProperty -Path $sourceFileName -Name IsReadOnly -Value $false
+        $configContent.save((Resolve-Path $sourceFileName))
     }
     else
     {
         Throw "Config failed: Can't find the node whoes name attribute is $nodeName" 
     }
-
-    attrib +R $sourceFileName
 }
 else
 {

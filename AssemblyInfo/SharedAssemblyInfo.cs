@@ -2,6 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Reflection;
+#if !NETSTANDARD2_0
+using System.Runtime.Versioning;
+#endif
 
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyVersion("3.20.1.0")]
+[assembly: AssemblyProduct("Windows Protocol Test Suites")]
+[assembly: AssemblyVersion("4.26.8.0")]
+#if !NETSTANDARD2_0
+[assembly: RequiresPreviewFeatures]
+#endif

@@ -12,6 +12,9 @@
     * [Traditional Test cases](#Traditional-Test-cases)
     * [MBT Test cases](#MBT-Test-cases)
 * [Traditional Test Scenarios Design](#Traditional-Test-Scenarios-Design)
+    * [Scenarios for CommonAlgorithm](#Scenarios-for-CommonAlgorithm)
+        * [Algorithm_Noting_FileModified](#Algorithm_Noting_FileModified)
+        * [Algorithm_Noting_FileAccessed](#Algorithm_Noting_FileAccessed)
     * [Scenarios for FileInformation](#Scenarios-for-FileInformation)
         * [FileInfo_IsCompressionSupported](#FileInfo_IsCompressionSupported)
         * [FileInfo_IsEASupported](#FileInfo_IsEASupported)
@@ -21,12 +24,19 @@
         * [FileInfo_IsShortNameSupported](#FileInfo_IsShortNameSupported)
         * [FileInfo_FileIdInformationSupported](#FileInfo_FileIdInformationSupported)
         * [FileInfo_FileAccessInformationSupported](#FileInfo_FileAccessInformationSupported)
+        * [FileInfo_SetFileBasicInformationSupported](#FileInfo_SetFileBasicInformationSupported)
+        * [FileInfo_CreationTime](#FileInfo_CreationTime)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_Zero](#FileInfo_Set_FileBasicInformation_Timestamp_Zero)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo](#FileInfo_Set_FileBasicInformaiton_Timestamp_MinusTwo)
     * [Scenarios for FileSystemInformation](#Scenarios-for-FileSystemInformation)
         * [FsInfo_FileFsAttributeInformation](#FsInfo_FileFsAttributeInformation)
         * [FsInfo_IsObjectIdSupported](#FsInfo_IsObjectIdSupported)
         * [FsInfo_FileFsSizeInformation_ClusterSize](#FsInfo_FileFsSizeInformation_ClusterSize)
         * [FsInfo_Query_FileFsSectorSizeInformation](#FsInfo_Query_FileFsSectorSizeInformation)
     * [Scenarios for FsControlRequest](#Scenarios-for-FsControlRequest)
+        * [FsCtl_Create_Or_Get_ObjectId](#FsCtl_Create_Or_Get_ObjectId)
+        * [FsCtl_Get_ObjectId](#FsCtl_Get_ObjectId)
         * [FsCtl_Get_IntegrityInformation](#FsCtl_Get_IntegrityInformation)
         * [FsCtl_Set_IntegrityInformation](#FsCtl_Set_IntegrityInformation)
         * [FsCtl_Offload_Read](#FsCtl_Offload_Read)
@@ -40,6 +50,11 @@
         * [FsCtl_Query_File_Regions](#FsCtl_Query_File_Regions)
         * [FsCtl_Get_Compression](#FsCtl_Get_Compression)
         * [FsCtl_Set_Compression](#FsCtl_Set_Compression)
+        * [FsCtl_RefsStreamSnapshotManagement](#FsCtl_RefsStreamSnapshotManagement)
+        * [FsCtl_RefsStreamSnapshotOperationCreate](#FsCtl_RefsStreamSnapshotOperationCreate)
+        * [FsCtl_RefsStreamSnapshotOperationQueryDeltas](#FsCtl_RefsStreamSnapshotOperationQueryDeltas)
+        * [FsCtl_Mark_Handle](#FsCtl_Mark_Handle)
+        * [FsCtl_RefsStreamSnapshotOperationList](#FsCtl_RefsStreamSnapshotOperationList)
     * [Scenarios for QuotaInformation](#Scenarios-for-QuotaInformation)
         * [QuotaInfo_IsQuotaInfoSupported](#QuotaInfo_IsQuotaInfoSupported)
     * [Scenarios for Alternate Data Stream](#Scenarios-for-Alternate-Data-Stream)
@@ -53,9 +68,30 @@
         * [AlternateDataStream_FsControl](#AlternateDataStream_FsControl)
     * [Scenarios for Create and Query Directory](#Scenarios-for-Create-And-Query-Directory)
         * [Query Directory](#Scenario-QueryDirectory)
+    * [Scenarios for File and Directory Leasing](#Test-cases-for-File-And-Directory-Leasing)
+        * [CompareLeaseKeys](#CompareLeaseKeys)
+    * [Scenarios for FileAccess](#Scenarios-for-FileAccess)
+        * [FileAccess_OpenExistingFile](#FileAccess_OpenExistingFile)
+        * [FileAccess_OpenNamedPipe](#FileAccess_OpenNamedPipe)
     * [Other Scenarios](#Other-Scenarios)
         * [CreateFile_InvalidStreamName](#Scenario-CreateFile_InvalidStreamName)
+        * [CreateFile_InvalidColon](#Scenario-CreateFile_InvalidColon)
+        * [CreateFile_BackSlash](#Scenario-CreateFile_BackSlash)
+        * [CreateFile_FindAllFiles](#Scenario-CreateFile_FindAllFiles)
 * [Traditional Test Case Design](#Traditional-Test-Case-Design)
+    * [Test cases for CommonAlgorithm](#Test-cases-for-CommonAlgorithm)
+        * [NotingFileModified](#NotingFileModified)
+            * [Algorithm_NotingFileModified_File_LastModificationTime](#Algorithm_NotingFileModified_File_LastModificationTime)
+            * [Algorithm_NotingFileModified_Dir_LastModificationTime](#Algorithm_NotingFileModified_Dir_LastModificationTime)
+            * [Algorithm_NotingFileModified_File_LastChangeTime](#Algorithm_NotingFileModified_File_LastChangeTime)
+            * [Algorithm_NotingFileModified_Dir_LastChangeTime](#Algorithm_NotingFileModified_Dir_LastChangeTime)
+            * [Algorithm_NotingFileModified_File_LastAccessTime](#Algorithm_NotingFileModified_File_LastAccessTime)
+            * [Algorithm_NotingFileModified_Dir_LastAccessTime](#Algorithm_NotingFileModified_Dir_LastAccessTime)
+            * [Algorithm_NotingFileModified_File_Archive](#Algorithm_NotingFileModified_File_Archive)
+            * [Algorithm_NotingFileModified_Dir_Archive](#Algorithm_NotingFileModified_Dir_Archive)
+        * [NotingFileAccessed](#NotingFileAccessed)
+            * [Algorithm_NotingFileAccessed_File_LastAccessTime](#Algorithm_NotingFileAccessed_File_LastAccessTime)
+            * [Algorithm_NotingFileAccessed_Dir_LastAccessTime](#Algorithm_NotingFileAccessed_Dir_LastAccessTime)
     * [Test cases for FileInformation](#Test-cases-for-FileInformation)
         * [IsEASupported](#IsEASupported)
             * [FileInfo_Set_FileFullEaInformation_File_IsEASupported](#FileInfo_Set_FileFullEaInformation_File_IsEASupported)
@@ -72,6 +108,9 @@
         * [IsShortNameSupported](#IsShortNameSupported)
             * [FileInfo_Set_FileShortNameInfo_File_IsShortNameSupported](#FileInfo_Set_FileShortNameInfo_File_IsShortNameSupported)
             * [FileInfo_Set_FileShortNameInfo_Dir_IsShortNameSupported](#FileInfo_Set_FileShortNameInfo_Dir_IsShortNameSupported)
+        * [IsFileValidLengthInformationSupported](#IsFileValidLengthInformationSupported)
+            * [FileInfo_Set_FileValidDataLengthInfo_File_IsSupported](#FileInfo_Set_FileValidDataLengthInfo_File_IsSupported)
+            * [FileInfo_Set_FileValidDataLengthInfo_Dir_IsSupported](#FileInfo_Set_FileValidDataLengthInfo_Dir_IsSupported)
         * [IsCompressionSupported](#IsCompressionSupported)
             * [FileInfo_Query_FileCompressionInfo_File_IsCompressionSupported](#FileInfo_Query_FileCompressionInfo_File_IsCompressionSupported)
             * [FileInfo_Query_FileCompressionInfo_Dir_IsCompressionSupported](#FileInfo_Query_FileCompressionInfo_Dir_IsCompressionSupported)
@@ -93,10 +132,79 @@
             * [FileInfo_Query_FileNormalizedNameInfo_Dir](#FileInfo_Query_FileNormalizedNameInfo_Dir)
         * [FileAccessInformation](#FileAccessInformation)
             * [FileInfo_Query_FileAccessInformation_DataSuffix](#FileInfo_Query_FileAccessInformation_DataSuffix)
+        * [FileAlignmentInformation](#FileAlignmentInformation)
+            * [FileInfo_Query_FileAlignmentInformation](#FileInfo_Query_FileAlignmentInformation)
+        * [FileAlternateNameInformation](#FileAlternateNameInformation)
+            * [FileInfo_Query_FileAlternateNameInformation](#FileInfo_Query_FileAlternateNameInformation)
+        * [FileInternalInformation](#FileInternalInformation)
+            * [FileInfo_Query_FileInternalInformation](#FileInfo_Query_FileInternalInformation)
+        * [FileModeInformation](#FileModeInformation)
+            * [FileInfo_Query_FileModeInformation](#FileInfo_Query_FileModeInformation)
+        * [FilePositionInformation](#FilePositionInformation)
+            * [FileInfo_Query_FilePositionInformation](#FileInfo_Query_FilePositionInformation)
+        * [FileBasicInformation](#FileBasicInformation)
+            * [FileInfo_Set_FileBasicInformation_File_Negative](#FileInfo_Set_FileBasicInformation_File_Negative)
+            * [FileInfo_Set_FileBasicInformation_Dir_Negative](#FileInfo_Set_FileBasicInformation_Dir_Negative)
+            * [FileInfo_Set_FileBasicInformation_File_LastWriteTime](#FileInfo_Set_FileBasicInformation_File_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Dir_LastWriteTime](#FileInfo_Set_FileBasicInformation_Dir_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_File_CreationTime](#FileInfo_Set_FileBasicInformation_File_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Dir_CreationTime](#FileInfo_Set_FileBasicInformation_Dir_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_File_ChangeTime](#FileInfo_Set_FileBasicInformation_File_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Dir_ChangeTime](#FileInfo_Set_FileBasicInformation_Dir_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_File_LastAccessTime](#FileInfo_Set_FileBasicInformation_File_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Dir_LastAccessTime](#FileInfo_Set_FileBasicInformation_Dir_LastAccessTime)
+        * [CreationTime](#CreationTime)        
+            * [FileInfo_Query_FileBasicInformation_File_CreationTime](#FileInfo_Query_FileBasicInformation_File_CreationTime)
+            * [FileInfo_Query_FileBasicInformation_Dir_CreationTime](#FileInfo_Query_FileBasicInformation_Dir_CreationTime)
+            * [FileInfo_Query_FileBasicInformation_File_CreationTime_Zero](#FileInfo_Query_FileBasicInformation_File_CreationTime_Zero)
+            * [FileInfo_Query_FileBasicInformation_Dir_CreationTime_Zero](#FileInfo_Query_FileBasicInformation_Dir_CreationTime_Zero)
+            * [FileInfo_Query_FileBasicInformation_File_CreationTime_MinusTwo](#FileInfo_Query_FileBasicInformation_File_CreationTime_MinusTwo)
+            * [FileInfo_Query_FileBasicInformation_Dir_CreationTime_MinusTwo](#FileInfo_Query_FileBasicInformation_Dir_CreationTime_MinusTwo)
+            * [FileInfo_Query_FileBasicInformation_File_CreationTime_Negative](#FileInfo_Query_FileBasicInformation_File_CreationTime_Negative)
+            * [FileInfo_Query_FileBasicInformation_Dir_CreationTime_Negative](#FileInfo_Query_FileBasicInformation_Dir_CreationTime_Negative)
+            * [FileInfo_Query_FileBothDirectoryInformation_Dir_CreationTime](#FileInfo_Query_FileBothDirectoryInformation_Dir_CreationTime)
+            * [FileInfo_Query_FileFullDirectoryInformation_Dir_CreationTime](#FileInfo_Query_FileFullDirectoryInformation_Dir_CreationTime)
+            * [FileInfo_Query_FileIdGlobalTxDirectoryInformation_Dir_CreationTime](#FileInfo_Query_FileIdGlobalTxDirectoryInformation_Dir_CreationTime)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_Zero](#FileInfo_Set_FileBasicInformation_Timestamp_Zero)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_CreationTime)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_CreationTime)
+        * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo](#FileInfo_Set_FileBasicInformaiton_Timestamp_MinusTwo)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastAccessTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastAccessTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastWriteTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastWriteTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_ChangeTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_ChangeTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_CreationTime)
+            * [FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_CreationTime](#FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_CreationTime)
     * [Test cases for FileSystemInformation](#Test-cases-for-FileSystemInformation)
         * [IsObjectIdSupported](#IsObjectIdSupported)
             * [FsInfo_Query_FileFsObjectIdInformation_File_IsObjectIdSupported (BVT)](#FsInfo_Query_FileFsObjectIdInformation_File_IsObjectIdSupported-BVT)
             * [FsInfo_Query_FileFsObjectIdInformation_Dir_IsObjectIdSupported](#FsInfo_Query_FileFsObjectIdInformation_Dir_IsObjectIdSupported)
+            * [FsInfo_Query_FileFsObjectIdInformation_File_OutputBufferSize_TooSmall](#FsInfo_Query_FileFsObjectIdInformation_File_OutputBufferSize_TooSmall)
+            * [FsInfo_Query_FileFsObjectIdInformation_Dir_OutputBufferSize_TooSmall](#FsInfo_Query_FileFsObjectIdInformation_Dir_OutputBufferSize_TooSmall)
         * [IsFsSectorSizeInformationSupported](#IsFsSectorSizeInformationSupported)
             * [FsInfo_Query_FileFsSectorSizeInformation_File_OutputBufferSize (3TCs, 1BVT)](#FsInfo_Query_FileFsSectorSizeInformation_File_OutputBufferSize-3TCs-BVT)
             * [FsInfo_Query_FileFsSectorSizeInformation_Dir_OutputBufferSize (3TCs)](#FsInfo_Query_FileFsSectorSizeInformation_Dir_OutputBufferSize-3TCs)
@@ -126,7 +234,7 @@
             * [FsCtl_Set_Sparse_File_IsSparseFileSupported](#FsCtl_Set_Sparse_File_IsSparseFileSupported)
             * [FsCtl_Set_Sparse_Dir_IsSparseFileSupported](#FsCtl_Set_Sparse_Dir_IsSparseFileSupported)
         * [IsZeroDataSupported](#IsZeroDataSupported)
-            * [FsCtl_Set_ZeroData_File_IsZeroDataSupported](#FsCtl_Set_ZeroData_File_IsSetZeroDataSupported)
+            * [FsCtl_Set_ZeroData_File_IsZeroDataSupported](#FsCtl_Set_ZeroData_File_IsZeroDataSupported)
             * [FsCtl_Set_ZeroData_Dir_IsZeroDataSupported](#FsCtl_Set_ZeroData_Dir_IsZeroDataSupported)
         * [IsDuplicateExtentsToFileExSupported](#IsDuplicateExtentsToFileExSupported)
             * [BVT_FsCtl_DuplicateExtentsToFileEx_IsBasicSupported](#BVT_FsCtl_DuplicateExtentsToFileEx_IsBasicSupported)
@@ -147,6 +255,17 @@
             * [FsCtl_Set_IntegrityInformation_Dir_WriteProtected](#FsCtl_Set_IntegrityInformation_Dir_WriteProtected)
             * [FsCtl_Set_IntegrityInformation_File_ChecksumAlgorithm (2TCs)](#FsCtl_Set_IntegrityInformation_File_ChecksumAlgorithm-2TCs)
             * [FsCtl_Set_IntegrityInformation_Dir_ChecksumAlgorithm(2TCs)](#FsCtl_Set_IntegrityInformation_Dir_ChecksumAlgorithm-2TCs)
+            * [FsCtl_Set_IntegrityInformation_File_Flag_Invalid](#FsCtl_Set_IntegrityInformation_File_Flag_Invalid)
+            * [FsCtl_Set_IntegrityInformation_Dir_Flag_Invalid](#FsCtl_Set_IntegrityInformation_Dir_Flag_Invalid)
+            * [FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_None](#FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_None)
+            * [FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_None](#FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_None)
+            * [FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_Unchanged](#FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_Unchanged)
+            * [FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_Unchanged](#FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_Unchanged)
+        * [IsIntegrityInformaitonExSupported](IsIntegrityInformaitonExSupported)
+            * [FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported](#FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported)
+            * [FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported_InvalidRequest](#FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported_InvalidRequest)
+            * [FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported_InvalidRequest](#FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported_InvalidRequest)
+            * [FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported](#FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported)
         * [IsOffloadReadSupported](#IsOffloadReadSupported)
             * [FsCtl_Offload_Read_File_IsOffloadSupported (BVT)](#FsCtl_Offload_Read_File_IsOffloadSupported-BVT)
         * [IsOffloadWriteSupported](#IsOffloadWriteSupported)
@@ -165,6 +284,41 @@
         * [IsQueryFileRegionsSupported](#IsQueryFileRegionsSupported)
             * [BVT_FsCtl_Query_File_Regions](#BVT_FsCtl_Query_File_Regions)
             * [BVT_FsCtl_Query_File_Regions_WithInputData](#BVT_FsCtl_Query_File_Regions_WithInputData)
+        * [IsRefsStreamSnapshotManagementSupported](#IsRefsStreamSnapshotManagementSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Create_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Create_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_List_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_List_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Query_Deltas_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Query_Deltas_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Revert_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Revert_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Set_ShadowBTree_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Set_ShadowBTree_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Clear_ShadowBTree_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Clear_ShadowBTree_IsSupported)
+            * [BVT_FsCtl_RefsStreamSnapshotManagement_Invalid_IsSupported](#BVT_FsCtl_RefsStreamSnapshotManagement_Invalid_IsSupported)
+            * [FsCtl_RefsStreamSnapshotManagement_BufferTooSmall_OperationInputBufferLengthNotZero](#FsCtl_RefsStreamSnapshotManagement_BufferTooSmall_OperationInputBufferLengthNotZero)
+            * [FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthZero](#FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthZero)
+            * [FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthNotAligned](#FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthNotAligned)
+            * [FsCtl_RefsStreamSnapshotManagement_Create_InvalidParameter_OutputBufferSizeNotZero](#FsCtl_RefsStreamSnapshotManagement_Create_InvalidParameter_OutputBufferSizeNotZero)
+            * [FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_SnapshotNameLengthZero](#FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_SnapshotNameLengthZero)
+            * [FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_OutputBufferSizeZero](#FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_OutputBufferSizeZero)
+            * [FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_SnapshotNameLengthZero](#FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_SnapshotNameLengthZero)
+            * [FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OperationBufferLengthInvalid](#FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OperationBufferLengthInvalid)
+            * [FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OutputBufferSizeZero](#FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OutputBufferSizeZero)
+            * [FsCtl_RefsStreamSnapshotManagement_List_AccessDenied_LacksReadAttribute](#FsCtl_RefsStreamSnapshotManagement_List_AccessDenied_LacksReadAttribute)
+            * [FsCtl_RefsStreamSnapshotManagement_QueryDeltas_AccessDenied_LacksReadAttribute](#FsCtl_RefsStreamSnapshotManagement_QueryDeltas_AccessDenied_LacksReadAttribute)
+            * [FsCtl_RefsStreamSnapshotManagement_Create_AccessDenied_LacksWriteAttribute](#FsCtl_RefsStreamSnapshotManagement_Create_AccessDenied_LacksWriteAttribute)
+        * [RefsStreamSnapshotOperation_Create](#RefsStreamSnapshotOperation_Create)
+            * [BVT_FsCtl_RefsStreamSnapshotOperation_Create_Positive](#BVT_FsCtl_RefsStreamSnapshotOperation_Create_Positive)
+            * [FsCtl_RefsStreamSnapshotOperation_Create_Negative](#FsCtl_RefsStreamSnapshotOperation_Create_Negative)        
+        * [RefsStreamSnapshotOperation_QueryDeltas](#RefsStreamSnapshotOperation_QueryDeltas)
+            * [BVT_FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Positive](#BVT_FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Positive)
+            * [FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Negative](#FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Negative)
+        * [IsMarkHandleSupported](#IsMarkHandleSupported)
+            * [FsCtl_MarkHandle_File_IsSupported (4TCs)](#FsCtl_MarkHandle_File_IsSupported-4TCs)
+            * [Fsctl_MarkHandle_File_BufferedNotSupported](Fsctl_MarkHandle_File_BufferedNotSupported)
+            * [Fsctl_MarkHandle_File_RedundantMedia (4TCs)](#Fsctl_MarkHandle_File_RedundantMedia-4TCs)
+            * [FsCtl_MarkHandle_Dir_NotSupported (4TCs)](#FsCtl_MarkHandle_Dir_NotSupported-4TCs)
+        * [RefsStreamSnapshotOperation_List](#RefsStreamSnapshotOperation_List)
+            * [BVT_FsCtl_RefsStreamSnapshotOperation_List_SingleEntry](#BVT_FsCtl_RefsStreamSnapshotOperation_List_SingleEntry)
+            * [BVT_FsCtl_RefsStreamSnapshotOperation_List_MultipleEntry](#BVT_FsCtl_RefsStreamSnapshotOperation_List_MultipleEntry)
+            * [FsCtl_RefsStreamSnapshotOperation_List_NoEntry](#FsCtl_RefsStreamSnapshotOperation_List_NoEntry)
     * [Test cases for QuotaInformation](#Test-cases-for-QuotaInformation)
         * [IsQuotaInfoSupported](#IsQuotaInfoSupported)
             * [QuotaInfo_Query_QuotaInformation_IsQuotaInfoSupported](#QuotaInfo_Query_QuotaInformation_IsQuotaInfoSupported)
@@ -227,9 +381,84 @@
             * [BVT_QueryDirectory_FileIdFullDirectoryInformation](#BVT_QueryDirectory_FileIdFullDirectoryInformation)
             * [BVT_QueryDirectory_FileBothDirectoryInformation](#BVT_QueryDirectory_FileBothDirectoryInformation)
             * [BVT_QueryDirectory_FileIdBothDirectoryInformation](#BVT_QueryDirectory_FileIdBothDirectoryInformation)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_DOT_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_DOT_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_DOT_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_DOT_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_DOT_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_SpecialCase_AsteriskWildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_SpecialCase_AsteriskWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_WildCard_QuestionMark](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_WildCard_QuestionMark)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskInStringWildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskInStringWildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_STAR_WildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_STAR_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_QM_WildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_QM_WildCard)
+            * [BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_DOT_WildCard](#BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_DOT_WildCard)
+    * [Test cases for File and Directory Leasing](#Test-cases-for-File-And-Directory-Leasing)
+        * [Compare Lease Keys](#CompareLeaseKeys)
+            * [Comparing_Same_File_LeaseKeysV1](#Comparing_Same_File_LeaseKeysV1)
+            * [Comparing_Same_Directory_LeaseKeysV1](#Comparing_Same_Directory_LeaseKeysV1)
+            * [Comparing_Same_LeaseKeysV2](#Comparing_Same_LeaseKeysV2)
+            * [Compare_Zero_LeaseFlag_ParentLeaseKey](#Compare_Zero_LeaseFlag_ParentLeaseKey)
+            * [DirectoryComparing_LeaseKeysV2](#DirectoryComparing_LeaseKeysV2)
+            * [DirectoryComparing_ParentLeaseKey_ChildLeaseKey](#DirectoryComparing_ParentLeaseKey_ChildLeaseKey)
+            * [DirectoryComparing_Child_Invalid_ParentLeaseKeys](#DirectoryComparing_Child_Invalid_ParentLeaseKeys)
+    * [Test cases for File Access](#Test-cases-for-File-Access)
+        * [FileAccess_OpenExistingFile](#FileAccess_OpenExistingFile)
+            * [FileAccess_WriteReadOnlyFile](#FileAccess_WriteReadOnlyFile)
+            * [FileAccess_DeleteReadOnlyDataFile](#FileAccess_DeleteReadOnlyDataFile)
+        * [FileAccess_OpenNamedPipe](#FileAccess_OpenNamedPipe)
+            * [BVT_FileAccess_OpenNamedPipe](#BVT_FileAccess_OpenNamedPipe)
+            * [BVT_FileAccess_OpenNamedPipe_InvalidPathName](#BVT_FileAccess_OpenNamedPipe_InvalidPathName)
+            * [FileAccess_OpenNamedPipe_DesiredAccessZero](#FileAccess_OpenNamedPipe_DesiredAccessZero)
+            * [FileAccess_OpenNamedPipe_InactiveListerner](#FileAccess_OpenNamedPipe_InactiveListerner)
+            * [FileAccess_OpenNamedPipe_Inbound](#FileAccess_OpenNamedPipe_Inbound)
+            * [FileAccess_OpenNamedPipe_Outbound](#FileAccess_OpenNamedPipe_Outbound)
+            * [FileAccess_OpenNamedPipe_IsCaseInsensitive](#FileAccess_OpenNamedPipe_IsCaseInsensitive)
     * [Test cases for Other Scenarios](#Test-cases-for-Other-Scenarios)
         * [IsCreateFileSupported](#IsCreateFileSupported)
             * [CreateFile_InvalidStreamName](#CreateFile_InvalidStreamName)
+        * [CreateFile_BackSlash](#CreateFile_BackSlash)
+            * [CreateDirectory_EndWithBackSlash](#CreateDirectory_EndWithBackSlash)
+            * [CreateFile_EndWithInvalidBackSlash](#CreateFile_EndWithInvalidBackSlash)
+            * [CreateFile_WithDoubleBackSlashInMiddle](#CreateFile_WithDoubleBackSlashInMiddle)
+        * [CreateFile_InvalidColon](#CreateFile_InvalidColon)
+            * [CreateDirectory_InvalidColon](#CreateDirectory_InvalidColon)
+            * [CreateFile_InvalidColon](#CreateFile_InvalidColon)
+        * [FindAllFiles](#FindAllFiles)
+            * [CreateFile_CheckNoFilesFound](#CreateFile_CheckNoFilesFound)
+            * [CreateFile_CheckSingleFileFound](#CreateFile_CheckSingleFileFound)
+            * [CreateFile_CheckSubDirAndSingleFileFound](#CreateFile_CheckSubDirAndSingleFileFound)
+            * [CreateFile_CheckMultipleFilesFound](#CreateFile_CheckMultipleFilesFound)
 * [MBT Test Design](#MBT-Test-Design)
     * [Model Design](#Model-Design)
     * [Adapter Design](#Adapter-Design)
@@ -287,17 +516,20 @@ The following diagram shows the basic test environment for MS-FSA. The **DC01** 
 ### <a name="Traditional-Test-cases"/>Traditional Test cases
 
 Traditional Test cases are designed specific to new algorithms in Win8, ReFS file system and Alternate Data Stream.
-There are 139 test cases in total:
+There are 228 test cases in total:
 
 |  **Category** |  **Scenarios** | **Test cases (BVT)** |
 | ------------- | -------------- | -------------------- |
-| Scenarios for FileInformation | 7 | 26 (5) |
-| Scenarios for FileSystemInformation | 4 | 22 (7) |
-| Scenarios for FsControlRequest | 13 | 44 (14) |
+| Scenarios for FileInformation | 11 | 84 (49) |
+| Scenarios for FileSystemInformation | 4 | 24 (7) |
+| Scenarios for FsControlRequest | 13 | 101 (32) |
 | Scenarios for Alternate Data Stream | 9 | 41 (12) |
 | Scenarios for QuotaInformation | 1 | 2 (0) |
-| Scenarios for FileAccess | 1 | 2 (0) |
-| Other Scenarios | 1 | 1 (0) |
+| Scenarios for File And Directory Leasing | 1 | 7 (0) |
+| Scenarios for FileAccess | 2 | 9 (2) |
+| Scenarios for CommonAlgorithm | 2 | 11 (11) |
+| Scenarios for Query Directory | 1 | 51 (48) |
+| Other Scenarios | 4 | 10 (0) |
 
 ### <a name="MBT-Test-cases"/>MBT Test cases
 
@@ -323,6 +555,39 @@ There are 343 test cases in total:
 | Set SecurityInfo | 18 |
 
 ## <a name="Traditional-Test-Scenarios-Design"/>Traditional Test Scenarios Design
+
+### <a name="Scenarios-for-CommonAlgorithm"/>Scenarios for CommonAlgorithm
+
+#### <a name="Algorithm_Noting_FileModified"/>Algorithm_Noting_FileModified
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastWriteTime, LastChangeTime, LastAccessTime and Archive is updated by File System when file is modified.|
+| | Note: The **FAT32** file system doesn’t process the ChangeTime field |
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If supported, the LastWriteTime, LastChangeTime and LastAccessTime is set to current system time.|
+| | If supported, the Archive attribute is set to true.|
+| Message Sequence| CreateFile.|
+| | Modify file|
+| | Verify LastWriteTime, LastChangeTime and LastAccessTime is set to current system time|
+| | Verify Archive attribute is set to true|
+
+#### <a name="Algorithm_Noting_FileAccessed"/>Algorithm_Noting_FileAccessed
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastAccessTime is updated by File System when file is accessed.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If supported, the LastAccessTime is set to current system time.|
+| Message Sequence| CreateFile.|
+| | Read file|
+| | Verify LastAccessTime is set to current system time|
 
 ### <a name="Scenarios-for-FileInformation"/>Scenarios for FileInformation
 
@@ -456,6 +721,88 @@ There are 343 test cases in total:
 | | QueryInfo with FileInfoClass.FileAccessInformation|
 | | Verify server responses accordingly.|
 
+#### <a name="FileInfo_SetFileBasicInformationSupported"/>FileInfo_SetFileBasicInformationSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if set values for FileBasicInformation attributes supported by different file systems.|
+| | Note: The **FAT32** file system doesn’t process the ChangeTime field|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If the file system supports the attribute values, The system responds according to [MS-FSA] 2.1.5.14.2 FileBasicInformation. |
+| Message Sequence| CreateFile.|
+| | SetInfo with FileInfoClass.FileBasicInformation|
+| | QueryInfo with FileInfoClass.FileBasicInformation|
+| | Verify server responses accordingly.|
+
+#### <a name="FileInfo_CreationTime"/>FileInfo_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different File Systems.|
+| | Note: **Only** NTFS, ReFS support value -2 for timestamps|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation, FileBothDirectoryInformation, FileFullDirectoryInformation, FileIdGlobalTxDirectoryInformation|
+| | If supported, CreationTime is set to current system time when file is created.|
+| | If supported, CreationTime is never updated in response to file system calls such as read and write.|
+| Message Sequence| CreateFile.|
+| | Verify CreationTime is set to current system time|
+| | Modify file|
+| | Verify CreationTime is not changed|
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting timestamps value to 0 is handled by different File Systems.|
+| | Note: **Only** NTFS, ReFS support value -2 for timestamps|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If supported, timestamp is not changed if value is set to 0.|
+| Message Sequence| CreateFile.|
+| | Set timestamp to value 0|
+| | Verify timestamp attribute is not changed|
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting timestamps value to -1 is handled by different File Systems.|
+| | Note: **Only** NTFS, ReFS support value -2 for timestamps|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If supported, timestamp is not changed if IO operation is performed after timestamp value is set to -1|
+| Message Sequence| CreateFile.|
+| | Set timestamp to value -1|
+| | Modify file|
+| | Verify timestamp attribute is not changed|
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting timestamps value  to -2 is handled by different File Systems.|
+| | Note: **Only** NTFS, ReFS support value -2 for timestamps|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FileInfoClass: FileBasicInformation|
+| | If supported, timestamp is set to current time if IO operation is performed after timestamp value is set to -1 and subsquently -2 |
+| Message Sequence| CreateFile.|
+| | Set timestamp to value -1|
+| | Modify file|
+| | Verify timestamp attribute is not changed|
+| | Set timestamp to value -2|
+| | Modify file|
+| | Verify timestamp attribute is set to current time|
 ### <a name="Scenarios-for-FileSystemInformation"/>Scenarios for FileSystemInformation
 
 #### <a name="FsInfo_FileFsAttributeInformation"/>FsInfo_FileFsAttributeInformation
@@ -539,6 +886,57 @@ There are 343 test cases in total:
 
 ### <a name="Scenarios-for-FsControlRequest"/>Scenarios for FsControlRequest
 
+#### <a name="FsCtl_Create_Or_Get_ObjectId"/>FsCtl_Create_Or_Get_ObjectId
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **FSCTL_CREATE_OR_GET_OBJECT_ID**|
+| | Note: Only **NTFS** supports create or get object id.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_CREATE_OR_GET_OBJECT_ID|
+| | Supporting test:|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | The operation MUST be failed with **STATUS_INVALID_PARAMETER** if:|
+| | OutputBufferSize is less than sizeof(**FILE_OBJECTID_BUFFER**).|
+| | Operation test:|
+| | Upon successful completion of the operation, server returns **STATUS_SUCCESS**.|
+| | Verify OutputBuffer.ObjectId is set to non-empty Guid.|
+| | Verify OutputBuffer.BirthVolumeId is set to non-empty Guid.|
+| | Verify OutputBuffer.BirthObjectId is set to non-empty Guid.|
+| | Verify OutputBuffer.DomainId is set to empty Guid.|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_CREATE_OR_GET_OBJECT_ID**.|
+| | Verify server response is correct.|
+
+#### <a name="FsCtl_Get_ObjectId"/>FsCtl_Get_ObjectId
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **FSCTL_GET_OBJECT_ID**|
+| | Note: Only **NTFS** supports get object id.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_GET_OBJECT_ID|
+| | Supporting test:|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | The operation MUST be failed with **STATUS_INVALID_PARAMETER** if:|
+| | OutputBufferSize is less than sizeof(**FILE_OBJECTID_BUFFER**).|
+| | Operation test:|
+| | Upon successful completion of the operation, server returns **STATUS_SUCCESS**.|
+| | Verify OutputBuffer.ObjectId is set to non-empty Guid.|
+| | Verify OutputBuffer.BirthVolumeId is set to non-empty Guid.|
+| | Verify OutputBuffer.BirthObjectId is set to non-empty Guid.|
+| | Verify OutputBuffer.DomainId is set to empty Guid.|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_CREATE_OR_GET_OBJECT_ID** to ensure the Object ID is set.|
+| | FSCTL request with **FSCTL_GET_OBJECT_ID**.|
+| | Verify server response is correct.|
+
 #### <a name="FsCtl_Get_IntegrityInformation"/>FsCtl_Get_IntegrityInformation
 
 | &#32;| &#32; |
@@ -593,6 +991,33 @@ There are 343 test cases in total:
 | | Verify ByteCount == sizeof(**FSCTL_SET_INTEGRITY_INFORMATION_BUFFER**).|
 | Message Sequence| CreateFile.|
 | | FSCTL request with **FSCTL_SET_INTEGRITY_INFORMATION**.|
+| | Verify server responses accordingly to input parameters.|
+
+#### <a name="FsCtl_Set_IntegrityInformation_Ex"/>FsCtl_Set_IntegrityInformation_Ex
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **FSCTL_SET_INTEGRITY_INFORMATION_EX**|
+| | Test environment: NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_SET_INTEGRITY_INFORMATION_EX|
+| | Supporting test:|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | The operation MUST be failed with **STATUS_INVALID_PARAMETER** under any of the following conditions:|
+| | OutputBufferSize is less than sizeof(**FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER**).|
+| | Open.Stream.StreamType is not DirectoryStream or FileStream.|
+| | Open.File.FileAttributes.FILE_ATTRIBUTE_SYSTEM is TRUE.|
+| | Operation test:|
+| | Upon successful completion of the operation, server returns **STATUS_SUCCESS**.|
+| | Verify OutputBuffer.CheckSumAlgorithm is set correctly.|
+| | Verify OutputBuffer.ChecksumChunkShift is set correctly.|
+| | Verify OutputBuffer.ClusterShift is set correctly.|
+| | Verify OutputBuffer.Flags for **CHECKSUM_ENFORCEMENT_OFF** is set correctly.|
+| | Verify ByteCount == sizeof(**FSCTL_SET_INTEGRITY_INFORMATION_EX_BUFFER**).|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_SET_INTEGRITY_INFORMATION_EX**.|
 | | Verify server responses accordingly to input parameters.|
 
 #### <a name="FsCtl_Offload_Read"/>FsCtl_Offload_Read
@@ -790,6 +1215,107 @@ There are 343 test cases in total:
 | | FSCTL request with **FSCTL_SET_COMPRESSION**.|
 | | Verify server responses correctly.|
 
+#### <a name="FsCtl_RefsStreamSnapshotManagement"/>FsCtl_RefsStreamSnapshotManagement
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT**|
+| | Note: Support for this operation is optional.|
+| | Test environment: ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| | Supporting test:|
+| | If not supported by operating system, failed with **STATUS_NOT_SUPPORTED**.|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | Test with different REFS_STREAM_SNAPSHOT_OPERATION parameter, verify server returns status code accordingly: **STATUS_NOT_SUPPORTED**, **STATUS_INVALID_DEVICE_REQUEST**, **STATUS_INVALID_PARAMETER**, **STATUS_BUFFER_TOO_SMALL**, **STATUS_ACCESS_DENIED**, **STATUS_SUCCESS**.|
+| | Operation test:|
+| | Upon successful completion of the operation, returns **STATUS_SUCCESS**.|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT**.|
+| | Verify server responds according to input parameters.|
+
+#### <a name="FsCtl_RefsStreamSnapshotOperationCreate"/>FsCtl_RefsStreamSnapshotOperationCreate
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE**|
+| | Note: Support for this operation is optional.|
+| | Test environment: ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE|
+| | Supporting test:|
+| | If not supported by operating system, failed with **STATUS_NOT_SUPPORTED**.|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | Test with single snapshot created and duplicate snapshot name created.|
+| | Operation test:|
+| | Upon successful completion of the operation, returns **STATUS_SUCCESS**.|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE**.|
+| | Verify snapshot is created.|
+
+#### <a name="FsCtl_RefsStreamSnapshotOperationQueryDeltas"/>FsCtl_RefsStreamSnapshotOperationQueryDeltas
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS**|
+| | Note: Support for this operation is optional.|
+| | Test environment: ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | FsCtl: REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS|
+| | Supporting test:|
+| | If not supported by operating system, failed with **STATUS_NOT_SUPPORTED**.|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | Test with modified file and unmodified file.|
+| | Operation test:|
+| | Upon successful completion of the operation, returns **STATUS_SUCCESS**.|
+| Message Sequence| CreateFile and fill with random data.|
+| | FSCTL request with **REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS**.|
+| | Verify that modification extents are returned.|
+
+#### <a name="FsCtl_Mark_Handle"/>FsCtl_Mark_Handle
+	
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if **FSCTL_MARK_HANDLE** is supported.|
+| | Note: This is implemented by the **ReFS** file system and **NTFS** file system.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile, DirectoryFile|
+| | Test coverage:|
+| | FsCtl: FSCTL_MARK_HANDLE|
+| | Input parameter test: |
+| | Test with different parameter, verify server returns different status code accordingly: **STATUS_DIRECTORY_NOT_SUPPORTED**, **STATUS_INVALID_DEVICE_REQUEST**, **STATUS_NOT_REDUNDANT_STORAGE**, **STATUS_INVALID_PARAMETER**, **STATUS_RESIDENT_FILE_NOT_SUPPORTED**, **STATUS_SUCCESS**.|
+| Message Sequence| CreateFile.|
+| | FSCTL request with **FSCTL_MARK_HANDLE**.|
+| | Verify server response is correct.|
+
+#### <a name="FsCtl_RefsStreamSnapshotOperationList"/>FsCtl_RefsStreamSnapshotOperationList
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test FSCTL request: **REFS_STREAM_SNAPSHOT_OPERATION_LIST**|
+| | Note: Support for this operation is optional.|
+| | Test environment: ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | FsCtl: REFS_STREAM_SNAPSHOT_OPERATION_LIST|
+| | Supporting test:|
+| | If not supported by operating system, failed with **STATUS_NOT_SUPPORTED**.|
+| | If not implemented, failed with **STATUS_INVALID_DEVICE_REQUEST**.|
+| | Input parameter test:|
+| | Test with multiple snapshot created. Verify that single entry, multiple entry and no entry returned appropriately.|
+| | Operation test:|
+| | Upon successful completion of the operation, returns **STATUS_SUCCESS**.|
+| Message Sequence| CreateFile |
+| | FSCTL request with **FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE**.|
+| | FSCTL request with **REFS_STREAM_SNAPSHOT_OPERATION_LIST**.|
+| | Verify that correct number of entry is returned.|
+
 ### <a name="Scenarios-for-QuotaInformation"/>Scenarios for QuotaInformation
 
 #### <a name="QuotaInfo_IsQuotaInfoSupported"/>QuotaInfo_IsQuotaInfoSupported
@@ -809,30 +1335,28 @@ There are 343 test cases in total:
 
 ### <a name="Scenarios-for-FileAccess"/>Scenarios for FileAccess
 
-#### <a name="FileAccess_WriteReadOnlyFile"/>FileAccess_WriteReadOnlyFile
+#### <a name="FileAccess_OpenExistingFile"/>FileAccess_OpenExistingFile
 
 | &#32;| &#32; |
 | -------------| ------------- |
-| Description| To write a read only file and check the returned status code.|
+| Description| To write or delete a read only file and check the returned status code.|
 | | Test environment: FAT32, NTFS, ReFS|
 | | Test object: DataFile|
 | | Test coverage:|
-| | If file type is DataFile, file attributes is read only and desired access is write data or append data, server will return STATUS_ACCESS_DENIED |
 | Message Sequence| Create readonly data file.|
-| | Write the read only data file|
+| | Write or delete the read only data file|
 | | Verify server responses accordingly.|
 
-#### <a name="FileAccess_DeleteReadOnlyDataFile"/>FileAccess_DeleteReadOnlyDataFile
+#### <a name="FileAccess_OpenNamedPipe"/>FileAccess_OpenNamedPipe
 
 | &#32;| &#32; |
 | -------------| ------------- |
-| Description| To delete a read only data file and check the returned status code.|
+| Description| Open a named pipe and check the returned status code.|
 | | Test environment: FAT32, NTFS, ReFS|
-| | Test object: DataFile|
+| | Test object: NamedPipe|
 | | Test coverage:|
-| | If file attributes is read only and create options is  FILE_DELETE_ON_CLOSE, server will return STATUS_CANNOT_DELETE. |
-| Message Sequence| Create readonly data file.|
-| | Delete the read only data file|
+| Message Sequence| Create named pipe.|
+| | Open named pipe|
 | | Verify server responses accordingly.|
 
 ### <a name="Scenarios-for-Alternate-Data-Stream"/>Scenarios for Alternate Data Stream
@@ -1022,8 +1546,154 @@ There are 343 test cases in total:
 | Message Sequence| Create a directory file with a invalid stream name.|
 | | Verify server return with **STATUS_INVALID_PARAMETER** for NTFS and ReFS, and **STATUS_OBJECT_NAME_INVALID** for other file systems.|
 
+#### <a name="Scenario-CreateFile_InvalidColon"/>CreateFile_InvalidColon
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test create a directory or data file with invalid colon.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DirectoryFile, DataFile|
+| Message Sequence| Create a directory or data file with a invalid colon contained in file name.|
+| | Verify server return with **STATUS_OBJECT_NAME_INVALID** for supported file systems.|
+
+#### <a name="Scenario-CreateFile_BackSlash"/>CreateFile_BackSlash
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test create a directory or data file with a invalid back slash.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DirectoryFile, DataFile|
+| Message Sequence| Create a directory or data file with back slash contained in file name.|
+| | Verify server response for supported file systems.|
+
+#### <a name="Scenario-CreateFile_FindAllFiles"/>CreateFile_FindAllFiles
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test finding all files under a directory|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DirectoryFile, DataFile|
+| Message Sequence| Create a directory|
+| | Create file(s) under the directory|
+| | Query the directory|
+| | Verify that all files existing in the directory are returned|
+
 ## <a name="Traditional-Test-Case-Design"/>Traditional Test Case Design
 
+### <a name="Test-cases-for-CommonAlgorithm"/>Test cases for CommonAlgorithm
+
+#### <a name="NotingFileModified"/>NotingFileModified
+
+##### <a name="Algorithm_NotingFileModified_File_LastModificationTime"/>Algorithm_NotingFileModified_File_LastModificationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastWriteTime is updated by different file systems when file is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write to file|
+| | Verify LastWriteTimeBeforeFileModified is less than LastWriteTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_Dir_LastModificationTime"/>Algorithm_NotingFileModified_Dir_LastModificationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastWriteTime is updated by different file systems when directory is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | Create file into directory|
+| | Verify LastWriteTimeBeforeFileModified is less than LastWriteTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_File_LastChangeTime"/>Algorithm_NotingFileModified_File_LastChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastChangeTime is updated by different file systems when file is modified.|
+| | Note: the **FAT32** file system doesn’t process the ChangeTime field|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write to file|
+| | Verify LastChangeTimeBeforeFileModified is less than LastChangeTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_Dir_LastChangeTime"/>Algorithm_NotingFileModified_Dir_LastChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastChangeTime is updated by different file systems when directory is modified.|
+| | Note: the **FAT32** file system doesn’t process the ChangeTime field|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | Create file into directory|
+| | Verify LastChangeTimeBeforeFileModified is less than LastChangeTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_File_LastAccessTime"/>Algorithm_NotingFileModified_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastAccessTime is updated by different file systems when file is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write data into file|
+| | Verify LastAccessTimeBeforeFileModified is less than LastAccessTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_Dir_LastAccessTime"/>Algorithm_NotingFileModified_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastAccessTime is updated by different file systems when directory is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | Create file into directory|
+| | Verify LastAccessTimeBeforeFileModified is less than LastAccessTimeAfterFileModified|
+
+##### <a name="Algorithm_NotingFileModified_File_Archive"/>Algorithm_NotingFileModified_File_Archive
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if Archive is updated by different file systems when file is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write to file|
+| | Verify Archive is true|
+
+##### <a name="Algorithm_NotingFileModified_Dir_Archive"/>Algorithm_NotingFileModified_Dir_Archive
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if Archive is updated by different file systems when directory is modified.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | Create file into directory|
+| | Verify Archive is true|
+
+
+#### <a name="NotingFileAccessed"/>NotingFileAccessed
+
+##### <a name="Algorithm_NotingFileAccessed_File_LastAccessTime"/>Algorithm_NotingFileAccessed_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastAccessTime is updated by different file systems when file is read.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write to file|
+| | Query FileBasicInformation and store LastAccessTimeBeforeFileAccessed|
+| | Read file|
+| | Query FileBasicInformation and store LastAccessTimeAfterFileAccessed|
+| | Verify LastAccessTimeBeforeFileAccessed is less than LastAccessTimeAfterFileAccessed|
+
+##### <a name="Algorithm_NotingFileAccessed_Dir_LastAccessTime"/>Algorithm_NotingFileAccessed_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if LastAccessTime is updated by different file systems when directory is read.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | Write files in directory|
+| | Query FileBasicInformation and store LastAccessTimeBeforeFileAccessed|
+| | Query files in directory|
+| | Query FileBasicInformation and store LastAccessTimeAfterFileAccessed|
+| | Verify LastAccessTimeBeforeFileModified is less than LastAccessTimeAfterFileAccessed|
 ### <a name="Test-cases-for-FileInformation"/>Test cases for FileInformation
 
 #### <a name="IsEASupported"/>IsEASupported
@@ -1261,6 +1931,29 @@ There are 343 test cases in total:
 | | } Else {|
 | | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
 | | }|
+
+#### <a name="IsFileValidLengthInformationSupported"/>IsFileValidLengthInformationSupported
+
+##### <a name="FileInfo_Set_FileValidDataLengthInfo_File_IsSupported"/>FileInfo_Set_FileValidDataLengthInfo_File_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if valid data length supported for different file system.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | Write data to File|
+| | SetInfo with FileInfoClass.FileValidDataLengthInformation|
+| | Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+
+##### <a name="FileInfo_Set_FileValidDataLengthInfo_Dir_IsSupported"/>FileInfo_Set_FileValidDataLengthInfo_Dir_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if valid data length supported for different file system.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | SetInfo with FileInfoClass.FileValidDataLengthInformation|
+| | Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
 
 #### <a name="IsCompressionSupported"/>IsCompressionSupported
 
@@ -1564,6 +2257,723 @@ There are 343 test cases in total:
 | | QueryInfo with FileInfoClass.FileAccessInformation|
 | | Verify server responses accordingly.|
 
+#### <a name="FileAlignmentInformation"/>FileAlignmentInformation
+
+##### <a name="FileInfo_Query_FileAlignmentInformation"/>FileInfo_Query_FileAlignmentInformation
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| The test case is used to query the buffer alignment required by the underlying device.|
+| Message Sequence| CreateFile with normal file name.|
+| | QueryInfo with FileInfoClass.FileAlignmentInformation|
+| | Verify server returned status and returned AlignmentRequirement and bytecount accordingly.|
+
+#### <a name="FileAlternateNameInformation"/>FileAlternateNameInformation
+
+##### <a name="FileInfo_Query_FileAlternateNameInformation"/>FileInfo_Query_FileAlternateNameInformation
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if SUT (NTFS) supports the alternate name and then query file alternate name info.|
+| Message Sequence| CreateFile with file name not compliant with restrictions for file names under MS-DOS and 16-bit Window (logger than 8).|
+| | QueryInfo with FileInfoClass.FileAlternateNameInformation|
+| | Verify server returned status and altername accordingly.|
+
+#### <a name="FileInternalInformation"/>FileInternalInformation
+
+##### <a name="FileInfo_Query_FileInternalInformation"/>FileInfo_Query_FileInternalInformation
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test is used to query the file system's 8-byte file reference number for a file.|
+| Message Sequence| CreateFile with normal file name.|
+| | QueryInfo with FileInfoClass.FileInternalInformation|
+| | Verify server returned status accordingly.|
+
+#### <a name="FileModeInformation"/>FileModeInformation
+
+##### <a name="FileInfo_Query_FileModeInformation"/>FileInfo_Query_FileModeInformation
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| The case is used to query the mode of the file.|
+| Message Sequence| CreateFile with normal file name and mode NO_INTERMEDIATE_BUFFERING, WRITE_THROUGH.|
+| | QueryInfo with FileInfoClass.FileModeInformation|
+| | Verify server returned status and verify the mode of FileModeInformation accordingly.|
+
+#### <a name="FilePositionInformation"/>FilePositionInformation
+
+##### <a name="FileInfo_Query_FilePositionInformation"/>FileInfo_Query_FilePositionInformation
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| The case is used to query the position of the file pointer within a file.|
+| Message Sequence| CreateFile with normal file name.|
+| | SetFilePositionInfo to file on server and verify the return value. |
+| | QueryInfo with FileInfoClass.FilePositionInformation|
+| |  Verify server returned satus.|
+
+#### <a name="FileBasicInformation"/>FileBasicInformation
+
+##### <a name="FileInfo_Set_FileBasicInformation_File_Negative"/>FileInfo_Set_FileBasicInformation_File_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting invalid values for file basic information attributes are handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where InputBufferSize less than sizeOf(FILE_BASIC_INFORMATION) |
+| | Verify status returned is **STATUS_INFO_LENGTH_MISMATCH** |
+| | SetInfo with FileInfoClass.FileBasicInformation where **InputBuffer.FileAttributes.FILE_ATTRIBUTE_DIRECTORY** is TRUE |
+| | Verify status returned is **STATUS_INVALID_PARAMETER** |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Dir_Negative"/>FileInfo_Set_FileBasicInformation_Dir_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting invalid values for file basic information attributes are handled by different file systems for directory |
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where InputBufferSize less than sizeOf(FILE_BASIC_INFORMATION) |
+| | Verify status returned should be **STATUS_INFO_LENGTH_MISMATCH** |
+| | SetInfo with FileInfoClass.FileBasicInformation where **InputBuffer.FileAttributes.FILE_ATTRIBUTE_TEMPORARY** is TRUE |
+| | Verify status returned should be **STATUS_INVALID_PARAMETER** |
+
+##### <a name="FileInfo_Set_FileBasicInformation_File_LastWriteTime"/>FileInfo_Set_FileBasicInformation_File_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting LastWriteTime with FileBasicInformation are supported by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where LastWriteTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for LastWriteTime|
+| | Verify returned values for LastWriteTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_Dir_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Dir_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting LastWriteTime with FileBasicInformation are supported by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where LastWriteTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for LastWriteTime|
+| | Verify returned values for LastWriteTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_File_CreationTime"/>FileInfo_Set_FileBasicInformation_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting CreationTime with FileBasicInformation are supported by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where CreationTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for CreationTime|
+| | Verify returned values for CreationTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_Dir_CreationTime"/>FileInfo_Set_FileBasicInformation_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting CreationTime with FileBasicInformation are supported by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where CreationTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for CreationTime|
+| | Verify returned values for CreationTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_File_ChangeTime"/>FileInfo_Set_FileBasicInformation_File_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting ChangeTime with FileBasicInformation are supported by different file systems for data file|
+| | Note: The **FAT32** file system doesn’t process the ChangeTime field|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where ChangeTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for ChangeTime|
+| | Verify returned values for ChangeTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_Dir_ChangeTime"/>FileInfo_Set_FileBasicInformation_Dir_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting ChangeTime with FileBasicInformation are supported by different file systems for directory file|
+| | Note: The **FAT32** file system doesn’t process the ChangeTime field|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where ChangeTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for ChangeTime|
+| | Verify returned values for ChangeTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_File_LastAccessTime"/>FileInfo_Set_FileBasicInformation_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting LastAccessTime with FileBasicInformation are supported by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where LastAccessTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for LastAccessTime|
+| | Verify returned values for LastAccessTime matches set values|
+
+##### <a name="FileInfo_Set_FileBasicInformation_Dir_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description|  To test if setting LastAccessTime with FileBasicInformation are supported by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | SetInfo with FileInfoClass.FileBasicInformation where LastAccessTime is set to valid timestamp|
+| | QueryInfo with FileInfoClass.FileBasicInformation for LastAccessTime|
+| | Verify returned values for LastAccessTime matches set values|
+
+#### <a name="CreationTime"/>CreationTime
+
+##### <a name="FileInfo_Query_FileBasicInformation_File_CreationTime"/>FileInfo_Query_FileBasicInformation_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for data file using FileBasicInformation|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_Dir_CreationTime"/>FileInfo_Query_FileBasicInformation_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file using FileBasicInformation|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_File_CreationTime_Zero"/>FileInfo_Query_FileBasicInformation_File_CreationTime_Zero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for data file when CreationTime is set to 0|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to 0 |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_Dir_CreationTime_Zero"/>FileInfo_Query_FileBasicInformation_Dir_CreationTime_Zero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file when CreationTime is set to 0|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Set CreationTime to 0 |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_File_CreationTime_MinusTwo"/>FileInfo_Query_FileBasicInformation_File_CreationTime_MinusTwo
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for data file when CreationTime is set to -2|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+| | Set CreationTime to -2 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_Dir_CreationTime_MinusTwo"/>FileInfo_Query_FileBasicInformation_Dir_CreationTime_MinusTwo
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file when CreationTime is set to -2|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+| | Set CreationTime to -2 |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileBasicInformation_File_CreationTime_Negative"/>FileInfo_Query_FileBasicInformation_File_CreationTime_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime value less than -2 is handled by different file systems for data file using FileBasicInformation|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Set CreationTime to -3 |
+| | Verify status returned should be **STATUS_INVALID_PARAMETER** |
+
+##### <a name="FileInfo_Query_FileBasicInformation_Dir_CreationTime_Negative"/>FileInfo_Query_FileBasicInformation_Dir_CreationTime_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime value less than -2 is handled by different file systems for directory using FileBasicInformation|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Set CreationTime to -3 |
+| | Verify status returned should be **STATUS_INVALID_PARAMETER** |
+
+##### <a name="FileInfo_Query_FileBothDirectoryInformation_Dir_CreationTime"/>FileInfo_Query_FileBothDirectoryInformation_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file using FileBothDirectoryInformation|
+| | File information class: FileBothDirectoryInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileFullDirectoryInformation_Dir_CreationTime"/>FileInfo_Query_FileFullDirectoryInformation_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file using FileFullDirectoryInformation|
+| | File information class: FileFullDirectoryInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Query_FileIdGlobalTxDirectoryInformation_Dir_CreationTime"/>FileInfo_Query_FileIdGlobalTxDirectoryInformation_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if CreationTime is handled by different file systems for directory file using FileIdGlobalTxDirectoryInformation|
+| | File information class: FileIdGlobalTxDirectoryInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Create file into directory |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to 0 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to 0 |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to 0 is handled by different file systems for directory|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to 0 |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to 0 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to 0 |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to 0 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to 0 |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value to 0 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastAccessTime |
+| | Set LastAccessTime to 0 |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value to 0 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query LastAccessTime |
+| | Set LastAccessTime to 0 |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to 0 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to 0 |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Zero_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to 0 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Set CreationTime to 0 |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to -1 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to -1 |
+| | Write to file |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to -1 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to -1 |
+| | Write to file |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to -1 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to -1 |
+| | Write to file |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to -1 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to -1 |
+| | Write to file |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value to -1 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastAccessTime |
+| | Set LastAccessTime to -1 |
+| | Write to file |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value to -1 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query LastAccessTime |
+| | Set LastAccessTime to -1 |
+| | Write to file |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to -1 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusOne_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to -1 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+#### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to -1 |
+| | Write to file |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+| | Set ChangeTime to -2 |
+| | Write to file |
+| | Query ChangeTime |
+| | Verify ChangeTime was updated to current time |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value to -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query ChangeTime |
+| | Set ChangeTime to -1 |
+| | Write to AlternativeDataStream |
+| | Query ChangeTime |
+| | Verify ChangeTime was not changed |
+| | Set ChangeTime to -2 |
+| | Write to AlternativeDataStream |
+| | Query ChangeTime |
+| | Verify ChangeTime was updated to current time |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to -1 |
+| | Write to file |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+| | Set LastWriteTime to -2 |
+| | Write to file |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was updated to current time |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value to -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Query LastWriteTime |
+| | Set LastWriteTime to -1 |
+| | Write to AlternateDataStream |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was not changed |
+| | Set LastWriteTime to -2 |
+| | Write to AlternateDataStream |
+| | Query LastWriteTime |
+| | Verify LastWriteTime was updated to current time |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value to -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query LastAccessTime |
+| | Set LastAccessTime to -1 |
+| | Write to file |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was not changed |
+| | Set LastAccessTime to -2 |
+| | Write to file |
+| | Query LastAccessTime |
+| | Verify LastAccessTime was updated to current time |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+| | Set CreationTime to -2 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed  |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_MinusTwo_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value to -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Query CreationTime |
+| | Set CreationTime to -1 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+| | Set CreationTime to -2 |
+| | Write to file |
+| | Query CreationTime |
+| | Verify CreationTime was not changed |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value less than -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Set LastAccessTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastAccessTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastAccessTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value less than -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Set LastAccessTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastWriteTime value less than -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Set LastWriteTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastWriteTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_LastWriteTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting LastAccessTime value less than -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Set LastWriteTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value less than -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Set ChangeTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_ChangeTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_ChangeTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting ChangeTime value less than -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Set ChangeTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_File_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value less than -2 is handled by different file systems for data file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DataFile).|
+| | Set CreationTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
+##### <a name="FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_CreationTime"/>FileInfo_Set_FileBasicInformation_Timestamp_Negative_Dir_CreationTime
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if setting CreationTime value less than -2 is handled by different file systems for directory file|
+| | File information class: FileBasicInformation|
+| Message Sequence| CreateFile (DirectoryFile).|
+| | Set CreationTime to -3 |
+| | Verify STATUS_INVALID_PARAMETER is returned |
+
 ### <a name="Test-cases-for-FileSystemInformation">Test cases for FileSystemInformation
 
 #### <a name="IsObjectIdSupported"/>IsObjectIdSupported
@@ -1605,6 +3015,34 @@ There are 343 test cases in total:
 | | } Else {|
 | | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
 | | }|
+
+##### <a name="FsInfo_Query_FileFsObjectIdInformation_File_OutputBufferSize_TooSmall"/>FsInfo_Query_FileFsObjectIdInformation_File_OutputBufferSize_TooSmall
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test the response if object id is supported and the output buffer is set too small.|
+| | Note: **ReFS** does not support object IDs.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Parameter combination|
+| | Parameter&nbsp;&#124;&nbsp;Expected Result|
+| | OutputBufferSize < sizeof(FILE_FS_OBJECT_ID_INFORMATION)&nbsp;&#124;&nbsp;STATUS_INFO_LENGTH_MISMATCH|
+| Message Sequence| CreateFile (DataFile)|
+| | QueryInfo with FsInfoClass.FileFsObjectIdInformation and OutputBufferSize < sizeof(FILE_FS_OBJECT_ID_INFORMATION)|
+| | Assert.AreEqual(**STATUS_INFO_LENGTH_MISMATCH**, ActualResult);|
+
+##### <a name="FsInfo_Query_FileFsObjectIdInformation_Dir_OutputBufferSize_TooSmall"/>FsInfo_Query_FileFsObjectIdInformation_Dir_OutputBufferSize_TooSmall
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test the response if object id is supported and the output buffer is set too small.|
+| | Note: ReFS does not support object IDs.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Parameter combination|
+| | Parameter&nbsp;&#124;&nbsp;Expected Result|
+| | OutputBufferSize < sizeof(FILE_FS_OBJECT_ID_INFORMATION)&nbsp;&#124;&nbsp;STATUS_INFO_LENGTH_MISMATCH|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | QueryInfo with FsInfoClass.FileFsObjectIdInformation and OutputBufferSize < sizeof(FILE_FS_OBJECT_ID_INFORMATION)|
+| | Assert.AreEqual(**STATUS_INFO_LENGTH_MISMATCH**, ActualResult);|
 
 #### <a name="IsFsSectorSizeInformationSupported"/>IsFsSectorSizeInformationSupported
 
@@ -2513,6 +3951,165 @@ There are 343 test cases in total:
 | | FSCTL request with FSCTL_GET_INTEGRITY_INFORMATION|
 | | Assert.AreEqual(**CHECKSUM_TYPE_CRC64**, OutputBuffer.CheckSumAlgorithm);|
 
+##### <a name="FsCtl_Set_IntegrityInformation_File_Flag_Invalid"/>FsCtl_Set_IntegrityInformation_File_Flag_Invalid
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_File_Flag_Invalid**|
+| Description| Set integrity information with invalid Flag value, check if server responds correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with InputBuffer.Flags set to invalid value|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+##### <a name="FsCtl_Set_IntegrityInformation_Dir_Flag_Invalid"/>FsCtl_Set_IntegrityInformation_Dir_Flag_Invalid
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_Dir_Flag_Invalid**|
+| Description| Set integrity information with invalid Flag value, check if server responds correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with InputBuffer.Flags set to invalid value|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+##### <a name="FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_None"/>FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_None
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_None**|
+| Description| Send FSCTL_SET_INTEGRITY_INFORMATION request to a file with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF, check if server responses correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| | To cover CHECKSUM_TYPE_NONE and FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| Message Sequence| CreateFile (DataFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+##### <a name="FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_None"/>FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_None
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_None**|
+| Description| Send FSCTL_SET_INTEGRITY_INFORMATION request to a directory with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF, check if server responses correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| | To cover CHECKSUM_TYPE_NONE and FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+##### <a name="FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_Unchanged"/>FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_Unchanged
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_File_CheckSumEnforcement_CheckSumType_Unchanged**|
+| Description| Send FSCTL_SET_INTEGRITY_INFORMATION request to a file with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF, check if server responses correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| | To cover CHECKSUM_TYPE_UNCHANGED and FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| Message Sequence| CreateFile (DataFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with ChecksumAlgorithm as CHECKSUM_TYPE_UNCHANGED and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+##### <a name="FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_Unchanged"/>FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_Unchanged
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case|  **FsCtl_Set_IntegrityInformation_Dir_CheckSumEnforcement_CheckSumType_Unchanged**|
+| Description| Send FSCTL_SET_INTEGRITY_INFORMATION request to a directory with ChecksumAlgorithm as CHECKSUM_TYPE_NONE and Flags FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF, check if server responses correctly.|
+| | Note: Only **ReFS** supports integrity|
+| | Test environment: FAT32, NTFS, ReFS|
+| | To cover CHECKSUM_TYPE_UNCHANGED and FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| Message Sequence| CreateFile (DirectoryFile)|
+| | FSCTL request FSCTL_SET_INTEGRITY_INFORMATION with ChecksumAlgorithm as CHECKSUM_TYPE_UNCHANGED and Flags as FSCTL_INTEGRITY_FLAG_CHECKSUM_ENFORCEMENT_OFF|
+| | If (IsIntegritySupported == False) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } |
+
+#### <a name="IsIntegrityInformationExSupported"/>IsSIntegrityInformationExSupported 
+
+##### <a name="FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported"/>FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test  if FSCTL_SET_INTEGRITY_INFORMATION_Ex is supported.|
+| | Test environment: NTFS, ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | The only data item this message returns is a status code, as specified in section 2.2. Upon success, 
+the status code returned by the function that processes this FSCTL is STATUS_SUCCESS. |
+| Message Sequence| CreateFile(DataFile)|
+| | Set Integrity Info|
+| | Verify server responses accordingly.|
+
+##### <a name="FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported_InvalidRequest"/>FsCtl_Set_IntegrityInformation_Ex_File_IsIntegritySupported_InvalidRequest
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test parameter check for invalid parameters.|
+| | Test environment: NTFS, ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | If the input buffer length is less than the size, in bytes, of the FSCTL_SET_INTEGRITY_INFORMATION_BUFFER_EX element;
+the handle is not to a file or directory; or Version is not equal to 1 return STATUS_INVALID_PARAMETER.|
+| Message Sequence| CreateFile(DataFile)|
+| | Set Integrity Info|
+| | Verify server responses accordingly.|
+
+##### <a name="FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported"/>FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test  if FSCTL_SET_INTEGRITY_INFORMATION_Ex is supported.|
+| | Test environment: NTFS, ReFS|
+| | Test object: DirectoryFile|
+| | Test coverage:|
+| | The only data item this message returns is a status code, as specified in section 2.2. Upon success, 
+the status code returned by the function that processes this FSCTL is STATUS_SUCCESS. |
+| Message Sequence| CreateFile(DirectoryFile)|
+| | Set Integrity Info|
+| | Verify server responses accordingly.|
+
+
+##### <a name="FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported_InvalidRequest"/>FsCtl_Set_IntegrityInformation_Ex_DirectoryFile_IsIntegritySupported_InvalidRequest
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test parameter check for invalid parameters.|
+| | Test environment: NTFS, ReFS|
+| | Test object: DirectoryFile |
+| | Test coverage:|
+| | The only data item this message returns is a status code, as specified in section 2.2. Upon success, 
+the status code returned by the function that processes this FSCTL is STATUS_SUCCESS. |
+| Message Sequence| CreateFile(DirectoryFile)|
+| | Set Integrity Info|
+| | Verify server responses accordingly.|
+
 #### <a name="IsOffloadReadSupported"/>IsOffloadReadSupported
 
 ##### <a name="FsCtl_Offload_Read_File_IsOffloadSupported-BVT"/>FsCtl_Offload_Read_File_IsOffloadSupported (BVT)
@@ -2744,6 +4341,584 @@ There are 343 test cases in total:
 | | 4. Length of the FILE_REGION_INFO data element should be the size we wrote to the file.|
 | | 5. FILE_REGION_USAGE_VALID_CACHED_DATA should be set for NTFS, or FILE_REGION_USAGE_VALID_NONCACHED_DATA should be set for REFS.|
 
+#### <a name="RefsStreamSnapshotManagement"/>RefsStreamSnapshotManagement
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Create_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Create_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_List_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_List_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_LIST is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Query_Deltas_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Query_Deltas_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Revert_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Revert_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_REVERT is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_REVERT.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Set_ShadowBTree_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Set_ShadowBTree_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_SET_SHADOW_BTREE is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_SET_SHADOW_BTREE.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Clear_ShadowBTree_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Clear_ShadowBTree_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_CLEAR_SHADOW_BTREE is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CLEAR_SHADOW_BTREE.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotManagement_Invalid_IsSupported"/>BVT_FsCtl_RefsStreamSnapshotManagement_Invalid_IsSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT with operation REFS_STREAM_SNAPSHOT_OPERATION_INVALID is supported.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_INVALID.|
+| | Verify returned NT_STATUS|
+| | If (IsRefsStreamSnapshotManagementSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;If (FileSystem != ReFS) {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | &nbsp;&nbsp;&nbsp;&nbsp;} Else {
+| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_SUPPORTED**, ActualResult);
+| | &nbsp;&nbsp;&nbsp;&nbsp;}
+| | }
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_BufferTooSmall_OperationInputBufferLengthNotZero"/>FsCtl_RefsStreamSnapshotManagement_BufferTooSmall_OperationInputBufferLengthNotZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send invalid buffer size of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_CREATE to a file and expect STATUS_BUFFER_TOO_SMALL.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE and invalid buffer size.|
+| | Verify returned NT_STATUS is STATUS_BUFFER_TOO_SMALL|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthZero"/>FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send invalid SnapshotNameLength of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_CREATE to a data file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE and SnapshotNameLength equals zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthNotAligned"/>FsCtl_RefsStreamSnapshotManagement_InvalidParameter_SnapshotNameLengthNotAligned
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send unaligned SnapshotNameLength of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_CREATE to a data file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE and SnapshotNameLength not aligned.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_Create_InvalidParameter_OutputBufferSizeNotZero"/>FsCtl_RefsStreamSnapshotManagement_Create_InvalidParameter_OutputBufferSizeNotZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send invalid OutputBufferSize of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_CREATE to a data file and expect NTSTATUS STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE and OutputBufferSize equals zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_SnapshotNameLengthZero"/>FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_SnapshotNameLengthZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send invalid SnapshotNameLength FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_LIST to a data file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST and SnapshotNameLength equals zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_OutputBufferSizeZero"/>FsCtl_RefsStreamSnapshotManagement_List_InvalidParameter_OutputBufferSizeZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send invalid OutputBufferSize FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_LIST to a data file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST and OutputBufferSize equals zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_SnapshotNameLengthZero"/>FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_SnapshotNameLengthZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Send invalid SnapshotNameLength of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to a file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS and SnapshotNameLength equals zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OperationBufferLengthInvalid"/>FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OperationBufferLengthInvalid
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Send invalid OperationBufferLength of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to a file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS and invalid OperationBufferLength.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OutputBufferSizeZero"/>FsCtl_RefsStreamSnapshotManagement_QueryDeltas_InvalidParameter_OutputBufferSizeZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Send invalid OutputBufferSize of FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to a file and expect NTSTATUS is STATUS_INVALID_PARAMETER.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS and OutputBufferSize equal to zero.|
+| | Verify returned NT_STATUS is STATUS_INVALID_PARAMETER|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_List_AccessDenied_LacksReadAttribute"/>FsCtl_RefsStreamSnapshotManagement_List_AccessDenied_LacksReadAttribute
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Create data file without Read Attribute then send FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_LIST to the file and expect NTSTATUS is STATUS_ACCESS_DENIED.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile) without Read Attribute|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST|
+| | Verify returned NT_STATUS is STATUS_ACCESS_DENIED|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_QueryDeltas_AccessDenied_LacksReadAttribute"/>FsCtl_RefsStreamSnapshotManagement_QueryDeltas_AccessDenied_LacksReadAttribute
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Create data file without Read Attribute then send FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to the file and expect NTSTATUS is STATUS_ACCESS_DENIED.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile) without Read Attribute|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS|
+| | Verify returned NT_STATUS is STATUS_ACCESS_DENIED|
+
+##### <a name="FsCtl_RefsStreamSnapshotManagement_Create_AccessDenied_LacksWriteAttribute"/>FsCtl_RefsStreamSnapshotManagement_Create_AccessDenied_LacksWriteAttribute
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| "Create data file without Write Attribute then send FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_CREATE to the file and expect NTSTATUS is STATUS_ACCESS_DENIED.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT|
+| Message Sequence| Create test file (DataFile) without Write Attribute|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE|
+| | Verify returned NT_STATUS is STATUS_ACCESS_DENIED|
+
+#### <a name="RefsStreamSnapshotOperationCreate"/>RefsStreamSnapshotOperationCreate
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotOperation_Create_Positive"/>BVT_FsCtl_RefsStreamSnapshotOperation_Create_Positive
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create snapshot with FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE then send FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST using snapshot name and expect one entry returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE.|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST using snapshot name.|
+| | Verify returned NT_STATUS|
+| | Verify returned snapshot count is 1|
+
+##### <a name="FsCtl_RefsStreamSnapshotOperation_Create_Negative"/>FsCtl_RefsStreamSnapshotOperation_Create_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create two snapshots with FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE using the same snapshot name and expect STATUS_OBJECT_NAME_COLLISION.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE.|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE using the same snapshot name.|
+| | Verify returned NT_STATUS is OBJECT_NAME_COLLISION|
+
+#### <a name="RefsStreamSnapshotOperationQueryDeltas"/>RefsStreamSnapshotOperationQueryDeltas
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Positive"/>BVT_FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Positive
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to modified data file and verify extent returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS|
+| Message Sequence| Create test file (DataFile) and fill with random data|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS.|
+| | Verify returned NT_STATUS|
+| | Verify returned extent count is greater than 0|
+
+##### <a name="FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Negative"/>FsCtl_RefsStreamSnapshotOperation_QueryDeltas_Negative
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Send FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT request with REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS to unmodified data file and verify no extent returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_QUERY_DELTAS.|
+| | Verify returned NT_STATUS|
+| | Verify returned extent count is 0|
+
+#### <a name="IsMarkHandleSupported"/>IsMarkHandleSupported
+
+##### <a name="FsCtl_MarkHandle_File_IsSupported-4TCs"/>FsCtl_MarkHandle_File_IsSupported (4TCs)
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| BVT_FsCtl_MarkHandle_File_IsSupported |
+| Description| To test if FSCTL_MARK_HANDLE is supported for different file systems.|
+| | Test environment: FAT32, NTFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| FsCtl_MarkHandle_EmptyFile_IsSupported |
+| Description| To test if FSCTL_MARK_HANDLE on an empty file is supported for different file systems.|
+| | Test environment: FAT32, NTFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| FsCtl_MarkHandle_NotEmptyFile_IsSupported |
+| Description| To test if FSCTL_MARK_HANDLE on a non empty file is supported for different file systems.|
+| | Test environment: FAT32, NTFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_File_CompressedSupported |
+| Description| To test if FSCTL_MARK_HANDLE on a non empty file with Compression set is supported for different file systems.|
+| | Test environment: FAT32, NTFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState equal COMPRESSION_FORMAT_LZNT1|
+| | FsCtl request with FSCTL_MARK_HANDLE|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+##### <a name="Fsctl_MarkHandle_File_BufferedNotSupported"/>Fsctl_MarkHandle_File_BufferedNotSupported
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test if FSCTL_MARK_HANDLE on a buffered file is supported for different file systems.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING not set |
+| | FsCtl request with FSCTL_MARK_HANDLE|
+| | If (FileSystem == NTFS \|\| FileSystem == ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_PARAMETER**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+##### <a name="Fsctl_MarkHandle_File_RedundantMedia-4TCs"/>Fsctl_MarkHandle_File_RedundantMedia (4TCs)
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_File_RedundantMedia_CopyNumberLessThanDataCopies_EmptyFile |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response on a redundant media with CopyNumber set to less than or equal to the NumberOfDataCopies of the file.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE with CopyNumber &gt; 1 &amp;&amp; CopyNumber &lt; NumberOfDataCopies|
+| | If (FileSystem != NTFS &amp;&amp; FileSystem != ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } Else If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_RESIDENT_FILE_NOT_SUPPORTED**, ActualResult);|
+| | } Else If (IsRedundantMedia) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_REDUNDANT_STORAGE**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| FsCtl_MarkHandle_File_RedundantMedia_CopyNumberLessThanDataCopies_NotEmptyFileSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response on a redundant media with CopyNumber set to less than or equal to the NumberOfDataCopies of the file.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE with CopyNumber &gt; 1 &amp;&amp; CopyNumber &lt; NumberOfDataCopies|
+| | If (FileSystem != NTFS &amp;&amp; FileSystem != ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } Else If (IsRedundantMedia) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_SUCCESS**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_REDUNDANT_STORAGE**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_File_RedundantMedia_CompressedNotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response on a redundant media with Compression set, and CopyNumber set to less than or equal to the NumberOfDataCopies of the file.|
+| | Test environment: NTFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState equal COMPRESSION_FORMAT_LZNT1|
+| | FsCtl request with FSCTL_MARK_HANDLE with CopyNumber &gt; 1 &amp;&amp; CopyNumber &lt; NumberOfDataCopies|
+| | If (FileSystem != NTFS &amp;&amp; IsRedundantMedia) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_COMPRESSED_FILE_NOT_SUPPORTED**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_File_RedundantMedia_CopyNumberGreaterThanDataCopiesNotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response on a redundant media with CopyNumber set to greater than the NumberOfDataCopies of the file.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DataFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE with CopyNumber &gt; NumberOfDataCopies|
+| | If (FileSystem != NTFS &amp;&amp; FileSystem != ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | } Else If (IsRedundantMedia) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**INVALID_PARAMETER**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_NOT_REDUNDANT_STORAGE**, ActualResult);|
+| | }|
+
+##### <a name="FsCtl_MarkHandle_Dir_NotSupported-4TCs"/>FsCtl_MarkHandle_Dir_NotSupported (4TCs)
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| FsCtl_MarkHandle_Dir_NotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response for a directory.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE |
+| | If (FileSystem == NTFS \|\| FileSystem == ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_DIRECTORY_NOT_SUPPORTED**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_Dir_BufferedNotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response for a buffered directory.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile) with NO_INTERMEDIATE_BUFFERING not set |
+| | FsCtl request with FSCTL_MARK_HANDLE |
+| | If (FileSystem == NTFS \|\| FileSystem == ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_DIRECTORY_NOT_SUPPORTED**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_Dir_CompressedNotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response for a directory with compression set.|
+| | Test environment: NTFS|
+| Message Sequence| CreateFile (DirectoryFile) with NO_INTERMEDIATE_BUFFERING not set |
+| | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState equal COMPRESSION_FORMAT_LZNT1|
+| | FsCtl request with FSCTL_MARK_HANDLE |
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_DIRECTORY_NOT_SUPPORTED**, ActualResult);|
+| | }|
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Test Case| Fsctl_MarkHandle_Dir_RedundantMediaNotSupported |
+| Description| To test if FSCTL_MARK_HANDLE returns correct response for a directory on redundant media.|
+| | Test environment: NTFS, ReFS|
+| Message Sequence| CreateFile (DirectoryFile) with NO_INTERMEDIATE_BUFFERING set |
+| | FsCtl request with FSCTL_MARK_HANDLE |
+| | If (FileSystem == NTFS \|\| FileSystem == ReFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_DIRECTORY_NOT_SUPPORTED**, ActualResult);|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_INVALID_DEVICE_REQUEST**, ActualResult);|
+| | }|
+
+#### <a name="RefsStreamSnapshotOperationList"/>RefsStreamSnapshotOperationList
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotOperation_List_SingleEntry"/>BVT_FsCtl_RefsStreamSnapshotOperation_List_SingleEntry
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create snapshot with FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE then send FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST and expect one entry returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE twice.|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_LIST and one snapshot name.|
+| | Verify returned NT_STATUS|
+| | Verify returned snapshot is 1|
+
+##### <a name="BVT_FsCtl_RefsStreamSnapshotOperation_List_MultipleEntry"/>BVT_FsCtl_RefsStreamSnapshotOperation_List_MultipleEntry
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create snapshot with FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE then send FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST with asterisk and expect two entry returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE twice.|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST and asterisk.|
+| | Verify returned NT_STATUS|
+| | Verify returned snapshot is 2|
+
+##### <a name="FsCtl_RefsStreamSnapshotOperation_List_NoEntry"/>FsCtl_RefsStreamSnapshotOperation_List_NoEntry
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create two snapshots with FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_CREATE then send FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST with wrong snapshot name and expect no entry returned.|
+| | Note: This is only implemented by the **REFS** file system file system.|
+| | Test environment: ReFS|
+| | FsCtl: FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST|
+| Message Sequence| Create test file (DataFile)|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation REFS_STREAM_SNAPSHOT_OPERATION_CREATE twice.|
+| | FSCTL request with FSCTL_REFS_STREAM_SNAPSHOT_MANAGEMENT using operation FSCTL_REFS_STREAM_SNAPSHOT_OPERATION_LIST and wrong snapshot name.|
+| | Verify returned NT_STATUS|
+| | Verify returned snapshot is 0|
+
 ### <a name="Test-cases-for-QuotaInformation"/>Test cases for QuotaInformation
 
 #### <a name="IsQuotaInfoSupported"/>IsQuotaInfoSupported
@@ -2786,6 +4961,110 @@ There are 343 test cases in total:
 | | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(True, ActualResult == **STATUS_OBJECT_PATH_NOT_FOUND** \|\| ActualResult == **OBJECT_NAME_NOT_FOUND**);|
 | | }|
 
+### <a name="Test-cases-for-File-Access"/>Test cases for File Access
+
+#### <a name="FileAccess_OpenExistingFile"/>FileAccess_OpenExistingFile
+
+##### <a name="FileAccess_WriteReadOnlyFile"/>FileAccess_WriteReadOnlyFile
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To write a read only file and check the returned status code.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | If file type is DataFile, file attributes is read only and desired access is write data or append data, server will return STATUS_ACCESS_DENIED |
+| Message Sequence| Create readonly data file.|
+| | Write the read only data file|
+| | Verify server responses accordingly.|
+
+##### <a name="FileAccess_DeleteReadOnlyDataFile"/>FileAccess_DeleteReadOnlyDataFile
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To delete a read only data file and check the returned status code.|
+| | Test environment: FAT32, NTFS, ReFS|
+| | Test object: DataFile|
+| | Test coverage:|
+| | If file attributes is read only and create options is  FILE_DELETE_ON_CLOSE, server will return STATUS_CANNOT_DELETE. |
+| Message Sequence| Create readonly data file.|
+| | Delete the read only data file|
+| | Verify server responses accordingly.|
+
+#### <a name="FileAccess_OpenNamedPipe"/>FileAccess_OpenNamedPipe
+
+##### <a name="BVT_FileAccess_OpenNamedPipe"/>BVT_FileAccess_OpenNamedPipe
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_SUCCESS when a named pipe is opened successfully|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe|
+| | Open named pipe|
+| | Verify server return with **STATUS_SUCCESS**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_InvalidPathName"/>BVT_FileAccess_OpenNamedPipe_InvalidPathName
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_OBJECT_NAME_NOT_FOUND when a named pipe open request is sent with invalid path name.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe|
+| | Open named pipe with invalid path name|
+| | Verify server return with **STATUS_OBJECT_NAME_NOT_FOUND**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_DesiredAccessZero"/>BVT_FileAccess_OpenNamedPipe_DesiredAccessZero
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_ACCESS_DENIED when a open named pipe request is sent with DesiredAccess as zero.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe|
+| | Open named pipe with DesiredAccess set to zero|
+| | Verify server return with **STATUS_ACCESS_DENIED**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_InactiveListener"/>BVT_FileAccess_OpenNamedPipe_InactiveListener
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_PIPE_NOT_AVAILABLE when a open named pipe request is sent when named pipe has no active listener.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe|
+| | Open named pipe|
+| | Verify server return with **STATUS_SUCCESS**|
+| | Open named pipe|
+| | Verify server return with **STATUS_PIPE_NOT_AVAILABLE**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_Inbound"/>BVT_FileAccess_OpenNamedPipe_Inbound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_ACCESS_DENIED when a open named pipe request is sent with FILE_READ_DATA while it was created with FILE_PIPE_INBOUND.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe with direction FILE_PIPE_INBOUND|
+| | Open named pipe with AccessMask.GENERIC_READ |
+| | Verify server return with **STATUS_ACCESS_DENIED**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_Outbound"/>BVT_FileAccess_OpenNamedPipe_Outbound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_ACCESS_DENIED when a open named pipe request is sent with FILE_WRITE_DATA while it was created with FILE_PIPE_OUTBOUND.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe with direction FILE_PIPE_OUTBOUND|
+| | Open named pipe with AccessMask.GENERIC_WRITE |
+| | Verify server return with **STATUS_ACCESS_DENIED**|
+
+##### <a name="BVT_FileAccess_OpenNamedPipe_IsCaseInsensitive"/>BVT_FileAccess_OpenNamedPipe_IsCaseInsensitive
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| To test that server sends STATUS_SUCCESS when a named pipe is opened using different path name case.|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create named pipe|
+| | Open named pipe using different path name case |
+| | Verify server return with **STATUS_SUCCESS**|
+
 ### <a name="Test-cases-for-Alternate-Data-Stream"/>Test cases for Alternate Data Stream
 
 #### <a name="IsCreateStreamSupported"/>IsCreateStreamSupported
@@ -2795,7 +5074,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream create is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (DataFile) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2806,7 +5085,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream create is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (DirectoryFile)|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2819,7 +5098,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream list is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (DataFile) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2832,7 +5111,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream list is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory)|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2847,7 +5126,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream delete is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2861,7 +5140,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if Alternate Data Stream delete is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory)|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2911,11 +5190,11 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if write and read from the Alternate Data Streams is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Read the bytes from the Alternate Data Streams created on this file|
-| | Verify server return with **STATUS_INVALID_PARAMETER** for supported file system|
+| | Verify server return with **STATUS_SUCCESS** for supported file system|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
 | | Read the bytes from the Alternate Data Streams created on this file|
 | | Verify server return with **STATUS_SUCCESS** for supported file system|
@@ -2925,11 +5204,11 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if write and read from the Alternate Data Streams is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Read the bytes from the Alternate Data Streams created on this file|
-| | Verify server return with **STATUS_INVALID_PARAMETER** for supported file system|
+| | Verify server return with **STATUS_SUCCESS** for supported file system|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
 | | Read the bytes from the Alternate Data Streams created on this file|
 | | Verify server return with **STATUS_SUCCESS** for supported file system|
@@ -2941,7 +5220,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if lock and unlock a byte range of the Alternate Data Streams is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2955,7 +5234,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if lock and unlock a byte range of the Alternate Data Streams is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Create another Alternate Data Stream and write 4096 bytes to the stream|
@@ -2971,7 +5250,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileAccessInformation query of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_ACCESS_INFORMATION on this Alternate Data Stream created on this file|
@@ -2983,7 +5262,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileAccessInformation query of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_ACCESS_INFORMATION on this Alternate Data Stream created on this file|
@@ -2995,7 +5274,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileBasicInformation query of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_BASIC_INFORMATION on this Alternate Data Stream created on this file|
@@ -3006,7 +5285,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileBasicInformation query of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_BASIC_INFORMATION on this Alternate Data Stream created on this file|
@@ -3017,31 +5296,39 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileCompressionInformation query of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState = COMPRESSION_FORMAT_LZNT1|
 | | Query the file information with FileInfoClass.FILE_COMPRESSION_INFORMATION on this Alternate Data Stream created on this file|
-| | Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 == COMPRESSION_FORMAT_LZNT1|
+| | If (IsCompressionSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 == COMPRESSION_FORMAT_LZNT1|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 != COMPRESSION_FORMAT_LZNT1|
+| | }|
 
 ##### <a name="AlternateDataStream_Query_FileCompressionInformation_Dir"/>AlternateDataStream_Query_FileCompressionInformation_Dir
 
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileCompressionInformation query of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState = COMPRESSION_FORMAT_LZNT1|
 | | Query the file information with FileInfoClass.FILE_COMPRESSION_INFORMATION on this Alternate Data Stream created on this file|
-| | Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 == COMPRESSION_FORMAT_LZNT1|
+| | If (IsCompressionSupported == True) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 == COMPRESSION_FORMAT_LZNT1|
+| | } Else {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionFormat & COMPRESSION_FORMAT_LZNT1 != COMPRESSION_FORMAT_LZNT1|
+| | }|
 
 ##### <a name="AlternateDataStream_Query_FileNetworkOpenInformation_File"/>AlternateDataStream_Query_FileNetworkOpenInformation_File
 
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileNetworkOpenInformation query of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_NETWORKOPEN_INFORMATION on this Alternate Data Stream created on this file|
@@ -3052,7 +5339,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileNetworkOpenInformation query of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_NETWORKOPEN_INFORMATION on this Alternate Data Stream created on this file|
@@ -3063,7 +5350,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileStandardInformation query of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_STANDARD_INFORMATION on this Alternate Data Stream created on this file|
@@ -3075,7 +5362,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileStandardInformation query of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Query the file information with FileInfoClass.FILE_STANDARD_INFORMATION on this Alternate Data Stream created on this file|
@@ -3087,7 +5374,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileEaInformation set of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_EA_INFORMATION on this Alternate Data Stream created on this file|
@@ -3098,7 +5385,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileEaInformation set of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_EA_INFORMATION on this Alternate Data Stream created on this file|
@@ -3109,7 +5396,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileShortNameInformation set of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_SHORTNAME_INFORMATION on this Alternate Data Stream created on this file|
@@ -3120,7 +5407,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileShortNameInformation set of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_SHORTNAME_INFORMATION on this Alternate Data Stream created on this file|
@@ -3131,7 +5418,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileValidDataLengthInformation set of the Alternate Data Streams on a file is supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_VALIDDATALENGTH_INFORMATION on this Alternate Data Stream created on this file|
@@ -3142,7 +5429,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FileValidDataLengthInformation set of the Alternate Data Streams on a file is supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | Set the file information with FileInfoClass.FILE_VALIDDATALENGTH_INFORMATION on this Alternate Data Stream created on this file|
@@ -3155,33 +5442,37 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_GET_COMPRESSION request and response on the Alternate Data Streams are supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState = COMPRESSION_FORMAT_DEFAULT|
 | | FsCtl request with FSCTL_GET_COMPRESSION on this Alternate Data Stream created on this file|
 | | Verify server return with **STATUS_SUCCESS** for supported file system|
-| | Verify OutputBuffer.CompressionState == COMPRESSION_FORMAT_LZNT1|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionState == COMPRESSION_FORMAT_LZNT1|
+| | }|
 
 ##### <a name="AlternateDataStream_FsCtl_Get_Compression_Dir"/>AlternateDataStream_FsCtl_Get_Compression_Dir
 
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_GET_COMPRESSION request and response on the Alternate Data Streams are supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory)|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION with CompressionState = COMPRESSION_FORMAT_DEFAULT|
 | | FsCtl request with FSCTL_GET_COMPRESSION on this Alternate Data Stream created on this file|
 | | Verify server return with **STATUS_SUCCESS** for supported file system|
-| | Verify OutputBuffer.CompressionState == COMPRESSION_FORMAT_LZNT1|
+| | If (FileSystem == NTFS) {|
+| | &nbsp;&nbsp;&nbsp;&nbsp;Verify OutputBuffer.CompressionState == COMPRESSION_FORMAT_LZNT1|
+| | }|
 
 ##### <a name="AlternateDataStream_FsCtl_Get_IntegrityInformation_File"/>AlternateDataStream_FsCtl_Get_IntegrityInformation_File
 
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_GET_INTEGRITY_INFORMATION request and response on the Alternate Data Streams are supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_GET_INTEGRITY_INFORMATION on this Alternate Data Stream created on this file|
@@ -3192,7 +5483,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_GET_INTEGRITY_INFORMATION request and response on the Alternate Data Streams are supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_GET_INTEGRITY_INFORMATION on this Alternate Data Stream created on this file|
@@ -3203,7 +5494,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_QUERY_ALLOCATED_RANGES request and response on the Alternate Data Streams are supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_QUERY_ALLOCATED_RANGES on this Alternate Data Stream created on this file|
@@ -3215,7 +5506,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_QUERY_ALLOCATED_RANGES request and response on the Alternate Data Streams are supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_QUERY_ALLOCATED_RANGES on this Alternate Data Stream created on this file|
@@ -3227,7 +5518,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_SET_COMPRESSION request and response on the Alternate Data Streams are supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION on this Alternate Data Stream created on this file|
@@ -3238,7 +5529,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_SET_COMPRESSION request and response on the Alternate Data Streams are supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl request with FSCTL_SET_COMPRESSION on this Alternate Data Stream created on this file|
@@ -3249,7 +5540,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_SET_ZERO_DATA request and response on the Alternate Data Streams are supported on a Data file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Data) and write 1024 bytes to the file|
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl Request with FSCTL_SET_ZERO_DATA on this Alternate Data Stream created on this file|
@@ -3260,7 +5551,7 @@ There are 343 test cases in total:
 | &#32;| &#32; |
 | -------------| ------------- |
 | Description| To test if the FSCTL_SET_ZERO_DATA request and response on the Alternate Data Streams are supported on a Directory file|
-| | Test environment: NTFS|
+| | Test environment: NTFS, ReFS|
 | Message Sequence| CreateFile (Directory) |
 | | Create an Alternate Data Stream and write 2048 bytes to the stream|
 | | FsCtl Request with FSCTL_SET_ZERO_DATA on this Alternate Data Stream created on this file|
@@ -3388,6 +5679,640 @@ There are 343 test cases in total:
 | | Query the created directory with FileIdBothDirectoryInformation|
 | | Verify each entry of the response|
 
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileBothDirectoryInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileBothDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileBothDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileDirectoryInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileFullDirectoryInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileFullDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileFullDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdBothDirectoryInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdBothDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdBothDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileIdFullDirectoryInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileIdFullDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileIdFullDirectoryInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression \* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression \* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_SpecialCase_AsteriskWildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_SpecialCase_AsteriskWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression special case \*.\* (Asterisk) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_WildCard_QuestionMark"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_WildCard_QuestionMark
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression ? (Question Mark) wild card.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression special case ? (Question Mark) wild card|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskInStringWildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_AsteriskInStringWildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression \* (Asterisk) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression \* (Asterisk) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_STAR_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_STAR_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression < (DOS Star) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression < (DOS Star) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_QM_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_QM_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression > (DOS QM) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression > (DOS QM) wild card in string|
+| | Verify each entry of the response|
+
+##### <a name="BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_DOT_WildCard"/>BVT_QueryDirectoryBySearchPattern_FileNamesInformation_DOS_DOT_WildCard
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory and a file and then query the directory info with FileInfoClass FileNamesInformation and check if FileName is in expression " (DOS DOT) wild card in string.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory in share|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Create a file under the newly created directory folder|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+| | Query the created directory with FileNamesInformation and check if FileName is in expression " (DOS DOT) wild card in string|
+| | Verify each entry of the response|
+
+### <a name="Test-cases-for-File-And-Directory-Leasing"/>Test cases for File and Directory Leasing
+
+#### <a name="CompareLeaseKeys"/>Compare Lease Keys
+
+##### <a name="Comparing_Same_File_LeaseKeysV1"/>Comparing_Same_File_LeaseKeysV1
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare the server returned lease keys of two opens of the same file using the same lease key.|
+| | This value is not valid for the SMB 2.0.2 dialect |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a file in share|
+| | Verify LeaseOpen equals OperationOpen |
+| | Verify LeaseBreakNotification not received |
+| | Verify LeaseOpen.LeaseKey == OperationOpen.LeaseKey |
+
+##### <a name="Comparing_Same_Directory_LeaseKeysV1"/>Comparing_Same_Directory_LeaseKeysV1
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare the server returned lease keys of two opens of the same directory file using the same lease key.|
+| | This value is not valid for the SMB 2.0.2 dialect |
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory file in share|
+| | Verify LeaseOpen equals OperationOpen |
+| | Verify LeaseBreakNotification not received |
+| | Verify LeaseOpen.LeaseKey == OperationOpen.LeaseKey |
+
+##### <a name="Comparing_Same_LeaseKeysV2"/>Comparing_Same_LeaseKeysV2
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare the server returned lease keys of two opens of the same file using the same lease key.|
+| | This is valid only for the SMB 3.x dialect family. |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a file in share |
+| | Verify LeaseOpen equals OperationOpen |
+| | Verify LeaseBreakNotification not received |
+| | Verify LeaseOpen.LeaseKey == OperationOpen.LeaseKey |
+| | Verify LeaseOpen.ParentLeaseKey == OperationOpen.ParentLeaseKey |
+
+##### <a name="Compare_Zero_LeaseFlag_ParentLeaseKey"/>Compare_Zero_LeaseFlag_ParentLeaseKey
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| The server should return an empty parentLeaseKey when leaseFlag is set to zero. |
+| | This is valid only for the SMB 3.x dialect family. |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a file in share |
+| | Verify LeaseRequest.ParentLeaseKey should not be empty |
+| | Verify LeaseOpen.ParentLeaseKey MUST be empty if LeaseFlag is set to Zero |
+
+##### <a name="DirectoryComparing_LeaseKeysV2"/>DirectoryComparing_LeaseKeysV2
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare the returned lease keys of two opens to the same directory file. |
+| | This is valid only for the SMB 3.x dialect family. |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a directory file in share |
+| | Verify LeaseOpen equals OperationOpen |
+| | Verify LeaseBreakNotification not received |
+| | Verify LeaseOpen.LeaseKey == OperationOpen.LeaseKey |
+| | Verify LeaseOpen.ParentLeaseKey == OperationOpen.ParentLeaseKey |
+
+##### <a name="DirectoryComparing_ParentLeaseKey_ChildLeaseKey"/>DirectoryComparing_ParentLeaseKey_ChildLeaseKey
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare the returned lease keys of two opens of a parent directory file and a child file. |
+| | This is valid only for the SMB 3.x dialect family. |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a directory file in share and a file in that directory |
+| | Verify LeaseOpen.LeaseKey MUST be equal to OperationOpen.ParentLeasekey |
+| | Verify LeaseBreakNotification not received |
+
+##### <a name="DirectoryComparing_Child_Invalid_ParentLeaseKeys"/>DirectoryComparing_Child_Invalid_ParentLeaseKeys
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Compare lease keys of parent directory file and a child file with an invalid parent lease key |
+| | This is valid only for the SMB 3.x dialect family. |
+| | Test environment: NTFS, ReFS, FAT32 |
+| Message Sequence| Create a directory file in share and a file in that directory |
+| | If request.ParentLeaseKey is empty
+| |   Verify response.ParentLeaseKey MUST be empty
+| | Verify LeaseBreakNotification is received |
+
 ### <a name="Test-cases-for-Other-Scenarios"/>Test cases for Other Scenarios
 
 #### <a name="IsCreateFileSupported"/>IsCreateFileSupported
@@ -3405,6 +6330,104 @@ There are 343 test cases in total:
 | | } Else {|
 | | &nbsp;&nbsp;&nbsp;&nbsp;Assert.AreEqual(**STATUS_OBJECT_NAME_INVALID**, ActualResult);|
 | | }|
+
+#### <a name="CreateFile_InvalidColon"/>CreateFile_InvalidColon
+
+##### <a name="CreateDirectory_InvalidColon"/>CreateDirectory_InvalidColon
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Try to create a directory with invalid colon and expect failure.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory file with invalid colon|
+| | Verify server returns with **STATUS_OBJECT_NAME_INVALID** for supported file system|
+
+##### <a name="CreateFile_InvalidColon"/>CreateFile_InvalidColon
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Try to create a data with invalid colon and expect failure.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a data file with invalid colon|
+| | Verify server returns with **STATUS_OBJECT_NAME_INVALID** for supported file system|
+
+#### <a name="CreateFile_BackSlash"/>CreateFile_BackSlash
+
+##### <a name="CreateDirectory_EndWithBackSlash"/>CreateDirectory_EndWithBackSlash
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Try to create a directory end with backslash and expect success.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a directory end with with backslash.|
+| | Verify server returns with **STATUS_SUCCESS** for supported file system|
+
+##### <a name="CreateFile_EndWithInvalidBackSlash"/>CreateFile_EndWithInvalidBackSlash
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Try to create a file end with invalid backslash and expect failure.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a data file end with invalid backslash.|
+| | Verify server returns with **STATUS_OBJECT_NAME_INVALID** for supported file system|
+
+##### <a name="CreateFile_WithDoubleBackSlashInMiddle"/>CreateFile_WithDoubleBackSlashInMiddle
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Try to create a file with double backslash in the middle and expect failure.|
+| | Test environment: NTFS, ReFS, FAT32|
+| Message Sequence| Create a file with double backslash in the middle.|
+| | Verify server returns with **STATUS_OBJECT_PATH_NOT_FOUND** for supported file system|
+
+#### <a name="CreateFile_FindAllFiles"/>CreateFile_FindAllFiles
+
+##### <a name="CreateFile_CheckNoFilesFound"/>CreateFile_CheckNoFilesFound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a directory file and confirm that FoundFiles count is zero|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create a directory|
+| | Query the directory|
+| | Verify that no file is returned|
+
+##### <a name="CreateFile_CheckSingleFileFound"/>CreateFile_CheckSingleFileFound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a data file under a directory file and confirm that FoundFiles count is one|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create a directory|
+| | Create a file under the directory|
+| | Query the directory|
+| | Verify that only the created file is returned|
+
+##### <a name="CreateFile_CheckSubDirAndSingleFileFound"/>CreateFile_CheckSubDirAndSingleFileFound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a data file under a subdirectory and confirm FoundFiles count|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create a root directory|
+| | Create a directory file as subdirectory under the root directory|
+| | Create a data file under the subdirectory|
+| | Query the root directory|
+| | Verify that number of files returned is 2|
+
+##### <a name="CreateFile_CheckMultipleFilesFound"/>CreateFile_CheckMultipleFilesFound
+
+| &#32;| &#32; |
+| -------------| ------------- |
+| Description| Create a data file under a subdirectory and verify FoundFiles count for the root directory and subdirectory|
+| | Test environment: FAT32, NTFS, ReFS|
+| Message Sequence| Create a root directory|
+| | Create a directory file as subdirectory under the directory|
+| | Create a data file under the subdirectory|
+| | Query the root directory|
+| | Query the subdirectory|
+| | Verify that number of files returned by root directory is 2|
+| | Verify that number of files returned by subdirectory is 1|
 
 ## <a name="MBT-Test-Design"/>MBT Test Design
 

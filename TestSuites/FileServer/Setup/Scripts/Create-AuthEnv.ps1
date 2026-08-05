@@ -1,8 +1,5 @@
-#############################################################################
-## Copyright (c) Microsoft. All rights reserved.
-## Licensed under the MIT license. See LICENSE file in the project root for full license information.
-##
-#############################################################################
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #----------------------------------------------------------------------------
 # Global variables
@@ -12,6 +9,7 @@ $env:Path += ";$scriptPath;$scriptPath\Scripts"
 $systemDrive = $ENV:SystemDrive
 $fullAccessAccount = "BUILTIN\Administrators"
 $buildinUsers = "BUILTIN\Users"
+$authenticatedUsers="NT AUTHORITY\Authenticated Users"
 
 #----------------------------------------------------------------------------
 # Start loging using start-transcript cmdlet
@@ -70,54 +68,46 @@ function RemoveAcl($folder,$user)
 }
 
 #----------------------------------------------------------------------------
+# Install WindowsFeature FS-Resource-Manager
+#----------------------------------------------------------------------------
+Write-Info.ps1 "Install WindowsFeature FS-Resource-Manager"
+Add-WindowsFeature FS-Resource-Manager
+    
+#----------------------------------------------------------------------------
+# Update FSRMClassificationpropertyDefinition
+#----------------------------------------------------------------------------
+Write-Info.ps1 "Update FSRMClassificationpropertyDefinition"
+Update-FSRMClassificationpropertyDefinition
+
+#----------------------------------------------------------------------------
 # Create shared folders for Auth test suite
 #----------------------------------------------------------------------------
-if((gwmi win32_computersystem).partofdomain -eq $true)
+Write-Info.ps1 "Create shared folders for Auth test suite."
+
+$shareNames = "AzFile","AzFolder"
+foreach($shareName in $shareNames)
 {
-
-    #----------------------------------------------------------------------------
-    # Install WindowsFeature FS-Resource-Manager
-    #----------------------------------------------------------------------------
-    Write-Info.ps1 "Install WindowsFeature FS-Resource-Manager"
-    Add-WindowsFeature FS-Resource-Manager
-    
-    #----------------------------------------------------------------------------
-    # Update FSRMClassificationpropertyDefinition
-    #----------------------------------------------------------------------------
-    Write-Info.ps1 "Update FSRMClassificationpropertyDefinition"
-    Update-FSRMClassificationpropertyDefinition
-
-    #----------------------------------------------------------------------------
-    # Create shared folders for Auth test suite
-    #----------------------------------------------------------------------------
-    Write-Info.ps1 "Create shared folders for Auth test suite."
-
-    $shareNames = "AzFile","AzFolder"
-    foreach($shareName in $shareNames)
-    {
-        Write-Info.ps1 "Create shared folder: $shareName"
-        $filePath = "$systemDrive\$shareName"
-        Write-Info.ps1 "Share the folder $filePath."
-        NewSMBShare -name "$shareName" -Path "$filePath" -FullAccess "$fullAccessAccount","$buildinUsers"
+    Write-Info.ps1 "Create shared folder: $shareName"
+    $filePath = "$systemDrive\$shareName"
+    Write-Info.ps1 "Share the folder $filePath."
+    NewSMBShare -name "$shareName" -Path "$filePath" -FullAccess "$fullAccessAccount","$buildinUsers"
         
-        Write-Info.ps1 "Remove $buildinUsers from Acl."
-        RemoveAcl -folder "$filePath" -user "$buildinUsers"
-    }
+    Write-Info.ps1 "Remove $buildinUsers from Acl."
+    RemoveAcl -folder "$filePath" -user "$buildinUsers"
 
-    Write-Info.ps1 "Create shared folder: AzShare"
-    NewSMBShare -name "AzShare" -Path "$systemDrive\AzShare" -FullAccess "$fullAccessAccount"	
-    Write-Info.ps1 "Keep $buildinUsers in Acl."
-
-    Write-Info.ps1 "Create shared folder: AzCBAC"
-    NewSMBShare -name "AzCBAC" -Path "$systemDrive\AzCBAC" -FullAccess "$fullAccessAccount","$buildinUsers"	
-    Write-Info.ps1 "Keep $buildinUsers in Acl."
-
-    Write-Info.ps1 "Completed creating all shared folders."
+    Write-Info.ps1 "Remove Authenticated Users Access Rule."
+    RemoveAcl -folder "$filePath" -user "$authenticatedUsers"
 }
-else
-{
-    Write-Info.ps1 "The ENV is workgroup, Auth test suite does not support such ENV, will skip creating shared folders."
-}
+
+Write-Info.ps1 "Create shared folder: AzShare"
+NewSMBShare -name "AzShare" -Path "$systemDrive\AzShare" -FullAccess "$fullAccessAccount"	
+Write-Info.ps1 "Keep $buildinUsers in Acl."
+
+Write-Info.ps1 "Create shared folder: AzCBAC"
+NewSMBShare -name "AzCBAC" -Path "$systemDrive\AzCBAC" -FullAccess "$fullAccessAccount","$buildinUsers"	
+Write-Info.ps1 "Keep $buildinUsers in Acl."
+
+Write-Info.ps1 "Completed creating all shared folders."
 
 #----------------------------------------------------------------------------
 # Ending

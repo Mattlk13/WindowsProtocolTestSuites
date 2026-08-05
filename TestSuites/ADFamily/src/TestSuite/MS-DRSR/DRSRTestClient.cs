@@ -8,10 +8,11 @@ using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Drsr;
 using Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
 
 using System.DirectoryServices.Protocols;
 using Microsoft.Protocols.TestSuites.ActiveDirectory.Common;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiService;
 
 namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Drsr
 {
@@ -2070,15 +2071,19 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Drsr
                 EnvironmentConfig.UseKerberos == true ?
                 (
                 ClientSecurityContextAttribute.Connection
+                | ClientSecurityContextAttribute.DceStyle
                 | ClientSecurityContextAttribute.Integrity
+                | ClientSecurityContextAttribute.ReplayDetect
+                | ClientSecurityContextAttribute.SequenceDetect
                 | ClientSecurityContextAttribute.Confidentiality
-                | ClientSecurityContextAttribute.UseSessionKey
-                | ClientSecurityContextAttribute.DceStyle)
+                | ClientSecurityContextAttribute.UseSessionKey)
                 :
                 (ClientSecurityContextAttribute.Connection
+                | ClientSecurityContextAttribute.DceStyle
                 | ClientSecurityContextAttribute.Integrity
-                | ClientSecurityContextAttribute.Confidentiality
-                | ClientSecurityContextAttribute.DceStyle);
+                | ClientSecurityContextAttribute.ReplayDetect
+                | ClientSecurityContextAttribute.SequenceDetect
+                | ClientSecurityContextAttribute.Confidentiality);
 
             SspiClientSecurityContext securityContext = new SspiClientSecurityContext(
                 EnvironmentConfig.UseKerberos == true ? SecurityPackageType.Kerberos : SecurityPackageType.Negotiate,

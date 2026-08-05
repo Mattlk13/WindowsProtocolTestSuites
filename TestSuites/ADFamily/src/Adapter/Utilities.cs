@@ -15,7 +15,6 @@ using System.Net;
 
 using Microsoft.Protocols.TestTools;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.InteropServices;
 using System.Globalization;
 using Microsoft.Protocols.TestTools.StackSdk.ActiveDirectory.Adts;
@@ -1460,14 +1459,13 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
         /// <param name="cookieBytes">Byte array which stores cookie information</param>
         public static void StoreCookie(byte[] cookieBytes)
         {
-            BinaryFormatter formatter = new BinaryFormatter();
             FileStream fs = new FileStream(
                     "..\\..\\cookie.bin",
                     FileMode.Create
                     );
             using (fs)
             {
-                formatter.Serialize(fs, cookieBytes);
+                System.Text.Json.JsonSerializer.Serialize(fs, cookieBytes);
             }
         }
 
@@ -1477,14 +1475,13 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
         /// <returns> Byte array which contains cookie information.</returns>
         public static byte[] RestoreCookie()
         {
-            BinaryFormatter formatter = new BinaryFormatter();
             FileStream fs = new FileStream(
                     "..\\..\\cookie.bin",
                     FileMode.Open
                     );
             using (fs)
             {
-                return (byte[])formatter.Deserialize(fs);
+                return System.Text.Json.JsonSerializer.Deserialize<byte[]>(fs);
             }
         }
 
@@ -2228,6 +2225,26 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
             }
 
         }
+
+        /// <summary>
+        /// Repeat the method until the condition is met
+        /// </summary>
+        /// <param name="retryTimes">Retry time (seconds)</param>
+        /// <param name="action">Execution method</param>
+        public static void RetryAction(int retryTimes, Func<bool> action)
+        {
+            int retryCount = 0;
+            bool needContinue;
+            do
+            {
+                needContinue = action();
+                if (needContinue)
+                {
+                    System.Threading.Thread.Sleep(1000);
+                    retryCount++;
+                }
+            } while (needContinue && retryCount < retryTimes);
+        }
     }
     public class NtSecurityDescriptorItem
     {
@@ -2272,7 +2289,7 @@ namespace Microsoft.Protocols.TestSuites.ActiveDirectory.Common
         /// <returns>FLAG Name </returns>
         public static string UnparseUInt32Enum(Type type, uint value)
         {
-            return Enum.Format(type, value, "g");
+            return Enum.Format(type, value, "f");
         }
 
         /// <summary>

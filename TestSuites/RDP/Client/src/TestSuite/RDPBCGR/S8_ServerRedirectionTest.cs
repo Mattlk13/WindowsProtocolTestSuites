@@ -15,6 +15,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("ServerRedirection")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT can process server redirection successfully and the routingToken is not expected when the server didn't present LoadBalanceInfo in the Server Redirection PDU.")]
         public void BVT_ServerRedirection_PositiveTest_WithoutRoutingToken()
         {
@@ -43,7 +44,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region First Connection
@@ -94,7 +95,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -106,6 +107,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         [TestCategory("RDP7.0")]
         [TestCategory("RDPBCGR")]
         [TestCategory("ServerRedirection")]
+        [TestCategory("BasicRequirement")]
         [Description("This test case is used to ensure SUT can process server redirection successfully and the routingToken is expected when the server present LoadBalanceInfo in the Server Redirection PDU.")]
         public void S8_ServerRedirection_PositiveTest_WithRoutingToken()
         {
@@ -134,7 +136,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #region Trigger client to connect
             //Trigger client to connect.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region First Connection
@@ -185,7 +187,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -209,8 +211,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         {
             this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_UserName.ToUpper(), clientInfoPdu.infoPacket.UserName.Trim('\0').ToUpper(), "Verify if UserName in Client Info PDU equals that sent in Server Redirection PDU.");
             this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Domain.ToUpper(), clientInfoPdu.infoPacket.Domain.Trim('\0').ToUpper(), "Verify if Domain in Client Info PDU equals that sent in Server Redirection PDU.");
-            this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Password, clientInfoPdu.infoPacket.Password.Trim('\0'), "Verify if Password in Client Info PDU equals that sent in Server Redirection PDU.");
+            if (string.Compare(this.Site.Properties["Security.Protocol"], "CredSSP",true) !=0)
+            {
+                this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Password, clientInfoPdu.infoPacket.Password.Trim('\0'), "Verify if Password in Client Info PDU equals that sent in Server Redirection PDU.");
+            }
         }
+            
         #endregion
 
         #region Verification Methods for S8_ServerRedirection_PositiveTest_WithRoutingToken
@@ -235,7 +241,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         {
             this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_UserName.ToUpper(), clientInfoPdu.infoPacket.UserName.Trim('\0').ToUpper(), "Verify if UserName in Client Info PDU equals that sent in Server Redirection PDU.");
             this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Domain.ToUpper(), clientInfoPdu.infoPacket.Domain.Trim('\0').ToUpper(), "Verify if Domain in Client Info PDU equals that sent in Server Redirection PDU.");
-            this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Password, clientInfoPdu.infoPacket.Password.Trim('\0'), "Verify if Password in Client Info PDU equals that sent in Server Redirection PDU.");
+            if (string.Compare(this.Site.Properties["Security.Protocol"], "CredSSP", true) != 0)
+            {
+                this.TestSite.Assert.AreEqual<string>(RdpbcgrTestData.Test_Password, clientInfoPdu.infoPacket.Password.Trim('\0'), "Verify if Password in Client Info PDU equals that sent in Server Redirection PDU.");
+            }
         }
         #endregion
     }

@@ -1,21 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.IO;
-using System.Text;
-using System.Net;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
+using Microsoft.Protocols.TestSuites.Rdp;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr.Mcs;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpemt;
-using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeudp;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -41,6 +42,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         //private RDPBCGRCapSet m_serverCapSet = null; 
         private string certFile;
         private string certPwd;
+        private string proxyIP = null;
         private int port = ConstValue.TEST_PORT;
         private IpVersion ipVersion = IpVersion.Ipv4;
         private string rdpVersionString = "7.0";
@@ -162,6 +164,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             if (this.rdpbcgrServerStack != null)
             {
                 this.rdpbcgrServerStack.Dispose();
+                sessionContext = null;
             }
 
         }
@@ -256,7 +259,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             if (rdpemtServerLossy != null)
                 rdpemtServerLossy.Dispose();
 
-            if (rdpeudpServer != null && rdpeudpServer.Running)
+            if (rdpeudpServer != null)
                 rdpeudpServer.Stop();
 
             if (rdpbcgrServerStack != null)
@@ -339,6 +342,56 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             }
         }
 
+        /// <summary>
+        /// Check if transport level (TCP) connection happens with Invalid Account DirectCredSSP.
+        /// </summary>
+        /// <param name="sessionType">The type of session to be established.</param>
+        public void ExpectTransportConnectionForInvalidAccount(RDPSessionType sessionType)
+        {
+            this.pduCache.Clear();
+            RdpbcgrServerSessionContext oldSession = sessionContext;
+
+            TimeSpan leftTime = pduWaitTimeSpan;
+            DateTime expiratedTime = DateTime.Now + pduWaitTimeSpan;
+            bool isRecieved = false;
+            while (!isRecieved && leftTime.CompareTo(new TimeSpan(0)) > 0)
+            {
+                try
+                {
+                    sessionContext = rdpbcgrServerStack.ExpectConnect(leftTime);
+                    if (oldSession == null)
+                    {
+                        isRecieved = true;
+                        break;
+                    }
+                    else if (oldSession.Identity.ToString() != sessionContext.Identity.ToString())
+                    {
+                        isRecieved = true;
+                        break;
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    site.Assert.Pass("Timeout when expecting connection shows account Is invalid");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    //break;
+                    site.Log.Add(LogEntryKind.Warning, "Excetpion thrown out when expect Connection With Invalid Account. {0}", ex.Message);
+                }
+                finally
+                {
+                    System.Threading.Thread.Sleep(100);//Wait some time for next packet.
+                    leftTime = expiratedTime - DateTime.Now;
+                }
+
+            }
+            
+            if (isRecieved)
+            {
+                site.Assert.Fail("Connection Should Not Be Received With Invalid Account");
+            }
+        }
 
         /// <summary>
         /// 2.2.1.1 - 2.2.1.2
@@ -352,11 +405,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="bSupportRestrictedAdminMode">Indicates the server supports Restricted admin mode</param>
         /// <param name="bReservedSet">Indicates the value of NEGRSP_FLAG_RESERVED in the flags field of RDP Negotiation Response</param>
         /// <param name="bSupportRestrictedAuthenticationMode">Indicates the server supports Restricted Authentication mode</param>
-        public void Server_X_224_Connection_Confirm(selectedProtocols_Values protocol, bool bSupportExtClientData, bool setRdpNegData, NegativeType invalidType, bool bSupportEGFX = false, bool bSupportRestrictedAdminMode = false, bool bReservedSet = false, bool bSupportRestrictedAuthenticationMode = false)
+        public void Server_X_224_Connection_Confirm(selectedProtocols_Values protocol, bool bSupportExtClientData, bool setRdpNegData, NegativeType invalidType, bool bSupportEGFX = false, bool bSupportRestrictedAdminMode = false, bool bReservedSet = false, bool bSupportRestrictedAuthenticationMode = false, bool invalidAccount = false)
         {
             //ExpectPacket<Client_X_224_Connection_Request_Pdu>(sessionContext, timeout);
             serverConfig.selectedProtocol = protocol;
             serverConfig.isExtendedClientDataSupported = bSupportExtClientData;
+            bool isSendTLSHandshakeAfterX224ConnectionConfirmPdu = true;
 
             Server_X_224_Connection_Confirm_Pdu confirmPdu
                 = rdpbcgrServerStack.CreateX224ConnectionConfirmPdu(sessionContext, protocol);
@@ -385,21 +439,45 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             {
                 case NegativeType.InvalidTPKTHeader:
                     confirmPdu.tpktHeader.version = 0;
+                    isSendTLSHandshakeAfterX224ConnectionConfirmPdu = false;
                     break;
                 case NegativeType.InvalidX224:
                     confirmPdu.x224Ccf.lengthIndicator--;
                     break;
                 case NegativeType.InvalidRdpNegData:
                     confirmPdu.rdpNegData.type = RDP_NEG_RSP_type_Values.Invalid;
+                    isSendTLSHandshakeAfterX224ConnectionConfirmPdu = false;
                     break;
             }
             if (!setRdpNegData)
             {
                 confirmPdu.rdpNegData = null;
             }
-            SendPdu(confirmPdu);
+
+            if (!invalidAccount)
+            {
+                SendPdu(confirmPdu, isSendTLSHandshakeAfterX224ConnectionConfirmPdu);
+            }
+            else
+            {
+                try
+                {
+                    SendPdu(confirmPdu, isSendTLSHandshakeAfterX224ConnectionConfirmPdu);
+                    site.Assert.Fail("Invalid Account Check Failed. SSPI Handshake Succeeded on Invalid User Account");
+                }
+                catch (SspiException e)
+                {
+                    site.Assert.Pass("Invalid Account Encountered. SSPI Handshake Failed");
+
+                }
+                catch (EndOfStreamException e)
+                {
+                    site.Assert.Pass("Invalid Account Encountered. CredSSP Authentication Failed");
+                }
+            }
             sessionState = ServerSessionState.X224ConnectionResponseSent;
         }
+
 
         /// <summary>
         /// Send X.224 Connection Confirm PDU. It is sent as a response of X.224 Connection Request.
@@ -1085,14 +1163,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="height">The height of the rectangle.</param>
         public void FPUpdateBitmap(ushort left, ushort top, ushort width, ushort height)
         {
-            TS_FP_UPDATE_PDU fpOutput = null;
-            TS_FP_UPDATE_BITMAP bitmap = null;
+            var bitmap = RDPBCGROutput.CreateFPUpdateBitmap(left, top, width, height);
 
-            fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            bitmap = RDPBCGROutput.CreateFPUpdateBitmap(left, top, width, height);
-            fpOutput.fpOutputUpdates[0] = bitmap;
-
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(bitmap);
         }
 
         /// <summary>
@@ -1102,14 +1175,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="y">The y-coordinate relative to the top-left corner of the server's desktop.</param>
         public void FPPointerPosition(int x, int y)
         {
-            TS_FP_UPDATE_PDU fpOutput = null;
-            TS_FP_POINTERPOSATTRIBUTE fpPos = new TS_FP_POINTERPOSATTRIBUTE();
+            var fpPos = RDPBCGROutput.CreateFPPointerPosAttribute(x, y);
 
-            fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            fpPos = RDPBCGROutput.CreateFPPointerPosAttribute(x, y);
-            fpOutput.fpOutputUpdates[0] = fpPos;
-
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(fpPos);
         }
 
         /// <summary>
@@ -1117,14 +1185,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// </summary>
         public void FPSystemPointerHidden()
         {
-            TS_FP_UPDATE_PDU fpOutput = null;
-            TS_FP_SYSTEMPOINTERHIDDENATTRIBUTE fpSysPointer = new TS_FP_SYSTEMPOINTERHIDDENATTRIBUTE();
+            var fpSysPointer = RDPBCGROutput.CreateFPSystemPointerHiddenAttribute();
 
-            fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            fpSysPointer = RDPBCGROutput.CreateFPSystemPointerHiddenAttribute();
-            fpOutput.fpOutputUpdates[0] = fpSysPointer;
-
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(fpSysPointer);
         }
 
         /// <summary>
@@ -1132,14 +1195,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// </summary>
         public void FPSystemPointerDefault()
         {
-            TS_FP_UPDATE_PDU fpOutput = null;
-            TS_FP_SYSTEMPOINTERDEFAULTATTRIBUTE fpSysPointer = new TS_FP_SYSTEMPOINTERDEFAULTATTRIBUTE();
+            var fpSysPointer = RDPBCGROutput.CreateFPSystemPointerDefaultAttribute();
 
-            fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            fpSysPointer = RDPBCGROutput.CreateFPSystemPointerDefaultAttribute();
-            fpOutput.fpOutputUpdates[0] = fpSysPointer;
-
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(fpSysPointer);
         }
 
         /// <summary>
@@ -1155,12 +1213,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         public void FPColorPointer(ushort cacheIndex, ushort hotSpotX, ushort hotSpotY, ushort width, ushort height,
             byte[] xorMaskData = null, byte[] andMaskData = null)
         {
-            TS_FP_UPDATE_PDU updatePdu = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            TS_FP_COLORPOINTERATTRIBUTE colorAttr = RDPBCGROutput.CreateFPColorPointerAttribute(cacheIndex, hotSpotX, hotSpotY, width, height,
+            var colorAttr = RDPBCGROutput.CreateFPColorPointerAttribute(cacheIndex, hotSpotX, hotSpotY, width, height,
                 xorMaskData, andMaskData);
-            updatePdu.fpOutputUpdates[0] = colorAttr;
 
-            SendPdu(updatePdu);
+            SendFastPathUpdatePdu(colorAttr);
         }
 
         /// <summary>
@@ -1177,12 +1233,10 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         public void FPNewPointer(ushort xorBpp, ushort cacheIndex, ushort hotSpotX, ushort hotSpotY, ushort width, ushort height,
             byte[] xorMaskData = null, byte[] andMaskData = null)
         {
-            TS_FP_UPDATE_PDU updatePdu = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            TS_FP_POINTERATTRIBUTE pointerAttr = RDPBCGROutput.CreateFPPointerAttribute(xorBpp, cacheIndex, hotSpotX, hotSpotY, width, height,
+            var pointerAttr = RDPBCGROutput.CreateFPPointerAttribute(xorBpp, cacheIndex, hotSpotX, hotSpotY, width, height,
                 xorMaskData, andMaskData);
-            updatePdu.fpOutputUpdates[0] = pointerAttr;
 
-            SendPdu(updatePdu);
+            SendFastPathUpdatePdu(pointerAttr);
         }
 
         /// <summary>
@@ -1191,11 +1245,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="cacheIndex">Cache entry in the pointer cache</param>
         public void FPCachedPointer(ushort cacheIndex)
         {
-            TS_FP_UPDATE_PDU updatePdu = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            TS_FP_CACHEDPOINTERATTRIBUTE cachedPointer = RDPBCGROutput.CreateCachedPointerAttribute(cacheIndex);
-            updatePdu.fpOutputUpdates[0] = cachedPointer;
+            var cachedPointer = RDPBCGROutput.CreateCachedPointerAttribute(cacheIndex);
 
-            SendPdu(updatePdu);
+            SendFastPathUpdatePdu(cachedPointer);
         }
         /// <summary>
         /// Send Fast-Path Surface Commands Update to client.
@@ -1206,19 +1258,13 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="height">The height of the rectangle.</param>
         public void FPSurfaceCommand(ushort left, ushort top, ushort width, ushort height)
         {
-            TS_FP_UPDATE_PDU fpOutput = null;
-            TS_FP_SURFCMDS surfCmds = null;
-            TS_SURFCMD_SET_SURF_BITS setSurfBits = null;
+            var setSurfBits = RDPBCGROutput.CreateSurfCmdSetSurfBits(left, top, width, height);
 
-            fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, 1);
-            setSurfBits = RDPBCGROutput.CreateSurfCmdSetSurfBits(left, top, width, height);
-            surfCmds = RDPBCGROutput.CreateFPSurfCmds(setSurfBits);
-
+            var surfCmds = RDPBCGROutput.CreateFPSurfCmds(setSurfBits);
 
             surfCmds.surfaceCommands[0] = setSurfBits;
-            fpOutput.fpOutputUpdates[0] = surfCmds;
 
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(surfCmds);
         }
 
         /// <summary>
@@ -1228,11 +1274,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// containing a collection of commands to be processed by the client.</param>
         public void SendSurfaceCommandsUpdate(TS_FP_SURFCMDS surfaceCommands)
         {
-            TS_FP_UPDATE_PDU fpOutput;
-            TS_FP_UPDATE[] updates = new TS_FP_UPDATE[1];
-            updates[0] = surfaceCommands;
-            fpOutput = rdpbcgrServerStack.CreateFastPathUpdatePdu(sessionContext, updates);
-            SendPdu(fpOutput);
+            SendFastPathUpdatePdu(surfaceCommands);
         }
 
         /// <summary>
@@ -1243,19 +1285,19 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="frameId">A 32-bit, unsigned integer. The ID identifying the frame.</param>
         public void SendFrameMarkerCommand(frameAction_Values frameAction, uint frameId)
         {
-            TS_FRAME_MARKER frameMakerCmd = new TS_FRAME_MARKER();
-            frameMakerCmd.cmdType = cmdType_Values.CMDTYPE_FRAME_MARKER;
-            frameMakerCmd.frameAction = frameAction;
-            frameMakerCmd.frameId = frameId;
+            TS_FRAME_MARKER frameMarkerCmd = new TS_FRAME_MARKER();
+            frameMarkerCmd.cmdType = cmdType_Values.CMDTYPE_FRAME_MARKER;
+            frameMarkerCmd.frameAction = frameAction;
+            frameMarkerCmd.frameId = frameId;
 
             TS_FP_SURFCMDS surfCmds = new TS_FP_SURFCMDS();
-            surfCmds.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS & 0x0f)
-            | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-            | ((int)compressedType_Values.None << 6));
-            surfCmds.compressionFlags = compressedType_Values.None;
-            surfCmds.size = 8; //size of TS_FRAME_MARKER;
+
+            surfCmds.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS);
+
             surfCmds.surfaceCommands = new TS_SURFCMD[1];
-            surfCmds.surfaceCommands[0] = frameMakerCmd;
+            surfCmds.surfaceCommands[0] = frameMarkerCmd;
+
+            surfCmds.AssignUpdateDataAndSize();
 
             SendSurfaceCommandsUpdate(surfCmds);
         }
@@ -1268,23 +1310,105 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         public void SendStreamSurfaceBitsCommand(TS_SURFCMD_STREAM_SURF_BITS streamCmd)
         {
             TS_FP_SURFCMDS surfCmds = new TS_FP_SURFCMDS();
-            surfCmds.updateHeader = (byte)(((int)updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS & 0x0f)
-            | (((int)fragmentation_Value.FASTPATH_FRAGMENT_SINGLE) << 4)
-            | ((int)compressedType_Values.None << 6));
-            surfCmds.compressionFlags = compressedType_Values.None;
-            // size of cmdType + destLeft + destTop + destRight + destBottom = 10
-            // size of bpp + flags + reserved + codecId + width + height + bitmapDataLength = 12
-            // size of exBitmapDataHeader = 24, if bitmapData.flags contains TSBitmapDataExFlags_Values.EX_COMPRESSED_BITMAP_HEADER_PRESENT
-            int subLength = 22;
-            if (streamCmd.bitmapData.exBitmapDataHeader != null)
-            {
-                subLength += 24;
-            }
-            surfCmds.size = (ushort)(subLength + streamCmd.bitmapData.bitmapDataLength); //size of TS_SURFCMD_STREAM_SURF_BITS;
+
+            surfCmds.updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_SURFCMDS);
 
             surfCmds.surfaceCommands = new TS_SURFCMD[1];
             surfCmds.surfaceCommands[0] = streamCmd;
+
+            surfCmds.AssignUpdateDataAndSize();
+
             SendSurfaceCommandsUpdate(surfCmds);
+        }
+
+        /// <summary>
+        /// Send fast-path large pointer update to client.
+        /// </summary>
+        /// <param name="cacheIndex">The cache index.</param>
+        /// <param name="hotSpotX">The x-coordinates of hotspot.</param>
+        /// <param name="hotSpotY">The y-coordinates of hotspot.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="xorMaskData">The xor mask data.</param>
+        /// <param name="andMaskData">The and mask data.</param>
+        public void FPLargePointer(
+            ushort cacheIndex,
+            ushort hotSpotX,
+            ushort hotSpotY,
+            ushort width,
+            ushort height,
+            byte[] xorMaskData = null,
+            byte[] andMaskData = null
+            )
+        {
+            var largePointerAttribute = RDPBCGROutput.CreateFPLargePointerAttribute(cacheIndex, hotSpotX, hotSpotY, width, height, xorMaskData, andMaskData);
+
+            SendFastPathUpdatePdu(largePointerAttribute);
+        }
+
+        private void SendFastPathUpdatePdu(TS_FP_UPDATE update)
+        {
+            var data = update.EncodeBody();
+
+            // Max length = 16383 - PDU header - FP header.
+            int maxLengthPerFragment = 16364;
+
+            if (data.Length > maxLengthPerFragment)
+            {
+                var maxRequestSize = SessionContext.MultifragmentUpdateMaxRequestSize;
+
+                if (maxRequestSize == null)
+                {
+                    throw new InvalidOperationException("SUT does not support multi-fragment!");
+                }
+
+                if (maxRequestSize < data.Length)
+                {
+                    throw new InvalidOperationException("SUT does not support multi-fragment!");
+                }
+
+                var fragments = data.Select((b, i) => new Tuple<byte, int>(b, i / maxLengthPerFragment)).GroupBy(x => x.Item2).Select(g => g.Select(x => x.Item1).ToArray());
+
+                var pdus = fragments.Select((fragment, i) =>
+                {
+                    fragmentation_Value fragmentation;
+
+                    if (i == 0)
+                    {
+                        fragmentation = fragmentation_Value.FASTPATH_FRAGMENT_FIRST;
+                    }
+                    else if (i == fragments.Count() - 1)
+                    {
+                        fragmentation = fragmentation_Value.FASTPATH_FRAGMENT_LAST;
+                    }
+                    else
+                    {
+                        fragmentation = fragmentation_Value.FASTPATH_FRAGMENT_NEXT;
+                    }
+
+                    var fragmentedPdu = new TS_FP_UPDATE_Fragmented()
+                    {
+                        updateHeader = new nested_TS_FP_UPDATE_updateHeader(updateCode_Values.FASTPATH_UPDATETYPE_LARGE_POINTER, fragmentation),
+                        updateData = fragment,
+                        size = (UInt16)fragment.Length,
+                    };
+
+                    var pdu = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, new TS_FP_UPDATE[] { fragmentedPdu });
+
+                    return pdu;
+                });
+
+                foreach (var pdu in pdus)
+                {
+                    SendPdu(pdu);
+                }
+            }
+            else
+            {
+                var fpOutput = RDPBCGROutput.CreateFPUpdatePDU(sessionContext, new TS_FP_UPDATE[] { update });
+
+                SendPdu(fpOutput);
+            }
         }
 
         #endregion "Fast Path Output"
@@ -1397,7 +1521,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// </summary>
         /// <param name="notificationType">The Logon Notification type.</param>
         /// <param name="errorType">The Logon Error type. Only used when Notification Type is LogonError.</param>
-        public void ServerSaveSessionInfo(LogonNotificationType notificationType, ErrorNotificationType_Values errorType)
+        public void ServerSaveSessionInfo(LogonNotificationType notificationType, ErrorNotificationType_Values errorType = ErrorNotificationType_Values.LOGON_MSG_NO_PERMISSION)
         {
             if (this.sessionState != ServerSessionState.RDPConnected || this.connectionFinalizationState != ConnectionFinalization_ServerState.ServerFontMapSent)
             {
@@ -1484,7 +1608,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
                 TS_LOGON_ERRORS_INFO errorInfo = new TS_LOGON_ERRORS_INFO();
                 errorInfo.ErrorNotificationType = errorType;
-                errorInfo.ErrorNotificationData = ErrorNotificationData_Values.LOGON_MSG_NO_PERMISSION;
+                errorInfo.ErrorNotificationData = ErrorNotificationData_Values.LOGON_FAILED_OTHER;
 
                 logonField.cbFieldData = 8;
                 logonField.FieldData = errorInfo;
@@ -1628,7 +1752,6 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// <param name="presentRoutingToken">Indicates if present routing token (LoadBalanceInfo).</param>
         public void SendServerRedirectionPdu(bool presentRoutingToken)
         {
-            UnicodeEncoding encoder = new UnicodeEncoding();
             RDP_SERVER_REDIRECTION_PACKET redirectPacket = new RDP_SERVER_REDIRECTION_PACKET();
 
             redirectPacket.Flags = RDP_SERVER_REDIRECTION_PACKET_FlagsEnum.SEC_REDIRECTION_PKT;
@@ -1642,8 +1765,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             }
             else
             {
-                string serverIP = ((System.Net.IPEndPoint)(sessionContext.LocalIdentity)).Address.ToString();
-                redirectPacket.TargetNetAddress = serverIP;
+                redirectPacket.TargetNetAddress = this.GetRedirectIpAddress();
                 redirectPacket.RedirFlags = RedirectionFlags.LB_TARGET_NET_ADDRESS;
             }
 
@@ -1654,7 +1776,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             redirectPacket.Domain = RdpbcgrTestData.Test_Domain;
             redirectPacket.RedirFlags |= RedirectionFlags.LB_DOMAIN;
 
-            redirectPacket.Password = encoder.GetBytes(RdpbcgrTestData.Test_Password);
+            redirectPacket.Password = RdpbcgrUtility.EncodeUnicodeStringToBytes(RdpbcgrTestData.Test_Password);
             redirectPacket.RedirFlags |= RedirectionFlags.LB_PASSWORD;
 
             redirectPacket.Pad = new byte[8];
@@ -1675,13 +1797,12 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
         public void SendServerRedirectionPduRDSTLS()
         {
-            UnicodeEncoding encoder = new UnicodeEncoding();
             RDP_SERVER_REDIRECTION_PACKET redirectPacket = new RDP_SERVER_REDIRECTION_PACKET();
 
             redirectPacket.Flags = RDP_SERVER_REDIRECTION_PACKET_FlagsEnum.SEC_REDIRECTION_PKT;
             redirectPacket.SessionID = RdpbcgrTestData.Test_Redirection_SessionId;
 
-            string serverIP = ((System.Net.IPEndPoint)(sessionContext.LocalIdentity)).Address.ToString();
+            var serverIP = this.GetRedirectIpAddress();
             redirectPacket.TargetNetAddress = serverIP;
             redirectPacket.RedirFlags = RedirectionFlags.LB_TARGET_NET_ADDRESS;
 
@@ -2001,8 +2122,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
                     Site.Log.Add(LogEntryKind.Debug, $"Unhandled exception from RdpeudpServer: {ex}");
                 };
             }
-            if (!rdpeudpServer.Running)
-                rdpeudpServer.Start();
+
+            rdpeudpServer.Start();
 
             //Send a Server Initiate Multitransport Request PDU
             byte[] securityCookie = new byte[16];
@@ -2742,9 +2863,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
         /// This method is used to send packet to SUT.
         /// </summary>
         /// <param name="packet">The packet to be sent.</param>
-        private void SendPdu(RdpbcgrServerPdu packet)
+        private void SendPdu(RdpbcgrServerPdu packet, bool isSendTLSHandshakeAfterX224ConnectionConfirmPdu = true)
         {
-            rdpbcgrServerStack.SendPdu(sessionContext, packet);
+            rdpbcgrServerStack.SendPdu(sessionContext, packet, isSendTLSHandshakeAfterX224ConnectionConfirmPdu);
             System.Threading.Thread.Sleep(100);//To avoid the combination with other sending request.
         }
         #endregion "PDU transport"
@@ -3080,11 +3201,20 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
         #region Private mothods
 
+        private string GetRedirectIpAddress()
+        {
+            string serverIP = ((System.Net.IPEndPoint)(sessionContext.LocalIdentity)).Address.ToString();
+            return string.IsNullOrEmpty(proxyIP) ? serverIP : proxyIP;
+        }
+
         private void LoadServerConfiguation()
         {
             serverConfig = new RdpbcgrServerConfig();
-            port = int.Parse(site.Properties["RDP.ServerPort"]);
-            if (site.Properties["RDP.IpVersion"] == "Ipv6")
+            PtfPropUtility.GetPtfPropertyValue(site, "ServerPort", out port);
+
+            string ipVersionString;
+            PtfPropUtility.GetPtfPropertyValue(site, "IpVersion", out ipVersionString);
+            if (ipVersionString == "Ipv6")
             {
                 ipVersion = IpVersion.Ipv6;
             }
@@ -3092,38 +3222,50 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             {
                 ipVersion = IpVersion.Ipv4;
             }
-            certFile = site.Properties["CertificatePath"];
-            certPwd = site.Properties["CertificatePassword"];
-            rdpVersionString = site.Properties["RDP.Version"];
+
+            PtfPropUtility.GetPtfPropertyValue(site, "ProxyIP", out proxyIP);
+
+            PtfPropUtility.GetPtfPropertyValue(site, "CertificatePath", out certFile);
+
+            PtfPropUtility.GetPtfPropertyValue(site, "CertificatePassword", out certPwd);
+
+            string rdpVersionString;
+            PtfPropUtility.GetPtfPropertyValue(site, "Version", out rdpVersionString);
 
             #region WaitTime
-            string strWaitTime = site.Properties["WaitTime"];
-            if (strWaitTime != null)
+            string strWaitTime;
+            PtfPropUtility.GetPtfPropertyValue(site, "WaitTime", out strWaitTime);
+            if (!String.IsNullOrEmpty(strWaitTime))
             {
                 int waitSeconds = Int32.Parse(strWaitTime);
                 pduWaitTimeSpan = new TimeSpan(0, 0, waitSeconds);
             }
             #endregion
 
-            string strIsClientToServerEncrypted = site.Properties["RDP.Security.IsClientToServerEncrypted"];
-            if (strIsClientToServerEncrypted != null)
+            string strIsClientToServerEncrypted;
+            PtfPropUtility.GetPtfPropertyValue(site, "IsClientToServerEncrypted", out strIsClientToServerEncrypted, new string[] { RdpPtfGroupNames.Security});
+
+            if (!String.IsNullOrEmpty(strIsClientToServerEncrypted))
             {
                 isClientToServerEncrypted = Boolean.Parse(strIsClientToServerEncrypted);
             }
 
-            string strIsWindows = site.Properties["IsWindowsImplementation"];
-            if (strIsWindows != null)
+            string strIsWindows;
+            PtfPropUtility.GetPtfPropertyValue(site, "IsWindowsImplementation", out strIsWindows);
+            if (!String.IsNullOrEmpty(strIsWindows))
             {
                 isWindowsImplementation = Boolean.Parse(strIsWindows);
             }
 
-            string strVerifySUTDisplay = site.Properties["VerifySUTDisplay.Enable"];
-            if (strVerifySUTDisplay != null)
+            string strVerifySUTDisplay;
+            PtfPropUtility.GetPtfPropertyValue(site, "Enable", out strVerifySUTDisplay, new string[] { RdpPtfGroupNames.VerifySUTDisplay});
+            if (!String.IsNullOrEmpty(strVerifySUTDisplay))
             {
                 verifySUTDisplay = Boolean.Parse(strVerifySUTDisplay);
             }
 
-            string strVerifySUTDisplayAssessValueThreshold = site.Properties["VerifySUTDisplay.IQA.AssessValueThreshold"];
+            string strVerifySUTDisplayAssessValueThreshold;
+            PtfPropUtility.GetPtfPropertyValue(site, "AssessValueThreshold", out strVerifySUTDisplayAssessValueThreshold, new string[] { RdpPtfGroupNames.VerifySUTDisplay, RdpPtfGroupNames.IQA, });
 
             if (Double.TryParse(strVerifySUTDisplayAssessValueThreshold, out this.IQAAssessValueThreshold))
             {
@@ -3137,7 +3279,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
                 this.Site.Assert.Fail("VerifySUTDisplay.IQA.AssessValueThreshold is not in digital format.");
             }
 
-            string strVerifySUTDisplayIQAAlgorithm = site.Properties["VerifySUTDisplay.IQA.Algorithm"];
+            string strVerifySUTDisplayIQAAlgorithm;
+            PtfPropUtility.GetPtfPropertyValue(site, "Algorithm", out strVerifySUTDisplayIQAAlgorithm, new string[] { RdpPtfGroupNames.VerifySUTDisplay, RdpPtfGroupNames.IQA });
             if (strVerifySUTDisplayIQAAlgorithm != null && strVerifySUTDisplayIQAAlgorithm.Equals("MS-SSIM"))
             {
                 this.IQAAlgorithm = IQA_Algorithm.MSSSIM;
@@ -3153,29 +3296,33 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 
             //Update test data
             string tempStr;
-            if (PtfPropUtility.GetStringPtfProperty(site, "RDP.ServerDomain", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "ServerDomain", out tempStr))
             {
                 RdpbcgrTestData.Test_Domain = tempStr;
             }
-            if (PtfPropUtility.GetStringPtfProperty(site, "RDP.ServerUserName", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "ServerUserName", out tempStr))
             {
                 RdpbcgrTestData.Test_UserName = tempStr;
             }
-            if (PtfPropUtility.GetStringPtfProperty(site, "RDP.ServerUserPassword", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "ServerUserPassword", out tempStr))
             {
                 RdpbcgrTestData.Test_Password = tempStr;
             }
-            if (PtfPropUtility.GetStringPtfProperty(site, "SUTRedirectionGuid", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "SUTRedirectionGuid", out tempStr))
             {
                 RdpbcgrTestData.Test_RedirectionGuid = tempStr;
             }
-            if (PtfPropUtility.GetStringPtfProperty(site, "SUTFullQualifiedDomainName", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "SUTFullQualifiedDomainName", out tempStr))
             {
                 RdpbcgrTestData.Test_FullQualifiedDomainName = tempStr;
             }
-            if (PtfPropUtility.GetStringPtfProperty(site, "SUTNetBiosName", out tempStr))
+            if (PtfPropUtility.GetPtfPropertyValue(site, "SUTNetBiosName", out tempStr))
             {
                 RdpbcgrTestData.Test_NetBiosName = tempStr;
+            }
+            if (PtfPropUtility.GetPtfPropertyValue(site, "Protocol", out tempStr))
+            {
+                RdpbcgrTestData.Test_Protocol = tempStr;
             }
         }
 

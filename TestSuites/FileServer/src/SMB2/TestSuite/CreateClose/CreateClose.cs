@@ -4,12 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestSuites.FileSharing.Common.TestSuite;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
@@ -61,6 +62,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
             }
             base.TestCleanup();
         }
+
         #endregion
 
         #region Test Cases
@@ -115,7 +117,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                 FileNameType.ExistedValidFileName,
                 true); //Valid AccessMask
         }
-
+        
         [TestMethod]
         [TestCategory(TestCategories.Smb2002)]
         [TestCategory(TestCategories.CreateClose)]
@@ -140,6 +142,11 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
         [Description("This case is designed to test whether server can handle Create operation with symbolic link at last of file path.")]
         public void CreateClose_SymbolicLinkAtLast()
         {
+            if(testConfig.Platform >= Platform.WindowsServer2022)
+            {
+                BaseTestSite.Assert.Inconclusive("This test case currently does not support Windows Server 2022 or Windows Server 2025.");
+            }
+            
             //Client1 create a directory
             OperateFileOrDirectory(
                 client1,
@@ -166,7 +173,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                 FileNameType.InvalidSymbolicLink,
                 true); //Valid AccessMask
         }
-
+        
         [TestMethod]
         [TestCategory(TestCategories.Smb2002)]
         [TestCategory(TestCategories.CreateClose)]
@@ -182,6 +189,110 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                 false,  //Use Administrator
                 FileNameType.NotExistedValidFileName,
                 false); //Invalid AccessMask
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.CreateClose)]
+        [TestCategory(TestCategories.Positive)]
+        [Description("This case is designed to test whether server can handle Create and Delete operations on file with dot directory name correctly.")]
+        public void CreateClose_CreateAndCloseFileWithDotDir()
+        {
+            // Client1 create a directory
+            OperateFileOrDirectory(
+                client1,
+                true,   //A directory
+                false,  //FILE_DELETE_ON_CLOSE flag not set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileName,
+                true);   //Valid AccessMask
+
+            // Client2 create a file with dot directory name
+            OperateFileOrDirectory(
+                client2,
+                false,   //Not a directory
+                true,    //FILE_DELETE_ON_CLOSE flag set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileNameWithDotDirectoryName,
+                true);   //Valid AccessMask
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.CreateClose)]
+        [TestCategory(TestCategories.Positive)]
+        [Description("This case is designed to test whether server can handle Create and Delete operations on directory with dot directory name correctly.")]
+        public void CreateClose_CreateAndCloseDirWithDotDir()
+        {
+            // Client1 create a directory
+            OperateFileOrDirectory(
+                client1,
+                true,   //A directory
+                false,  //FILE_DELETE_ON_CLOSE flag not set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileName,
+                true);   //Valid AccessMask
+
+            // Client2 create a directory with dot directory name
+            OperateFileOrDirectory(
+                client2,
+                true,   //A directory
+                true,   //FILE_DELETE_ON_CLOSE flag set
+                false,  //Use Administrator
+                FileNameType.NotExistedValidFileNameWithDotDirectoryName,
+                true);  //Valid AccessMask
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.CreateClose)]
+        [TestCategory(TestCategories.UnexpectedFields)]
+        [Description("This case is designed to test whether server can handle Create and Delete operations on file with double dot directory name correctly.")]
+        public void CreateClose_CreateAndCloseFileWithDoubleDotDir()
+        {
+            // Client1 create a directory
+            OperateFileOrDirectory(
+                client1,
+                true,   //A directory
+                false,  //FILE_DELETE_ON_CLOSE flag not set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileName,
+                true);   //Valid AccessMask
+
+            // Client2 create a file with doule dot directory name
+            OperateFileOrDirectory(
+                client2,
+                false,   //Not a directory
+                true,    //FILE_DELETE_ON_CLOSE flag set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileNameWithDoubleDotDirectoryName,
+                true);   //Valid AccessMask
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Smb2002)]
+        [TestCategory(TestCategories.CreateClose)]
+        [TestCategory(TestCategories.UnexpectedFields)]
+        [Description("This case is designed to test whether server can handle Create and Delete operations on directory with double dot directory name correctly.")]
+        public void CreateClose_CreateAndCloseDirWithDoubleDotDir()
+        {
+            // Client1 create a directory
+            OperateFileOrDirectory(
+                client1,
+                true,   //A directory
+                false,  //FILE_DELETE_ON_CLOSE flag not set
+                false,   //Use Administrator
+                FileNameType.NotExistedValidFileName,
+                true);   //Valid AccessMask
+
+            // Client2 create a directory with doule dot directory name
+            OperateFileOrDirectory(
+                client2,
+                true,   //A directory
+                true,   //FILE_DELETE_ON_CLOSE flag set
+                false,  //Use Administrator
+                FileNameType.NotExistedValidFileNameWithDoubleDotDirectoryName,
+                true);  //Valid AccessMask
         }
         #endregion
 
@@ -274,6 +385,12 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                 case FileNameType.InvalidSymbolicLink:
                     fileName = TestConfig.Symboliclink + "\\CreateClose" + Guid.NewGuid();
                     break;
+                case FileNameType.NotExistedValidFileNameWithDotDirectoryName:
+                    fileName = isDirectory ? fileName + "\\CreateClose_Directory_" + Guid.NewGuid() + ".dot" : fileName + "\\CreateClose_File_" + Guid.NewGuid() + ".dot.txt";
+                    break;
+                case FileNameType.NotExistedValidFileNameWithDoubleDotDirectoryName:
+                    fileName = isDirectory ? fileName + "\\..\\CreateClose_Directory_" + Guid.NewGuid() : fileName + "\\..\\CreateClose_File_" + Guid.NewGuid() + ".txt";
+                    break;
                 default:
                     throw new ArgumentException("fileNameType");
             }
@@ -338,8 +455,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 BaseTestSite.Assert.AreNotEqual(
                                     Smb2Status.STATUS_SUCCESS,
                                     header.Status,
-                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and any of the following conditions is TRUE, the server SHOULD<242> fail the request with STATUS_ACCESS_DENIED. " +
-                                    "DesiredAccess does not include DELETE or GENERIC_ALL. " +
+                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and Treeconnect.MaximalAccess does not include DELETE or GENERIC, the server SHOULD<283> fail the request with STATUS_ACCESS_DENIED. " +
                                     "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                             }
                             else if (testConfig.Platform == Platform.WindowsServer2008 
@@ -353,8 +469,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 BaseTestSite.Assert.AreEqual(
                                     Smb2Status.STATUS_INVALID_PARAMETER,
                                     header.Status,
-                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and any of the following conditions is TRUE, the server SHOULD<242> fail the request with STATUS_ACCESS_DENIED. " +
-                                    "DesiredAccess does not include DELETE or GENERIC_ALL. " +
+                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and Treeconnect.MaximalAccess does not include DELETE or GENERIC, the server SHOULD<283> fail the request with STATUS_ACCESS_DENIED. " +
                                     "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                             }
                             else 
@@ -363,8 +478,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 BaseTestSite.Assert.AreEqual(
                                     Smb2Status.STATUS_ACCESS_DENIED,
                                     header.Status,
-                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and any of the following conditions is TRUE, the server SHOULD<242> fail the request with STATUS_ACCESS_DENIED. " +
-                                    "DesiredAccess does not include DELETE or GENERIC_ALL. " +
+                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and Treeconnect.MaximalAccess does not include DELETE or GENERIC, the server SHOULD<283> fail the request with STATUS_ACCESS_DENIED. " +
                                     "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                             }
                         }
@@ -376,8 +490,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 BaseTestSite.Assert.AreNotEqual(
                                     Smb2Status.STATUS_SUCCESS,
                                     header.Status,
-                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and any of the following conditions is TRUE, the server SHOULD<242> fail the request with STATUS_ACCESS_DENIED. " +
-                                    "Treeconnect.MaximalAccess does not include DELETE or GENERIC_ALL. " +
+                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and Treeconnect.MaximalAccess does not include DELETE or GENERIC, the server SHOULD<283> fail the request with STATUS_ACCESS_DENIED. " +
                                     "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                             }
                             else if (testConfig.Platform == Platform.WindowsServer2008
@@ -391,8 +504,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 BaseTestSite.Assert.AreEqual(
                                     Smb2Status.STATUS_ACCESS_DENIED,
                                     header.Status,
-                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and any of the following conditions is TRUE, the server SHOULD<242> fail the request with STATUS_ACCESS_DENIED. " +
-                                    "Treeconnect.MaximalAccess does not include DELETE or GENERIC_ALL. " +
+                                    "3.3.5.9: If the FILE_DELETE_ON_CLOSE flag is set in CreateOptions and Treeconnect.MaximalAccess does not include DELETE or GENERIC, the server SHOULD<283> fail the request with STATUS_ACCESS_DENIED. " +
                                     "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                             }
                         }
@@ -411,6 +523,24 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.SMB2.TestSuite.CreateClose
                                 Smb2Status.STATUS_SUCCESS,
                                 header.Status,
                                 "{0} should be successful, actually server returns with {1}.", header.Command, Smb2Status.GetStatusCode(header.Status));
+                    }
+                    break;
+                case FileNameType.NotExistedValidFileNameWithDotDirectoryName:
+                    {
+                        BaseTestSite.Assert.AreEqual(
+                                Smb2Status.STATUS_SUCCESS,
+                                header.Status,
+                                "{0} should be successful, actually server returns with {1}.", header.Command, Smb2Status.GetStatusCode(header.Status));
+                    }
+                    break;
+                case FileNameType.NotExistedValidFileNameWithDoubleDotDirectoryName:
+                    {
+                        BaseTestSite.Assert.AreEqual(
+                                Smb2Status.STATUS_INVALID_PARAMETER,
+                                header.Status,
+                                    "3.3.5.9: Windows-based servers accept the path names containing Dot Directory Names specified in [MS-FSCC] section 2.1.5.1 and attempt to normalize the path name by removing the pathname components of \".\"  and \"..\"." +
+                                    "Windows-based servers fail the CREATE request with STATUS_INVALID_PARAMETER if the file name in the Buffer field of the request begins in the form \"subfolder\\..\\\", for example \"x\\..\\y.txt\". " +
+                                    "Actually server returns with {0}.", Smb2Status.GetStatusCode(header.Status));
                     }
                     break;
                 default:

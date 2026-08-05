@@ -1,6 +1,6 @@
 ﻿# AUTH  Protocol Server Test Design Specification 
 
-##Contents
+## Contents
 * [Contents](#_Toc427487690)
 * [Summary](#_Toc427487691)
 * [Test Scope](#_Toc427487692)
@@ -13,6 +13,9 @@
 		* [Test Case Design](#_Toc427487699)
 		* [BVT cases](#_Toc427487700)
 		* [Other traditional cases](#_Toc427487701)
+    * [NTLM Authentication](#_Toc_NtlmAuth)
+		* [Test Case Design](#_Toc_NtlmAuth_Design)
+		* [BVT cases](#_Toc_NtlmAuth_Bvt)
     * [Share Permission Check](#_Toc427487702)
 		* [Test Case Design](#_Toc427487703)
 		* [Preconditions](#_Toc427487704)
@@ -33,7 +36,7 @@
 
 ## <a name="_Toc427487691"/>Summary
 The Auth_ServerTestSuite is designed to test Authentication and Authorization scenarios of MS-SMB2.
-The Authentication cases cover Kerberos Authentication;
+The Authentication cases cover Kerberos Authentication and NTLM Authentication;
 The Authorization cases cover Share Permission Check, Folder Permission Check, File Permission Check, and Claim-Based Access Control scenario.
 
 ## <a name="_Toc427487692"/>Test Scope
@@ -62,13 +65,13 @@ Details of the environment is specified in section 1 of FileSharing_ServerTestDe
 Synthetic Kerberos client is used to communicate with KDC to get the cifs Service Ticket of the target SUT.
 Service Tickets, Authenticators of Kerberos and mechListMIC of GSSPNG are modified in each case to simulate different situations. Synthetic SMB2 client will then send the Kerberos tokens (included in SMB2 SESSION_SETUP Request) to the SUT, to see whether SUT can handle them correctly according to RFC 4120, RFC 4178, RFC 4121 and MS-KILE.
 Service password/keytab file may be needed in order for synthetic Kerberos client to modify the Service Ticket.
-17 traditional cases are designed to cover the above scenarios.
+18 traditional cases are designed to cover the above scenarios.
 
 #### <a name="_Toc427487700"/>BVT cases
 
 | &#32;| &#32; |
 | -------------| ------------- |
-|  **Test ID**| BVT_KerbAuth_AccessFile_Success| 
+|  **Test ID**| BVT_KerbAuth_Success| 
 |  **Description** | This test case is designed to test whether server can handle Kerberos Authentication using GSSAPI correctly| 
 |  **Test Execution Steps**| Kerberos client sends AS-REQ without PA-DATA to KDC| 
 | | Kerberos client expects KRB-ERROR from KDC| 
@@ -84,10 +87,16 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 NEOGTIATE response from AP| 
 | | SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
-| | Try accessing files, which should be successful| 
-
-
-
+| | SMB2 Client sends TREE_CONNECT request|
+| | SMB2 client expects TREE_CONNECT response|
+| | SMB2 Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | SMB2 Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | SMB2 Client sends LogOff request|
+| | SMB2 client expects LogOff response|
+| | SMB2 Client sends Disconnect request|
+| | SMB2 client expects Disconnect response|
 
 
 
@@ -114,11 +123,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 Server should return KRB_AP_ERR_BADMATCH in GSS Token| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_Authenticator_CRealmNotMatch| 
@@ -138,11 +142,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Session Setup should fail because the cname or crealm in the Authenticator does not match the same field in the Ticket| 
 | | SMB2 Server should return KRB_AP_ERR_BADMATCH in GSS Token| 
-
-
-
-
-
 
 
 | &#32;| &#32; |
@@ -165,9 +164,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Session Setup should fail because the Authenticator cannot be correctly decrypted| 
 | | SMB2 Server should return KRB_AP_ERR_MODIFIED in GSS Token| 
-
-
-
 
 
 
@@ -196,10 +192,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 
 
 
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_Ticket_WrongSName| 
@@ -221,10 +213,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Server would find the right key, despite of the wrong realm| 
 | | Session Setup should succeed| 
-
-
-
-
 
 
 
@@ -250,11 +238,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | Session Setup should succeed| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_Ticket_NotValid| 
@@ -276,11 +259,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 Client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Session Setup should fail because the starttime (tomorrow) in the Ticket is later than the current time by more than the allowable clock skew| 
 | | SMB2 Server should return KRB_AP_ERR_TKT_NYV in GSS Token| 
-
-
-
-
-
 
 
 | &#32;| &#32; |
@@ -306,11 +284,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 Server should return KRB_AP_ERR_TKT_EXPIRED in GSS Token| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_Ticket_WrongEncKey| 
@@ -331,10 +304,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Session Setup should fail because the Ticket cannot be correctly decrypted| 
 | | SMB2 Server should return KRB_AP_ERR_MODIFIED in GSS Token| 
-
-
-
-
 
 
 
@@ -362,10 +331,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 
 
 
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_AuthData_UnknownType_Optional_Authenticator| 
@@ -390,11 +355,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SessionSetup should succeed| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_AuthData_UnknownType_Ticket| 
@@ -415,12 +375,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
 | | Session Setup should fail because of the unknown Authorization-Data in the Ticket| 
-
-
-
-
-
-
 
 
 
@@ -447,11 +401,6 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | Server should not fail the request.| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| KerbAuth_Replay| 
@@ -466,18 +415,22 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | Create authenticator| 
 | | Create AP Request| 
 | | Create GSS Token| 
-| | SMB2 client sends SMB2 NEGOTIATE request to AP| 
+| | First SMB2 client sends SMB2 NEGOTIATE request to AP| 
 | | SMB2 client expects SMB2 NEOGTIATE response from AP| 
-| | SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
+| | First SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
-| | Session Setup should fail because it uses a Replay of KRB_AP_REQ| 
-| | SMB2 Server should return KRB_AP_ERR_REPEAT in GSS Token| 
-| | Try accessing file using another SMB2 Client, which should succeed| 
-
-
-
-
-
+| | Second Client sends SMB2 SESSION_SETUP request with a Replay of KRB_AP_REQ|
+| | SMB2 Client expects rejected with KRB_AP_ERR_REPEAT in GSS Token| 
+| | First Client sends TREE_CONNECT request|
+| | SMB2 client expects TREE_CONNECT response|
+| | First Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | First Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | First Client sends LogOff request|
+| | SMB2 client expects LogOff response|
+| | First Client sends Disconnect request|
+| | SMB2 client expects Disconnect response|
 
 
 | &#32;| &#32; |
@@ -499,12 +452,16 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 | | SMB2 client expects SMB2 NEOGTIATE response from AP| 
 | | SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
 | | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
-| | Try accessing files, which should be successful| 
-
-
-
-
-
+| | SMB2 Client sends TREE_CONNECT request|
+| | SMB2 client expects TREE_CONNECT response|
+| | SMB2 Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | SMB2 Client sends TREE_DISCONNECT request|
+| | SMB2 client expects TREE_DISCONNECT response|
+| | SMB2 Client sends LogOff request|
+| | SMB2 client expects LogOff response|
+| | SMB2 Client sends Disconnect request|
+| | SMB2 client expects Disconnect response|
 
 
 | &#32;| &#32; |
@@ -530,6 +487,56 @@ Service password/keytab file may be needed in order for synthetic Kerberos clien
 
 
 
+| &#32;| &#32; |
+| -------------| ------------- |
+|  **Test ID**| KerbAuth_UserName_With_Special_Characters| 
+|  **Description**| This test case is designed to test whether DC and File Server can handle users name with special characters correctly.| 
+|  **Test Execution Steps**| For each of the 5 existing users with special character run the execution steps one by one: |
+| | Kerberos client sends AS-REQ without PA-DATA to KDC| 
+| | Kerberos client expects KRB-ERROR from KDC| 
+| | Kerberos client sends AS-REQ with PA-DATA to KDC| 
+| | Kerberos client expects AS-REP from KDC| 
+| | Kerberos client sends TGS-REQ to KDC| 
+| | Kerberos client expects TGS-REP from KDC| 
+| | Decrypt SMB2 Service Ticket| 
+| | Create Authenticator| 
+| | Create AP-REQ| 
+| | Create GSS Token| 
+| | Add mechListMIC with invalid checksum to negTokenInit| 
+| | SMB2 client sends SMB2 NEGOTIATE request to AP| 
+| | SMB2 client expects SMB2 NEOGTIATE response from AP| 
+| | SMB2 client sends SMB2 SESSION_SETUP request to AP with GSS Token| 
+| | SMB2 client expects SMB2 SESSION_SETUP response with GSS Token| 
+| | Session Setup should fail because of the invalid checksum in mechListMIC| 
+
+
+
+### <a name="_Toc_NtlmAuth"/>NTLM Authentication
+
+#### <a name="_Toc_NtlmAuth_Design"/>Test Case Design
+The synthetic SMB2 client uses the NTLM (NTLMSSP) security package to authenticate against the SUT through the SMB2 SESSION_SETUP exchange. The underlying NTLMSSP three-way handshake (NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE) is carried inside the SESSION_SETUP request/response tokens. The test verifies that the SUT processes the NTLM authentication token correctly according to MS-NLMP section 3 and MS-SMB2 section 3.3.5.5 (Receiving an SMB2 SESSION_SETUP Request), and grants access to a share.
+1 BVT case is designed to cover this scenario.
+
+#### <a name="_Toc_NtlmAuth_Bvt"/>BVT cases
+
+| &#32;| &#32; |
+| -------------| ------------- |
+|  **Test ID**| BVT_NtlmAuth_Success| 
+|  **Description** | This test case is designed to test whether the server can handle NTLM (NTLMSSP) Authentication through the SMB2 SESSION_SETUP exchange (Negotiate -> Challenge -> Authenticate) correctly| 
+|  **Test Execution Steps**| SMB2 client sends SMB2 NEGOTIATE request to SUT| 
+| | SMB2 client expects SMB2 NEGOTIATE response from SUT| 
+| | SMB2 client sends SMB2 SESSION_SETUP request using the NTLM security package (NTLMSSP NEGOTIATE_MESSAGE)| 
+| | SMB2 client expects SMB2 SESSION_SETUP response with STATUS_MORE_PROCESSING_REQUIRED carrying the NTLMSSP CHALLENGE_MESSAGE| 
+| | SMB2 client sends SMB2 SESSION_SETUP request carrying the NTLMSSP AUTHENTICATE_MESSAGE| 
+| | SMB2 client expects SMB2 SESSION_SETUP response with STATUS_SUCCESS| 
+| | SMB2 client sends TREE_CONNECT request| 
+| | SMB2 client expects TREE_CONNECT response with STATUS_SUCCESS| 
+| | SMB2 client sends TREE_DISCONNECT request| 
+| | SMB2 client expects TREE_DISCONNECT response| 
+| | SMB2 client sends LogOff request| 
+| | SMB2 client expects LogOff response| 
+| | SMB2 client sends Disconnect request| 
+
 
 
 ### <a name="_Toc427487702"/>Share Permission Check
@@ -544,28 +551,28 @@ In Share Permission Check scenario, different DACLs will be applied to SMB share
 
 #### <a name="_Toc427487704"/>Preconditions
 
-#####Domain Users
+##### Domain Users
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
 | AzUser01| S-1-5-21-465464611-2451339954-1855217765-1106| AzGroup01|  | 
+| 9L7!MNZ%}wq4iZ| | AzGroup01|  | 
+| XJ(x1SjZ{INM!RpPrQ^c| | AzGroup01|  | 
+| p9jwB3A@U)i2z~LzTd| | |  | 
+| $I1Q73_VjdSJ!vGn7Q| | |  | 
+| @0o2^w@w^-t%abwos31| | |  | 
 | | | Domain Users| | 
 
-
-
-
-#####Domain Groups
+##### Domain Groups
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
 | AzGroup01| S-1-5-21-465464611-2451339954-1855217765-1105|  |  | 
 
 
-
-
 * SID may be different in your environment.
 
-#####Share(s)
+##### Share(s)
 If MS-SRVS is supported by SUT, test suite can dynamically set Share Permissions using MS-SRVS. One share need to be exposed, named AzShare by default. Folder (NTFS) permission should be set to allow everyone to access it.
 Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions should be set respectively according to the Security Descriptor in each of the following tables. Folder (NTFS) permission should be set to allow everyone to access it.
 
@@ -579,10 +586,6 @@ Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions 
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
 #### <a name="_Toc427487706"/>Other traditional cases
 
 | &#32;| &#32; |
@@ -593,22 +596,12 @@ Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions 
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| SharePermission_AccessDeny_GroupSid| 
 |  **Description**| This test case is designed to test whether a user is not allowed to access a share when ACCESS_DENIED_ACE with user's group SID exists in share Security Descriptor.| 
 |  **Security Descriptor**| O:SYG:SYD:**(D;;0x1fffff;;;S-1-5-21-465464611-2451339954-1855217765-1105)**(A;;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
-
 
 
 | &#32;| &#32; |
@@ -619,11 +612,6 @@ Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions 
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| SharePermission_AccessDeny_UserSid| 
@@ -632,21 +620,12 @@ Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions 
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| SharePermission_AccessDeny_UserSidWithoutReadPermission| 
 |  **Description**| This test case is designed to test whether a user can access a share when ACCESS_ALLOWED_ACE with user SID exists in share Security Descriptor.| 
 |  **Security Descriptor**| O:SYG:SYD:**(D;;;;;S-1-5-21-465464611-2451339954-1855217765-1106)**(A;;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
 
 
 
@@ -661,10 +640,6 @@ Otherwise, 6 shares (AzShare01, …, AzShare06) are required. Share Permissions 
 | | Use account AzUsre01 to delete the file just created. This operation should not succeed because Treeconnect.MaximalAccess does not include DELETE or GENERIC_ALL.| 
 
 
-
-
-
-
 ### <a name="_Toc427487707"/>Folder Permission Check
 
 #### <a name="_Toc427487708"/>Test Case Design
@@ -677,7 +652,7 @@ In Folder Permission Check scenario, different DACLs will be applied to a shared
 
 #### <a name="_Toc427487709"/>Preconditions
 
-#####Domain Users
+##### Domain Users
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
@@ -685,9 +660,7 @@ In Folder Permission Check scenario, different DACLs will be applied to a shared
 | | | Domain Users| | 
 
 
-
-
-#####Domain Groups
+##### Domain Groups
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
@@ -695,10 +668,9 @@ In Folder Permission Check scenario, different DACLs will be applied to a shared
 
 
 
-
 * SID may be different in your environment.
 
-#####Share(s)
+##### Share(s)
 One share need to be exposed, named AzFolder by default. Share Permission should be set to allow everyone to access it. Domain Admins should be granted Full Access permission to the folder.
 SMB2 SET_INFO is required to run these cases.
 
@@ -713,9 +685,6 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
 #### <a name="_Toc427487711"/>Other traditional cases
 
 | &#32;| &#32; |
@@ -724,10 +693,6 @@ SMB2 SET_INFO is required to run these cases.
 |  **Description**| This test case is designed to test whether a user can access a share when ACCESS_ALLOWED_ACE with user's group SID exists in folder Security Descriptor.| 
 |  **Security Descriptor**| O:BAG:DUD:P**(A;;GR;;;S-1-5-21-465464611-2451339954-1855217765-1106)**(A;OICI;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
 
 
 
@@ -740,21 +705,12 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| FolderPermission_AccessDeny_SidNoInclude| 
 |  **Description**| This test case is designed to test whether a user is not allowed to access a share when user SID does not exist in folder Security Descriptor.| 
 |  **Security Descriptor**| O:BAG:DUD:P(A;OICI;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
-
 
 
 | &#32;| &#32; |
@@ -766,19 +722,12 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| FolderPermission_AccessDeny_UserSidWithoutReadPermission| 
 |  **Description**| This test case is designed to test whether a user can access a share when ACCESS_ALLOWED_ACE with user SID exists in folder Security Descriptor.| 
 |  **Security Descriptor**| O:BAG:DUD:P**(A;;;;;S-1-5-21-465464611-2451339954-1855217765-1106)**(A;OICI;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
 
 
 
@@ -792,28 +741,23 @@ In File Permission Check scenario, files with different DACLs will be created in
 
 
 
-#####Domain Users
+##### Domain Users
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
 | AzUser01| S-1-5-21-465464611-2451339954-1855217765-1106| AzGroup01|  | 
 | | | Domain Users| | 
 
-
-
-
-#####Domain Groups
+##### Domain Groups
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
 | AzGroup01| S-1-5-21-465464611-2451339954-1855217765-1105|  |  | 
 
 
-
-
 * SID may be different in your environment.
 
-#####Share(s)
+##### Share(s)
 One share need to be exposed, named AzFile by default. Share permission should be set to allow everyone accessing it. Domain Admins should be granted Full Access permission to the folder.
 SMB2 SET_INFO is required to run these cases.
 
@@ -827,10 +771,6 @@ SMB2 SET_INFO is required to run these cases.
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
 #### <a name="_Toc427487715"/>Other traditional cases
 
 | &#32;| &#32; |
@@ -841,21 +781,12 @@ SMB2 SET_INFO is required to run these cases.
 |  **Access Account**| AzUser01| 
 
 
-
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| FilePermission_AccessDeny_GroupSid| 
 |  **Description**| This test case is designed to test whether a user is not allowed to read a file when ACCESS_DENIED_ACE with user's group SID exists in file Security Descriptor.| 
 |  **Security Descriptor**| O:BAG:DUD:AI**(D;;GR;;;S-1-5-21-465464611-2451339954-1855217765-1105)**(A;ID;FA;;;SY)(A;ID;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
 
 
 
@@ -868,20 +799,12 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
-
 | &#32;| &#32; |
 | -------------| ------------- |
 |  **Test ID**| FolderPermission_AccessDeny_UserSid| 
 |  **Description**| This test case is designed to test whether a user is not allowed to read a file when ACCESS_DENIED_ACE with user SID exists in file Security Descriptor.| 
 |  **Security Descriptor**| O:BAG:DUD:AI**(D;;GR;;;S-1-5-21-465464611-2451339954-1855217765-1106)**(A;ID;FA;;;SY)(A;ID;FA;;;BA)| 
 |  **Access Account**| AzUser01| 
-
-
-
-
 
 
 
@@ -907,7 +830,7 @@ In Claim-Based Access Control scenario, different Central Access Policies (CAPs)
 
 #### <a name="_Toc427487718"/>Preconditions
 
-#####Domain Users
+##### Domain Users
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
@@ -932,9 +855,7 @@ In Claim-Based Access Control scenario, different Central Access Policies (CAPs)
 | noclaimuser| S-1-5-21-465464611-2451339954-1855217765-1607| Domain Users|  | 
 
 
-
-
-#####Domain Groups
+##### Domain Groups
 
 | User Name| SID| Member Of| Attributes| 
 | -------------| -------------| -------------| ------------- |
@@ -944,11 +865,9 @@ In Claim-Based Access Control scenario, different Central Access Policies (CAPs)
 | Payroll Admins| S-1-5-21-465464611-2451339954-1855217765-1603| Payroll|  | 
 
 
-
-
 * SID may be different in your environment.
 
-#####Claims
+##### Claims
 
 | Display Name| ID| Value Type| Comments| 
 | -------------| -------------| -------------| ------------- |
@@ -957,12 +876,9 @@ In Claim-Based Access Control scenario, different Central Access Policies (CAPs)
 
 
 
+##### Central Access Rules (CARs)
 
-
-
-#####Central Access Rules (CARs)
-
-######CountryCodeAnyOf156Or840
+###### CountryCodeAnyOf156Or840
 
 
 Target Resources: All Resources
@@ -973,7 +889,7 @@ Current Permissions:
 
 
 
-######CountryCodeEquals156AndITDepartmentRule
+###### CountryCodeEquals156AndITDepartmentRule
 
 
 Target Resources: All Resources
@@ -986,7 +902,7 @@ Current Permissions:
 
 
 
-######CountryCodeEquals156OrITDepartmentRule
+###### CountryCodeEquals156OrITDepartmentRule
 
 
 Target Resources: All Resources
@@ -997,7 +913,7 @@ Current Permissions:
 
 
 
-######CountryCodeEquals156Rule
+###### CountryCodeEquals156Rule
 
 
 Target Resources: All Resources
@@ -1008,7 +924,7 @@ Current Permissions:
 
 
 
-######CountryCodeGreaterThan392Rule
+###### CountryCodeGreaterThan392Rule
 
 
 Target Resources: All Resources
@@ -1019,7 +935,7 @@ Current Permissions:
 
 
 
-######CountryCodeGreaterThanOrEquals392Rule
+###### CountryCodeGreaterThanOrEquals392Rule
 
 
 Target Resources: All Resources
@@ -1030,7 +946,7 @@ Current Permissions:
 
 
 
-######CountryCodeLessThan392Rule
+###### CountryCodeLessThan392Rule
 
 
 Target Resources: All Resources
@@ -1041,7 +957,7 @@ Current Permissions:
 
 
 
-######CountryCodeLessThanOrEquals392Rule
+###### CountryCodeLessThanOrEquals392Rule
 
 
 Target Resources: All Resources
@@ -1052,7 +968,7 @@ Current Permissions:
 
 
 
-######CountryCodeNotAnyOf156Or840Rule
+###### CountryCodeNotAnyOf156Or840Rule
 
 
 Target Resources: All Resources
@@ -1063,7 +979,7 @@ Current Permissions:
 
 
 
-######CountryCodeNotEquals156Rule
+###### CountryCodeNotEquals156Rule
 
 
 Target Resources: All Resources
@@ -1073,10 +989,7 @@ Current Permissions:
 ![image16](./image/Auth_ServerTestDesignSpecification/image16.png)
 
 
-
-#####Central Access Policies (CAPs)
-
-
+##### Central Access Policies (CAPs)
 
 
 | Name| Member Central Access Rules| 
@@ -1096,15 +1009,11 @@ Current Permissions:
 | CountryCodeEquals156OrITGroupPolicy| CountryCodeEquals156OrITGroupRule| 
 
 
-
-
-
-
-#####Share(s)
+##### Share(s)
 One share need to be exposed, named AzCBAC by default. Share Permission and Folder Permission should all be set to allow everyone to access it.
 SMB2 SET_INFO is required to run these cases.
 
-#####BVT cases
+##### BVT cases
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
@@ -1116,10 +1025,7 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
-#####Other traditional cases
+##### Other traditional cases
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
@@ -1131,10 +1037,6 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
-
-
-
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
 |  **Test ID**| CountryCodeAnyOf156Or840Policy| | | | 
@@ -1142,27 +1044,29 @@ SMB2 SET_INFO is required to run these cases.
 |  **Policy Name**| CountryCodeAnyOf156Or840Policy| | | | 
 |  **Expected Results**|  **User**| Payrollmember01|  **Result**| true| 
 |  |  **User**| Payrollmember02|  **Result**| true| 
-|  |  **User**| Payrollmember03|  **Result**| false| 
-
-
-
-
+|  |  **User**| Payrollmember03|  **Result**| false|
 
 
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
-|  **Test ID**| CBAC_CountryCodeGreaterThan392Policy| | | | 
+|  **Test ID**| CBAC_CountryCodeNotAnyOf156Or840Policy| | | |
+|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeNotAnyOf156Or840Policy is applied on the share.| | | |
+|  **Policy Name**| CountryCodeNotAnyOf156Or840Policy| | | |
+|  **Expected Results**|  **User**| Payrollmember01|  **Result**| false|
+|  |  **User**| Payrollmember02|  **Result**| false|
+|  |  **User**| Payrollmember03|  **Result**| true|
+
+
+
+| &#32;| &#32;| &#32;| &#32;| &#32; |
+| -------------| -------------| -------------| -------------| ------------- |
+|  **Test ID**| CBAC_CountryCodeGreaterThan392Policy| | | |
 |  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeGreaterThan392Policy is applied on the share.| | | | 
 |  **Policy Name**| CountryCodeGreaterThan392Policy| | | | 
 |  **Expected Results**|  **User**| Payrollmember01|  **Result**| false| 
 |  |  **User**| Payrollmember02|  **Result**| true| 
 |  |  **User**| Payrollmember03|  **Result**| false| 
-
-
-
-
-
 
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
@@ -1176,44 +1080,54 @@ SMB2 SET_INFO is required to run these cases.
 
 
 
-
+| &#32;| &#32;| &#32;| &#32;| &#32; |
+| -------------| -------------| -------------| -------------| ------------- |
+|  **Test ID**| CBAC_CountryCodeLessThanOrEquals392Policy| | | |
+|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeLessThanOrEquals392Policy is applied on the share.| | | |
+|  **Policy Name**| CountryCodeLessThanOrEquals392Policy| | | |
+|  **Expected Results**|  **User**| Payrollmember01|  **Result**| true|
+|  |  **User**| Payrollmember02|  **Result**| false|
+|  |  **User**| Payrollmember03|  **Result**| true|
 
 
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
-|  **Test ID**| CBAC_CountryCodeLessThanOrEquals392Policy| | | | 
-|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeLessThanOrEquals392Policy is applied on the share.| | | | 
-|  **Policy Name**| CountryCodeLessThanOrEquals392Policy| | | | 
-|  **Expected Results**|  **User**| Payrollmember01|  **Result**| true| 
-|  |  **User**| Payrollmember02|  **Result**| false| 
-|  |  **User**| Payrollmember03|  **Result**| true| 
+|  **Test ID**| CBAC_CountryCodeGreaterThanOrEquals392Policy| | | |
+|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeGreaterThanOrEquals392Policy is applied on the share.| | | |
+|  **Policy Name**| CountryCodeGreaterThanOrEquals392Policy| | | |
+|  **Expected Results**|  **User**| Payrollmember01|  **Result**| false|
+|  |  **User**| Payrollmember02|  **Result**| true|
+|  |  **User**| Payrollmember03|  **Result**| true|
 
 
-
-
+| &#32;| &#32;| &#32;| &#32;| &#32; |
+| -------------| -------------| -------------| -------------| ------------- |
+|  **Test ID**| CBAC_CountryCodeEquals156OrITDepartmentPolicy| | | |
+|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeEquals156OrITDepartmentPolicy is applied on the share.| | | |
+|  **Policy Name**| CountryCodeEquals156OrITDepartmentPolicy| | | |
+|  **Expected Results**|  **User**| Payrollmember01|  **Result**| true|
+|  |  **User**| Payrollmember02|  **Result**| false|
+|  |  **User**| ITmember01|  **Result**| true|
+|  |  **User**| ITadmin01|  **Result**| true|
 
 
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
-|  **Test ID**| CBAC_CountryCodeEquals156OrITDepartmentPolicy| | | | 
-|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeEquals156OrITDepartmentPolicy is applied on the share.| | | | 
-|  **Policy Name**| CountryCodeLessThanOrEquals392Policy| | | | 
-|  **Expected Results**|  **User**| Payrollmember01|  **Result**| true| 
-|  |  **User**| Payrollmember02|  **Result**| false| 
-|  |  **User**| ITmember01|  **Result**| true| 
-|  |  **User**| ITadmin01|  **Result**| true| 
-
-
-
-
+|  **Test ID**| CBAC_CountryCodeEquals156AndITDepartmentPolicy| | | |
+|  **Description**| This test case is designed to test whether users can access the share if the policy CountryCodeEquals156AndITDepartmentPolicy is applied on the share.| | | |
+|  **Policy Name**| CountryCodeEquals156AndITDepartmentPolicy| | | |
+|  **Expected Results**|  **User**| Payrollmember01|  **Result**| false|
+|  |  **User**| Payrollmember02|  **Result**| false|
+|  |  **User**| ITmember01|  **Result**| false|
+|  |  **User**| ITadmin01|  **Result**| false|
 
 
 
 | &#32;| &#32;| &#32;| &#32;| &#32; |
 | -------------| -------------| -------------| -------------| ------------- |
-|  **Test ID**| CBAC_NoUserClaimBlockWriteControl| | | | 
+|  **Test ID**| CBAC_NoUserClaimBlockWriteControl| | | |
 |  **Description**| This test case is designed to test whether noclaimuser can access the share if any policy is applied on the share.| | | | 
 |  **Policy Name**| CountryCodeEquals156Policy| | | | 
 |  **Expected Results**|  **User**| noclaimuser|  **Result**| true| 

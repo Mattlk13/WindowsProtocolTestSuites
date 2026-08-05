@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 {
@@ -137,6 +137,15 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
         /// A Boolean indicating whether the server supports multi-credit operations.
         /// </summary>
         public bool SupportsMultiCredit
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        ///  A Boolean indicating whether the server supports one-way notifications on this connection.
+        /// <summary>
+        public bool SupportsNotifications
         {
             get;
             set;

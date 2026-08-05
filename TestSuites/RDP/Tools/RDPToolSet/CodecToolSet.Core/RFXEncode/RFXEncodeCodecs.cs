@@ -1,7 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdprfx;
 
 // ReSharper disable once CheckNamespace
 namespace CodecToolSet.Core.RFXEncode
@@ -15,6 +15,7 @@ namespace CodecToolSet.Core.RFXEncode
 
         public RFXEncode() : base()
         {
+            //extensionData = new JObject();
             this.SubActions = new List<ICodecAction>
             {
                 new TileInput(),
@@ -35,8 +36,8 @@ namespace CodecToolSet.Core.RFXEncode
             this.Input = new[] { input };
 
             // perform all sub transforms
-            foreach (var sub in SubActions) {
-
+            foreach (var sub in SubActions) 
+            {
                 // hand over parameters
                 foreach (var key in Parameters.Keys) {
                     sub.Parameters[key] = Parameters[key];

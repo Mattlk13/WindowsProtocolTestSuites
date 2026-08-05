@@ -103,12 +103,12 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2.Common
                             cryptoInfo = cryptoInfoTable[sessionId];
                         }
 
-                        packet.Header.Signature = Sign(cryptoInfo, packet.ToBytes());
+                        packet.Header.Signature = Sign(cryptoInfo, packet, role);
                     }
                 }
                 else
                 {
-                    (originalPacket as Smb2SinglePacket).Header.Signature = Sign(cryptoInfo, originalPacket.ToBytes());
+                    (originalPacket as Smb2SinglePacket).Header.Signature = Sign(cryptoInfo, originalPacket as Smb2SinglePacket, role);
                 }
             }
             #endregion
@@ -136,44 +136,100 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2.Common
             {
                 throw new InvalidOperationException(
                     String.Format(
-                        "Flags/EncryptionAlgorithm field is invalid for encrypted message. Expected value 0x0001, actual {0}.",
+                        "[MS-SMB2] section 3.3.5.2.1.1 Flags/EncryptionAlgorithm field is invalid for encrypted message. Expected value 0x0001, actual {0}.",
                         (ushort)transformHeader.Flags
                     )
                 );
             }
 
             if (transformHeader.SessionId == 0 || !cryptoInfoTable.ContainsKey(transformHeader.SessionId))
-                throw new InvalidOperationException("Invalid SessionId in TRANSFORM_HEADER.");
+                throw new InvalidOperationException("[MS-SMB2] section 3.3.5.2.1.1 Invalid SessionId in TRANSFORM_HEADER.");
 
             Smb2CryptoInfo cryptoInfo = cryptoInfoTable[transformHeader.SessionId];
 
-            using (var bcrypt = new BCryptAlgorithm("AES"))
+            byte[] decrypted = new byte[encryptedPacket.EncryptdData.Length];
+            byte[] key = role == Smb2Role.Server ? cryptoInfo.ServerInKey : cryptoInfo.ServerOutKey;
+            // Auth data is Transform_Header start from Nonce, excluding ProtocolId and Signature.
+            var authData = Smb2Utility.MarshalStructure(transformHeader).Skip((int)Marshal.OffsetOf<Transform_Header>("Nonce")).ToArray();
+
+            int nonceLength;
+
+            if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_CCM)
             {
-                int nonceLength = 0;
-                BCryptCipherMode mode = BCryptCipherMode.NotAvailable;
-                GetCryptoParams(cryptoInfo, CryptoOperationType.Decrypt, out mode, out nonceLength);
-                bcrypt.Mode = mode;
-                bcrypt.Key = role == Smb2Role.Server ? cryptoInfo.ServerInKey : cryptoInfo.ServerOutKey;
-                // Auth data is Transform_Header start from Nonce, excluding ProtocolId and Signature.
-                var authData = Smb2Utility.MarshalStructure(transformHeader).Skip((int)Marshal.OffsetOf<Transform_Header>("Nonce")).ToArray();
-                return bcrypt.Decrypt(encryptedPacket.EncryptdData, transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(), authData, transformHeader.Signature);
+                nonceLength = Smb2Consts.AES128CCM_Nonce_Length;
             }
+            else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_GCM)
+            {
+                nonceLength = Smb2Consts.AES128GCM_Nonce_Length;
+            }
+            else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_CCM)
+            {
+                nonceLength = Smb2Consts.AES256CCM_Nonce_Length;
+            }
+            else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_GCM)
+            {
+                nonceLength = Smb2Consts.AES256GCM_Nonce_Length;
+            }
+            else
+            {
+                throw new InvalidOperationException(String.Format(
+                    "Invalid encryption algorithm is set in Smb2CryptoInfo when decrypting: {0}", cryptoInfo.CipherId));
+            }
+
+            if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_CCM ||
+                cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_CCM)
+            {
+                using (var cipher = new AesCcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message decryption uses the AES-CCM AEAD algorithm specified by the protocol. Protocol-test interop code, not a security boundary.
+                {
+                    cipher.Decrypt(
+                        transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                        encryptedPacket.EncryptdData,
+                        transformHeader.Signature,
+                        decrypted,
+                        authData);
+                }
+            }
+            else
+            {
+                using (var cipher = new AesGcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message decryption uses the AES-GCM AEAD algorithm specified by the protocol. Protocol-test interop code, not a security boundary.
+                {
+                    cipher.Decrypt(
+                        transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                        encryptedPacket.EncryptdData,
+                        transformHeader.Signature,
+                        decrypted,
+                        authData);
+                }
+            }
+
+
+            return decrypted;
         }
 
-        private static byte[] Sign(Smb2CryptoInfo cryptoInfo, byte[] original)
+        private static byte[] Sign(Smb2CryptoInfo cryptoInfo, Smb2SinglePacket original, Smb2Role role)
         {
             if (Smb2Utility.IsSmb2Family(cryptoInfo.Dialect))
             {
                 // [MS-SMB2] 3.1.4.1 
                 // 3. If Connection.Dialect is "2.002" or "2.100", the sender MUST compute a 32-byte hash using HMAC-SHA256 over the entire message, 
                 HMACSHA256 hmacSha = new HMACSHA256(cryptoInfo.SigningKey);
-                return hmacSha.ComputeHash(original);
+                return hmacSha.ComputeHash(original.ToBytes());
+            }
+            else if (cryptoInfo.SigningId == SigningAlgorithm.AES_GMAC)
+            {
+                // [MS-SMB2] 3.1.4.1
+                // 1. If Connection.Dialect belongs to the SMB 3.x dialect family and Connection.SigningAlgorithmId is AES-GMAC, 
+                // compute a 16-byte hash using the AES-GMAC over the entire message using nonce as specified
+                var nonce = Smb2Utility.ComputeNonce(original, role);
+                var (_, tag) = AesGmac.ComputeHash(cryptoInfo.SigningKey, nonce, original.ToBytes());
+
+                return tag;
             }
             else
             {
                 // [MS-SMB2] 3.1.4.1 
                 // 2. If Connection.Dialect belongs to the SMB 3.x dialect family, the sender MUST compute a 16-byte hash using AES-128-CMAC over the entire message
-                return AesCmac128.ComputeHash(cryptoInfo.SigningKey, original);
+                return AesCmac128.ComputeHash(cryptoInfo.SigningKey, original.ToBytes());
             }
         }
 
@@ -202,77 +258,221 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2.Common
                  )
              )
             {
-                using (var bcrypt = new BCryptAlgorithm("AES"))
+                byte[] originalBinary = packet.ToBytes();
+                Transform_Header transformHeader = new Transform_Header
                 {
-                    byte[] originalBinary = packet.ToBytes();
-                    Transform_Header transformHeader = new Transform_Header
-                    {
-                        ProtocolId = Smb2Consts.ProtocolIdInTransformHeader,
-                        OriginalMessageSize = (uint)originalBinary.Length,
-                        SessionId = sessionId,
-                        Signature = new byte[16]
-                    };
+                    ProtocolId = Smb2Consts.ProtocolIdInTransformHeader,
+                    OriginalMessageSize = (uint)originalBinary.Length,
+                    SessionId = sessionId,
+                    Signature = new byte[16]
+                };
 
-                    if (cryptoInfo.Dialect == DialectRevision.Smb311)
-                    {
-                        transformHeader.Flags = TransformHeaderFlags.Encrypted;
-                    }
-                    else
-                    {
-                        transformHeader.EncryptionAlgorithm = EncryptionAlgorithm.ENCRYPTION_AES128_CCM;
-                    }
+                if (cryptoInfo.Dialect == DialectRevision.Smb311)
+                {
+                    transformHeader.Flags = TransformHeaderFlags.Encrypted;
+                }
+                else
+                {
+                    transformHeader.EncryptionAlgorithm = EncryptionAlgorithm.ENCRYPTION_AES128_CCM;
+                }
 
-                    byte[] tag;
+                byte[] encrypted = new byte[originalBinary.Length];
+                byte[] tag = new byte[16];
+                byte[] key = role == Smb2Role.Server ? cryptoInfo.ServerOutKey : cryptoInfo.ServerInKey;
 
-                    int nonceLength = 0;
-                    BCryptCipherMode mode = BCryptCipherMode.NotAvailable;
-                    GetCryptoParams(cryptoInfo, CryptoOperationType.Encrypt, out mode, out nonceLength);
-                    bcrypt.Mode = mode;
-                    bcrypt.Key = role == Smb2Role.Server ? cryptoInfo.ServerOutKey : cryptoInfo.ServerInKey;
-                    // The reserved field (5 bytes for CCM, 4 bytes for GCM) must be set to zero.
-                    byte[] nonce = new byte[16];
+                // The reserved field (5 bytes for CCM, 4 bytes for GCM) must be set to zero.
+                byte[] nonce = new byte[16];
+
+                if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_CCM)
+                {
+                    int nonceLength = Smb2Consts.AES128CCM_Nonce_Length;
                     Buffer.BlockCopy(Guid.NewGuid().ToByteArray(), 0, nonce, 0, nonceLength);
                     transformHeader.Nonce = new Guid(nonce);
 
-                    byte[] output = bcrypt.Encrypt(
-                        originalBinary,
-                        transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
-                        // Use the fields including and after Nonce field as auth data
-                        Smb2Utility.MarshalStructure(transformHeader).Skip(20).ToArray(),
-                        // Signature is 16 bytes in length
-                        16,
-                        out tag);
-                    transformHeader.Signature = tag;
-
-                    var encryptedPacket = new Smb2EncryptedPacket();
-                    encryptedPacket.Header = transformHeader;
-                    encryptedPacket.EncryptdData = output;
-
-                    return encryptedPacket;
+                    using (var cipher = new AesCcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message encryption uses AES-128-CCM as specified; the nonce is generated fresh per message via Guid.NewGuid(). Protocol-test interop code.
+                    {
+                        cipher.Encrypt(
+                            transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                            originalBinary,
+                            encrypted,
+                            tag,
+                            // Use the fields including and after Nonce field as auth data
+                            Smb2Utility.MarshalStructure(transformHeader).Skip(20).ToArray());
+                    }
                 }
+                else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_GCM)
+                {
+                    int nonceLength = Smb2Consts.AES128GCM_Nonce_Length;
+                    Buffer.BlockCopy(Guid.NewGuid().ToByteArray(), 0, nonce, 0, nonceLength);
+                    transformHeader.Nonce = new Guid(nonce);
+
+                    using (var cipher = new AesGcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message encryption uses AES-128-GCM as specified; the nonce is generated fresh per message via Guid.NewGuid(). Protocol-test interop code.
+                    {
+                        cipher.Encrypt(
+                            transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                            originalBinary,
+                            encrypted,
+                            tag,
+                            // Use the fields including and after Nonce field as auth data
+                            Smb2Utility.MarshalStructure(transformHeader).Skip(20).ToArray());
+                    }
+                }
+                else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_CCM)
+                {
+                    int nonceLength = Smb2Consts.AES256CCM_Nonce_Length;
+                    Buffer.BlockCopy(Guid.NewGuid().ToByteArray(), 0, nonce, 0, nonceLength);
+                    transformHeader.Nonce = new Guid(nonce);
+
+                    using (var cipher = new AesCcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message encryption uses AES-256-CCM as specified; the nonce is generated fresh per message via Guid.NewGuid(). Protocol-test interop code.
+                    {
+                        cipher.Encrypt(
+                            transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                            originalBinary,
+                            encrypted,
+                            tag,
+                            // Use the fields including and after Nonce field as auth data
+                            Smb2Utility.MarshalStructure(transformHeader).Skip(20).ToArray());
+                    }
+                }
+                else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_GCM)
+                {
+                    int nonceLength = Smb2Consts.AES256GCM_Nonce_Length;
+                    Buffer.BlockCopy(Guid.NewGuid().ToByteArray(), 0, nonce, 0, nonceLength);
+                    transformHeader.Nonce = new Guid(nonce);
+
+                    using (var cipher = new AesGcm(key)) // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x message encryption uses AES-256-GCM as specified; the nonce is generated fresh per message via Guid.NewGuid(). Protocol-test interop code.
+                    {
+                        cipher.Encrypt(
+                            transformHeader.Nonce.ToByteArray().Take(nonceLength).ToArray(),
+                            originalBinary,
+                            encrypted,
+                            tag,
+                            // Use the fields including and after Nonce field as auth data
+                            Smb2Utility.MarshalStructure(transformHeader).Skip(20).ToArray());
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException(String.Format(
+                        "Invalid encryption algorithm is set in Smb2CryptoInfo when encrypting: {0}", cryptoInfo.CipherId));
+                }
+
+                transformHeader.Signature = tag;
+
+                var encryptedPacket = new Smb2EncryptedPacket();
+                encryptedPacket.Header = transformHeader;
+                encryptedPacket.EncryptdData = encrypted;
+
+                return encryptedPacket;
             }
 
             // Return null if the message is not required to be encrypted.
             return null;
         }
 
-        private static void GetCryptoParams(Smb2CryptoInfo cryptoInfo, CryptoOperationType operationType, out BCryptCipherMode mode, out int nonceLength)
+        public static void SignByteArray(Smb2CryptoInfo cryptoInfo, byte[] original, out byte[] nonce, out byte[] signature, Smb2Role role, Smb2Command smb2Command, UInt64 messageId = 1)
         {
+            if (Smb2Utility.IsSmb2Family(cryptoInfo.Dialect))
+            {
+                // [MS-SMB2] 3.1.4.1 
+                // 3. If Connection.Dialect is "2.02" or "2.1", the sender MUST compute a 32-byte hash using HMAC-SHA256 over the entire message, 
+                HMACSHA256 hmacSha = new HMACSHA256(cryptoInfo.SigningKey);
+                signature = hmacSha.ComputeHash(original);
+                nonce = Array.Empty<byte>();
+            }
+            else if (Smb2Utility.IsSmb3xFamily(cryptoInfo.Dialect))
+            {
+                if (cryptoInfo.SigningId == SigningAlgorithm.AES_GMAC)
+                {
+                    // [MS-SMB2] 3.1.4.1
+                    // 1. If Connection.Dialect belongs to the SMB 3.x dialect family and Connection.SigningAlgorithmId is AES-GMAC, 
+                    // compute a 16-byte hash using the AES-GMAC over the entire message using nonce as specified
+                    nonce = Smb2Utility.ComputeNonce(messageId, role, smb2Command);
+                    var (_, tag) = AesGmac.ComputeHash(cryptoInfo.SigningKey, nonce, original);
+
+                    signature = tag;
+                }
+                else
+                {
+                    // [MS-SMB2] 3.1.4.1 
+                    // 2. If Connection.Dialect belongs to the SMB 3.x dialect family, the sender MUST compute a 16-byte hash using AES-128-CMAC over the entire message
+                    signature = AesCmac128.ComputeHash(cryptoInfo.SigningKey, original);
+                    nonce = Array.Empty<byte>();
+                }
+            }
+            else
+            {
+                nonce = Array.Empty<byte>();
+                signature = Array.Empty<byte>();
+            }
+        }
+
+        private static void CipherEncrypt(
+            dynamic cipher,
+            int nonceLength,
+            byte[] original,
+            out byte[] encrypted,
+            out byte[] nonce,
+            out byte[] signature)
+        {
+            encrypted = new byte[original.Length];
+            signature = new byte[16];
+            byte[] nonceGenerator = new byte[16];
+
+            Buffer.BlockCopy(Guid.NewGuid().ToByteArray(), 0, nonceGenerator, 0, nonceLength);
+            var nonceGuid = new Guid(nonceGenerator);
+            nonce = nonceGuid.ToByteArray().Take(nonceLength).ToArray();
+
+            using (cipher)
+            {
+                cipher.Encrypt(
+                    nonceGuid.ToByteArray().Take(nonceLength).ToArray(),
+                    original,
+                    encrypted,
+                    signature);
+            }
+        }
+
+        public static void EncryptByteArray(
+            Smb2CryptoInfo cryptoInfo,
+            byte[] original,
+            out byte[] encrypted,
+            out byte[] nonce,
+            out byte[] signature,
+            Smb2Role role)
+        {
+            byte[] key = role == Smb2Role.Server ? cryptoInfo.ServerOutKey : cryptoInfo.ServerInKey;
+
+            dynamic cipher;
+            int nonceLength;
+
             if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_CCM)
             {
-                mode = BCryptCipherMode.CCM;
+                cipher = new AesCcm(key); // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x encryption uses AES-128-CCM as specified by the protocol. Protocol-test interop code, not a security boundary.
                 nonceLength = Smb2Consts.AES128CCM_Nonce_Length;
             }
             else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES128_GCM)
             {
-                mode = BCryptCipherMode.GCM;
+                cipher = new AesGcm(key); // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x encryption uses AES-128-GCM as specified by the protocol. Protocol-test interop code, not a security boundary.
                 nonceLength = Smb2Consts.AES128GCM_Nonce_Length;
+            }
+            else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_CCM)
+            {
+                cipher = new AesCcm(key); // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x encryption uses AES-256-CCM as specified by the protocol. Protocol-test interop code, not a security boundary.
+                nonceLength = Smb2Consts.AES256CCM_Nonce_Length;
+            }
+            else if (cryptoInfo.CipherId == EncryptionAlgorithm.ENCRYPTION_AES256_GCM)
+            {
+                cipher = new AesGcm(key); // CodeQL [SM04193] Required by [MS-SMB2] section 3.1.4.4: SMB 3.x encryption uses AES-256-GCM as specified by the protocol. Protocol-test interop code, not a security boundary.
+                nonceLength = Smb2Consts.AES256GCM_Nonce_Length;
             }
             else
             {
                 throw new InvalidOperationException(String.Format(
-                    "No valid encryption algorithm is set in Smb2CryptoInfo when trying to {0}", operationType));
+                    "Invalid encryption algorithm is set in Smb2CryptoInfo when encrypting: {0}", cryptoInfo.CipherId));
             }
+
+            CipherEncrypt(cipher, nonceLength, original, out encrypted, out nonce, out signature);
         }
     }
 }

@@ -1,18 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Protocols.TestTools.StackSdk;
-using Microsoft.Protocols.TestSuites;
 using Microsoft.Protocols.TestTools;
+using SkiaSharp;
+using System;
+using System.IO;
 using System.Net;
-using System.Collections;
-using System.Reflection;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Diagnostics;
 
 namespace Microsoft.Protocols.TestSuites.Rdp
 {
@@ -22,9 +14,11 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         #region variables
 
         const string interfaceFullName = "Microsoft.Protocols.TestSuites.Rdp.IRdpSutControlAdapter";
-        const string basicRDPFileString = "session bpp:i:32\nconnection type:i:6\ncompression:i:0\nauthentication level:i:0\n";
+        const string basicRDPFileString = "session bpp:i:32\nconnection type:i:6\nauthentication level:i:0\nuse redirection server name:i:1\n";
 
-        string localIP;
+        private bool isClientSupportCompression = false;
+
+        string rdpServerIP;
         ushort localPort;
         RDP_Connect_Payload_Type connectPayloadType;
         SUTControlProtocolHandler controlHandler;
@@ -33,7 +27,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
 
         #region IRdpSutControlAdapter Implementation
-        
+
         /// <summary>
         /// This method used to trigger client to initiate a RDP connection from RDP client, 
         /// and the client should use Direct Approach with CredSSP as the security protocol.
@@ -44,9 +38,14 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             // Get help message
             string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
             // Create payload
-            byte[] payload = CreateRDPConncectPayload(connectPayloadType, localIP, localPort, true, false);
+            byte[] payload = CreateRDPConncectPayload(connectPayloadType, rdpServerIP, localPort, true, false);
 
             return Start_RDP_Connection(caseName, payload, helpMessage);
+        }
+
+        public int RDPConnectWithDirectCredSSPInvalidAccount(string caseName)
+        {
+            return RDPConnectWithDirectCredSSP(caseName);
         }
 
         /// <summary>
@@ -59,7 +58,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             // Get help message
             string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
             // Create payload
-            byte[] payload = CreateRDPConncectPayload(connectPayloadType, localIP, localPort, true, true);
+            byte[] payload = CreateRDPConncectPayload(connectPayloadType, rdpServerIP, localPort, true, true);
 
             return Start_RDP_Connection(caseName, payload, helpMessage);
         }
@@ -74,9 +73,19 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             // Get help message
             string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
             // Create payload
-            byte[] payload = CreateRDPConncectPayload(connectPayloadType, localIP, localPort, false, false);
+            byte[] payload = CreateRDPConncectPayload(connectPayloadType, rdpServerIP, localPort, false, false);
 
             return Start_RDP_Connection(caseName, payload, helpMessage);
+        }
+
+        /// <summary>
+        /// This method used to trigger client to initiate a RDP connection from RDP client, 
+        /// and the client should use Negotiation-Based Approach to advertise the support for TLS, CredSSP or RDP standard security protocol using an Invalid Username.
+        /// </summary>
+        /// <returns>Negative values indicate the operation is failed, otherwise, successful.</returns>
+        public int RDPConnectWithNegotiationApproachInvalidAccount(string caseName)
+        {
+            return RDPConnectWithNegotiationApproach(caseName);
         }
 
         /// <summary>
@@ -89,7 +98,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             // Get help message
             string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
             // Create payload
-            byte[] payload = CreateRDPConncectPayload(connectPayloadType, localIP, localPort, false, true);
+            byte[] payload = CreateRDPConncectPayload(connectPayloadType, rdpServerIP, localPort, false, true);
 
             return Start_RDP_Connection(caseName, payload, helpMessage);
         }
@@ -98,22 +107,22 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         /// This method is used to trigger RDP client initiate a disconnection of current session.
         /// </summary>
         /// <returns>Negative values indicate the operation is failed, otherwise, successful.</returns>
-        public int TriggerClientDisconnect(string caseName)
-        {      
+        public int TriggerCloseRDPWindow(string caseName)
+        {
             // Get help message
             string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
             // Create payload
             byte[] payload = null;
-            
+
             // Create request message
             ushort reqId = controlHandler.GetNextRequestId();
             SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.CLOSE_RDP_CONNECTION, caseName,
                 reqId, helpMessage, payload);
-            
+
             //Send the request and get response if necessary
             byte[] resposePayload = null;
             return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
-                        
+
         }
 
         /// <summary>
@@ -130,6 +139,48 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             // Create request message
             ushort reqId = controlHandler.GetNextRequestId();
             SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.CLOSE_RDP_CONNECTION, caseName,
+                reqId, helpMessage, payload);
+
+            //Send the request and get response if necessary
+            byte[] resposePayload = null;
+            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
+        }
+
+        /// <summary>
+        /// This method is used to trigger change of stored credentials to invalid user account.
+        /// </summary>
+        /// <returns>Negative values indicate the operation is failed, otherwise, successful.</returns>
+        public int CredentialManagerAddInvalidAccount(string caseName)
+        {
+            // Get help message
+            string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
+            // Create payload
+            byte[] payload = null;
+
+            // Create request message
+            ushort reqId = controlHandler.GetNextRequestId();
+            SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.CREDENTIAL_MANAGER_ADD_INVALID_ACCOUNT, caseName,
+                reqId, helpMessage, payload);
+
+            //Send the request and get response if necessary
+            byte[] resposePayload = null;
+            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
+        }
+
+        /// <summary>
+        /// This method is used to trigger change of stored credentials to valid user account.
+        /// </summary>
+        /// <returns>Negative values indicate the operation is failed, otherwise, successful.</returns>
+        public int CredentialManagerReverseInvalidAccount(string caseName)
+        {
+            // Get help message
+            string helpMessage = CommonUtility.GetHelpMessage(interfaceFullName);
+            // Create payload
+            byte[] payload = null;
+
+            // Create request message
+            ushort reqId = controlHandler.GetNextRequestId();
+            SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.CREDENTIAL_MANAGER_REVERSE_INVALID_ACCOUNT, caseName,
                 reqId, helpMessage, payload);
 
             //Send the request and get response if necessary
@@ -155,9 +206,9 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
             //Send the request and get response if necessary
             byte[] resposePayload = null;
-            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);            
+            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
         }
-        
+
         /// <summary>
         /// This method is used to trigger the client to server input events. 
         /// </summary>
@@ -177,7 +228,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             {
                 Array.Reverse(payload);
             }
-            
+
             // Create request message
             ushort reqId = controlHandler.GetNextRequestId();
             SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.BASIC_INPUT, caseName,
@@ -185,7 +236,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
 
             //Send the request and get response if necessary
             byte[] resposePayload = null;
-            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);  
+            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
         }
 
         /// <summary>
@@ -220,7 +271,17 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             {
                 return -1;
             }
-            
+
+        }
+
+        /// <summary>
+        /// This method is used to enable compression, always return successful since CS managed adapter would generated RDP file directly with the compression flag
+        /// </summary>
+        /// <param name="isCompressionEnable">If enable compression</param>
+        /// <returns>Always return successful since CS managed adapter would generated RDP file directly with the compression flag</returns>
+        public int SetCompressionValue(bool isCompressionEnable)
+        {
+            return 1;
         }
 
         /// <summary>
@@ -231,29 +292,35 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         {
             base.Initialize(testSite);
 
-            controlHandler = SUTControlProtocolHandler.GetInstance(testSite);         
+            controlHandler = SUTControlProtocolHandler.GetInstance(testSite);
             // Initiate local IP
-            localIP = GetLocalIP();
+            string proxyIP;
+            PtfPropUtility.GetPtfPropertyValue(testSite, "ProxyIP", out proxyIP);
+            if (string.IsNullOrEmpty(proxyIP))
+            {
+                rdpServerIP = GetLocalIP();
+            }
+            else
+            {
+                rdpServerIP = proxyIP;
+            }
 
             // Initiate local port
             try
             {
-                localPort = ushort.Parse(testSite.Properties["RDP.ServerPort"]);
+                string localPortString;
+                PtfPropUtility.GetPtfPropertyValue(testSite, "ServerPort", out localPortString);
+                localPort = ushort.Parse(localPortString);
             }
             catch
             {
                 localPort = 0;
             }
-                        
+
             // Initiate Connect payload type
-            bool clientSupportRDPFile = false;
-            try
-            {
-                clientSupportRDPFile = bool.Parse(testSite.Properties["SUTControl.ClientSupportRDPFile"]);
-            }
-            catch
-            {                
-            }
+            bool clientSupportRDPFile;
+            PtfPropUtility.GetPtfPropertyValue(testSite, "ClientSupportRDPFile", out clientSupportRDPFile, new string[] { RdpPtfGroupNames.SUTControl });
+
             if (clientSupportRDPFile)
             {
                 connectPayloadType = RDP_Connect_Payload_Type.RDP_FILE;
@@ -262,7 +329,8 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             {
                 connectPayloadType = RDP_Connect_Payload_Type.PARAMETERS_STRUCT;
             }
-                        
+
+            PtfPropUtility.GetPtfPropertyValue(testSite, "SupportCompression", out isClientSupportCompression);
         }
 
 
@@ -279,15 +347,28 @@ namespace Microsoft.Protocols.TestSuites.Rdp
         /// <returns></returns>
         private int Start_RDP_Connection(string caseName, byte[] payload, string helpMessage)
         {
-            ushort reqId = controlHandler.GetNextRequestId();
-            SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.START_RDP_CONNECTION, caseName,
-                        reqId, helpMessage, payload);
+            //Return -1 If Connection Fails
+            int output = -1;
+            try
+            {
+                ushort reqId = controlHandler.GetNextRequestId();
+                this.Site.Log.Add(LogEntryKind.Comment, "Preparing RDP Connection To Server.");
+                SUT_Control_Request_Message requestMessage = new SUT_Control_Request_Message(SUTControl_TestsuiteId.RDP_TESTSUITE, (ushort)RDPSUTControl_CommandId.START_RDP_CONNECTION, caseName,
+                            reqId, helpMessage, payload);
 
-            byte[] resposePayload = null;
-            return controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
-            
+                byte[] resposePayload = null;
+
+                output = controlHandler.OperateSUTControl(requestMessage, false, out resposePayload);
+                this.Site.Log.Add(LogEntryKind.Comment, "Complete RDP Connection To Server.");
+            }
+            catch (Exception e)
+            {
+                this.Site.Log.Add(LogEntryKind.Comment, "RDP Connection: RDP Connection To SUT Failed:" + e.Message);
+            }
+
+            return output;
         }
-        
+
         /// <summary>
         /// Create a payload for start RDP connection command
         /// </summary>
@@ -356,6 +437,16 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                 rdpConfigString += "screen mode id:i:1\ndesktopwidth:i:1024\ndesktopheight:i:768\n";
             }
             rdpConfigString += "pinconnectionbar:i:0\n";
+
+            if (isClientSupportCompression)
+            {
+                rdpConfigString += "compression:i:1\n";
+            }
+            else
+            {
+                rdpConfigString += "compression:i:0\n";
+            }
+
             return rdpConfigString;
         }
 
@@ -391,15 +482,14 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             return config;
 
         }
-        
+
         /// <summary>
         /// Get IP address of local host
         /// </summary>
         /// <returns>string for local IP address</returns>
         private string GetLocalIP()
         {
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
+            foreach (IPAddress ip in Dns.GetHostAddresses(Dns.GetHostName()))
             {
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
@@ -436,7 +526,7 @@ namespace Microsoft.Protocols.TestSuites.Rdp
             }
             int height = BitConverter.ToInt32(heightArray, 0);
 
-            Bitmap bitmapScreen = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+            SKBitmap bitmapScreen = new SKBitmap(width, height);
             for (int j = 0; j < height; j++)
             {
                 for (int i = 0; i < width; i++)
@@ -444,10 +534,11 @@ namespace Microsoft.Protocols.TestSuites.Rdp
                     byte R = bitmapBinary[index++];
                     byte G = bitmapBinary[index++];
                     byte B = bitmapBinary[index++];
-                    bitmapScreen.SetPixel(i, j, Color.FromArgb(R, G, B));
+                    bitmapScreen.SetPixel(i, j, new SKColor(R, G, B));
                 }
             }
-            bitmapScreen.Save(bitmapFile, ImageFormat.Bmp);
+            using var stream = File.OpenWrite(bitmapFile);
+            bitmapScreen.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
         }
 
         #endregion Private methods

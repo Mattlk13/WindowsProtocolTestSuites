@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Security.Permissions;
 
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
@@ -13,7 +13,7 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
     /// Security context, which used by DTLS server.
     /// Accept client token to get server token.
     /// </summary>
-    public class DtlsServerSecurityContext : SspiServerSecurityContext
+    public class DtlsServerSecurityContext : SspiServerSecurityContext, IDtlsServerSecurityContext
     {
         bool bStreamSizes;
         SecurityPackageContextStreamSizes dtlsStreamSizes;
@@ -34,7 +34,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// </summary>
         public SecurityPackageContextStreamSizes StreamSizes
         {
-            [SecurityPermission(SecurityAction.Demand)]
             get
             {
                 if (!bStreamSizes)
@@ -58,7 +57,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// the context</param>
         /// <param name="targetDataRep">The data representation, such as byte ordering, on the target. This parameter 
         /// can be either SECURITY_NATIVE_DREP or SECURITY_NETWORK_DREP.</param>
-        [SecurityPermission(SecurityAction.Demand)]
         public DtlsServerSecurityContext(
             SecurityPackageType packageType,
             CertificateCredential serverCredential, 
@@ -86,7 +84,6 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
         /// </summary>
         /// <param name="clientToken">Token of client</param>
         /// <exception cref="SspiException">If Accept fail, this exception will be thrown.</exception>
-        [SecurityPermission(SecurityAction.Demand)]
         public override void Accept(byte[] clientToken)
         {
             SecurityBuffer[] inSecurityBuffers;
@@ -104,9 +101,9 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Security.Sspi
             SecurityBuffer[] outSecurityBuffers;
             outSecurityBuffers = new SecurityBuffer[2];
             //1 token
-            outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[NativeMethods.MAX_TOKEN_SIZE]);
+            outSecurityBuffers[0] = new SecurityBuffer(SecurityBufferType.Token, new byte[Consts.MAX_TOKEN_SIZE]);
             //2 alert
-            outSecurityBuffers[1] = new SecurityBuffer(SecurityBufferType.Alert, new byte[NativeMethods.MAX_TOKEN_SIZE]);
+            outSecurityBuffers[1] = new SecurityBuffer(SecurityBufferType.Alert, new byte[Consts.MAX_TOKEN_SIZE]);
             SecurityBufferDescWrapper outputBufferDescWrapper = new SecurityBufferDescWrapper(outSecurityBuffers);
 
             SecurityInteger timeStamp;

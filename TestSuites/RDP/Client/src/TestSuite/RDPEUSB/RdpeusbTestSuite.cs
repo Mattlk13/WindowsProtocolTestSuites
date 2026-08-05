@@ -2,15 +2,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
+using System.Reflection;
+using Microsoft.Protocols.TestSuites.Rdp;
+using Microsoft.Protocols.TestSuites.Rdpbcgr;
 using Microsoft.Protocols.TestTools;
 using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpedyc;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpeusb;
-using Microsoft.Protocols.TestSuites.Rdp;
-using Microsoft.Protocols.TestSuites.Rdpbcgr;
-using Microsoft.Protocols.TestSuites.Rdpeusb;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Protocols.TestSuites.Rdpeusb
 {
@@ -42,6 +43,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
 
         protected override void TestInitialize()
         {
+            VerifyDeviceNeededRdpeusbTestCase();
+
             base.TestInitialize();
 
             if (null == rdpeusbAdapter)
@@ -56,7 +59,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
                 context = new EusbTestContext();
             }
 
-            this.rdpbcgrAdapter.TurnVerificationOff(true);
+            this.rdpbcgrAdapter.TurnVerificationOff(TurnOffRDPEUSBVerification);
 
             //Start RDP listening.
             this.TestSite.Log.Add(LogEntryKind.Comment, "Starting RDP listening with transport protocol: {0}", transportProtocol.ToString());
@@ -77,18 +80,46 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
                 rdpedycServer.Dispose();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Stop RDP listening.");
-            this.rdpbcgrAdapter.StopRDPListening();
+            this.rdpbcgrAdapter?.StopRDPListening();
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Trigger client to close all RDP connections for clean up.");
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+
+            TriggerClientDisconnectAll();
 
             DynamicVCException.SetCleanUp(false);
         }
-        
+
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Inconclude the interactive test cases.
+        /// </summary>
+        private void VerifyDeviceNeededRdpeusbTestCase()
+        {
+            var isDeviceNeededTestCase = IsDeviceNeededRdpeusbTestCase();
+            bool isSUTSupportEUSBDevice;
+            PtfPropUtility.GetPtfPropertyValue(BaseTestSite, "SupportEUSBDevice", out isSUTSupportEUSBDevice);
+
+            if (isDeviceNeededTestCase && !isSUTSupportEUSBDevice)
+            {
+                Site.Assume.Inconclusive("The RDPEUSB case requires device operation.");
+            }
+        }
+
+        /// <summary>
+        /// Determine whether the executing Rdpeusb test case needs device
+        /// </summary>
+        /// <returns>The executing Rdpeusb test case needs device or not</returns>
+        private bool IsDeviceNeededRdpeusbTestCase()
+        {
+            var testName = this.TestContext.TestName;
+            var method = GetType().GetMethod(testName);
+            var attrs = method.GetCustomAttributes<TestCategoryAttribute>();
+
+            return attrs.Any(attr => attr.TestCategories.Contains("DeviceNeeded"));
+        }
 
         //Set default server capabilities
         private void setServerCapabilitiesWithRemoteFxSupported()
@@ -108,7 +139,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
             #region Trigger client to connect
             //Trigger client to connect. 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Triggering SUT to initiate a RDP connection to server.");
-            triggerClientRDPConnect(transportProtocol);
+            TriggerClientRDPConnect(transportProtocol);
             #endregion
 
             #region RDPBCGR Connection
@@ -126,7 +157,7 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
             this.rdpbcgrAdapter.EstablishRDPConnection(selectedProtocol, enMethod, enLevel, true, false, rdpServerVersion);
 
             this.TestSite.Log.Add(LogEntryKind.Comment, "Sending Server Save Session Info PDU to SUT to notify user has logged on.");
-            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn, ErrorNotificationType_Values.LOGON_FAILED_OTHER);
+            this.rdpbcgrAdapter.ServerSaveSessionInfo(LogonNotificationType.UserLoggedOn);
 
             #endregion
 
@@ -138,8 +169,8 @@ namespace Microsoft.Protocols.TestSuites.Rdpeusb
         //Stop RDP connection.
         private void StopRDPConnection()
         {
-            int iResult = this.sutControlAdapter.TriggerClientDisconnectAll(this.TestContext.TestName);
-            this.TestSite.Log.Add(LogEntryKind.Debug, "The result of TriggerClientDisconnectAll is {0}.", iResult);
+            TriggerClientDisconnectAll();
+
             this.rdpbcgrAdapter.Reset();
             this.rdpeusbAdapter.Reset();
         }

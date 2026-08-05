@@ -3,6 +3,7 @@
 
 using Microsoft.Protocols.TestSuites.FileSharing.Common.Adapter;
 using Microsoft.Protocols.TestTools;
+using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Dfsc;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -34,6 +35,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [Description("Client sends a DFS root referral request v4 to DFS Server first, and then link referral request v4.")]
         public void BVT_RootAndLinkReferralStandaloneV4ToDFSServer()
@@ -52,6 +54,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [Description("Client sends a DFS root referral request v4 to DFS Server first, and then link referral request v4.")]
         public void BVT_RootAndLinkReferralDomainV4ToDFSServer()
@@ -71,11 +74,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS root referral request v1 to DFS Server first, and then link referral request v1.")]
         public void RootAndLinkReferralEXStandaloneV1ToDFSServer()
         {
+            CheckDomainName();
             utility.CheckEXOverSMB();
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a DFS root referral request v1 to DFS Server, the request path is stand-alone, and expects success.");
             ValidRootOrLinkReferralToDFSServer(ReferralEntryType_Values.DFS_REFERRAL_V1, false, true, true);
@@ -86,6 +91,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS link referral request v1 to DFS Server first and expects positive response.")]
@@ -97,12 +103,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS root referral request v2 to DFS Server first, and then link referral request v2.")]
         public void RootAndLinkReferralStandaloneV2ToDFSServer()
         {
-            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a DFS root referral request v2 to DFS Server, the request path is stand-alone, and expects success.");            
+            BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a DFS root referral request v2 to DFS Server, the request path is stand-alone, and expects success.");
             ValidRootOrLinkReferralToDFSServer(ReferralEntryType_Values.DFS_REFERRAL_V2, false, true);
 
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a DFS link referral request v2 to DFS Server, the request path is stand-alone, and expects success.");
@@ -115,6 +122,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         /// </summary>
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS link referral request v4 to DFS Server and expects interlink returned.")]
@@ -136,6 +144,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         /// </summary>
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS link referral request v4 to DFS Server and expects interlink returned.")]
@@ -159,6 +168,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         /// </summary>
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS link referral request v3 to DFS Server and expects root target returned.")]
@@ -181,6 +191,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         /// </summary>
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a DFS link referral request v4 to DFS Server and expects root target returned.")]
@@ -198,6 +209,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.UnexpectedFields)]
         [Description("Client sends a v4 invalid Root referral request to DFS server and expects negative response.")]
@@ -223,11 +235,19 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.UnexpectedFields)]
         [Description("Client sends a v4 invalid Root referral request to DFS server and expects negative response.")]
         public void InvalidRootReferralDomainToDFSServer()
         {
+            bool dfsServerIsDC = TestConfig.SutComputerName.ParseIPAddress().Equals(TestConfig.DCServerName.ParseIPAddress());
+
+            if (dfsServerIsDC)
+            {
+                BaseTestSite.Assume.Inconclusive("This test case is only applicable when the DFS server does not also act as domain controller.");
+            }
+
             string invalidRootPathDomain = string.Format(@"\{0}\{1}", TestConfig.DomainFQDNName, DFSCTestUtility.Consts.InvalidComponent);
             uint status;
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a DFS root referral request v4 to DFS Server, the request path is domain-based and invalid, expects negative response.");
@@ -269,7 +289,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
             uint status;
             string reqPath;
-            ReferralResponseType ReferralResponseType;
+            ReferralResponseType referralResponseType;
 
             string target;
             if (rootOrLink)
@@ -285,7 +305,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
                     target = TestConfig.RootTargetStandalone;
                 }
 
-                ReferralResponseType = ReferralResponseType.RootTarget;
+                referralResponseType = ReferralResponseType.RootTarget;
             }
             else
             {
@@ -295,14 +315,14 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
                     reqPath = TestConfig.ValidLinkPathStandalone;
 
                 target = TestConfig.LinkTarget;
-                ReferralResponseType = ReferralResponseType.LinkTarget;
+                referralResponseType = ReferralResponseType.LinkTarget;
             }
 
             DfscReferralResponsePacket respPacket = utility.SendAndReceiveDFSReferral(out status, client, entryType, reqPath, false, isEx, containSiteName);
 
             BaseTestSite.Assert.AreEqual(Smb2Status.STATUS_SUCCESS, status, "Root Referral to DFS Server Response should succeed, actual status is {0}", Smb2Status.GetStatusCode(status));
 
-            utility.VerifyReferralResponse(ReferralResponseType, entryType, reqPath, target, respPacket);
+            utility.VerifyReferralResponse(referralResponseType, entryType, reqPath, target, respPacket);
         }
     }
 }

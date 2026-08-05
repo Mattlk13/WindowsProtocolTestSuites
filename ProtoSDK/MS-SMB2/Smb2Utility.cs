@@ -9,6 +9,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
+using Microsoft.Protocols.TestTools.StackSdk.Dtyp;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
 {
@@ -714,9 +715,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                 {
                     name = CreateContextNames.SMB2_CREATE_SD_BUFFER;
 
-                    var sid = new SecurityIdentifier(createSdBuffer.SID);
-                    dataBuffer = new byte[sid.BinaryLength];
-                    sid.GetBinaryForm(dataBuffer, 0);
+                    _SID sid = DtypUtility.ToSid(createSdBuffer.SID);
+                    dataBuffer = TypeMarshal.ToBytes(sid);
 
                     goto encapsulateCreateContextStruct;
                 }
@@ -1141,8 +1141,8 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
                                 break;
                             }
                             else
-                            { 
-                                throw new InvalidOperationException("Unexpected create context: " + createContextName + ", the GUID format is: " + createContextGuid.ToString()); 
+                            {
+                                throw new InvalidOperationException("Unexpected create context: " + createContextName + ", the GUID format is: " + createContextGuid.ToString());
                             }
                         }
                 }
@@ -1496,6 +1496,80 @@ namespace Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2
             DialectRevision[] dialects = allDialects.GetRange(0, index + 1).ToArray();
 
             return dialects;
+        }
+
+        /// <summary>
+        /// Get supported compression algorithms in given compression algorithms.
+        /// </summary>
+        /// <param name="compressionAlgorithms">An array containing compression algorithms.</param>
+        /// <returns>The supported compression algorithms.</returns>
+        public static CompressionAlgorithm[] GetSupportedCompressionAlgorithms(CompressionAlgorithm[] compressionAlgorithms)
+        {
+            var result = compressionAlgorithms.Where(compressionAlgorithm => Smb2Consts.AllCompressionAlgorithms.Contains(compressionAlgorithm));
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Get supported pattern scanning algorithms in given compression algorithms.
+        /// </summary>
+        /// <param name="compressionAlgorithms">An array containing compression algorithms.</param>
+        /// <returns>The supported pattern scanning algorithms.</returns>
+        public static CompressionAlgorithm[] GetSupportedPatternScanningAlgorithms(CompressionAlgorithm[] compressionAlgorithms)
+        {
+            var result = compressionAlgorithms.Where(compressionAlgorithm => Smb2Consts.AllPatternScanningAlgorithms.Contains(compressionAlgorithm));
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Computes nonce used in signing messages when AES-GMAC signing algorithm is in use
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="decodeRole"></param>
+        /// <returns></returns>
+        public static byte[] ComputeNonce(Smb2SinglePacket packet, Smb2Role decodeRole)
+        {
+            var nonce = new byte[12];
+            BitConverter.GetBytes(packet.Header.MessageId).CopyTo(nonce, 0);
+
+            // Set least significant bit to 0 if sender is a client or otherwise
+            if (decodeRole.Equals(Smb2Role.Server))
+            {
+                nonce[nonce.Length - 1] = 1;
+            }
+            // If the message is SMB2 CANCEL request, the penultimate bit is set to 1
+            if (packet.Header.Command.Equals(Smb2Command.CANCEL))
+            {
+                nonce[nonce.Length - 2] = 1;
+            }
+
+            return nonce;
+        }
+
+        /// <summary>
+        /// Computes nonce used in signing messages when AES-GMAC signing algorithm is in use
+        /// </summary>
+        /// <param name="messageId"></param>
+        /// <param name="decodeRole"></param>
+        /// <returns></returns>
+        public static byte[] ComputeNonce(UInt64 messageId, Smb2Role decodeRole, Smb2Command smb2Command)
+        {
+            var nonce = new byte[12];
+            BitConverter.GetBytes(messageId).CopyTo(nonce, 0);
+
+            // Set least significant bit to 0 if sender is a client or otherwise
+            if (decodeRole.Equals(Smb2Role.Server))
+            {
+                nonce[nonce.Length - 1] = 1;
+            }
+            // If the message is SMB2 CANCEL request, the penultimate bit is set to 1
+            if (smb2Command.Equals(Smb2Command.CANCEL))
+            {
+                nonce[nonce.Length - 2] = 1;
+            }
+
+            return nonce;
         }
     }
 }

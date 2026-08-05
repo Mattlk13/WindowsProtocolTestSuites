@@ -1,14 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Text;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Protocols.TestTools;
-using Microsoft.Protocols.TestTools.StackSdk;
 using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpbcgr;
-using Microsoft.Protocols.TestTools.StackSdk.RemoteDesktop.Rdpele;
 
 namespace Microsoft.Protocols.TestSuites.Rdpbcgr
 {
@@ -487,6 +482,9 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             #endregion Test Steps
 
             #region Test Code
+            //Wait for the disconnected session of the last test case to be removed
+            System.Threading.Thread.Sleep(65000);
+
             this.Site.Log.Add(LogEntryKind.Comment, "Establish transport connection with RDP Server, encrypted protocol is {0}.", testConfig.transportProtocol.ToString());
             rdpbcgrAdapter.ConnectToServer(testConfig.transportProtocol);
 
@@ -541,5 +539,6 @@ namespace Microsoft.Protocols.TestSuites.Rdpbcgr
             Site.Assert.IsTrue(disconnected, "SUT should disconnect the connection when receiving Server Shutdown Request before logon.");
             #endregion Test Code
         }
+
     }
 }

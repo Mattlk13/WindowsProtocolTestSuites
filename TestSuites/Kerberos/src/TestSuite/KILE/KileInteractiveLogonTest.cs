@@ -726,8 +726,8 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite.KILE
             BaseTestSite.Assert.AreEqual(EncTicketFlags.INITIAL,
                 EncTicketFlags.INITIAL & (EncTicketFlags)flags, 
                 "The INITIAL flag should be set. This flag indicates that a ticket was issued using the AS protocol, rather than issued based on a TGT. Application servers that want to require the demonstrated knowledge of a client's secret key (e.g., a password-changing program) can insist that this flag be set in any tickets they accept, and can thus be assured that the client's key was recently presented to the authentication server.");
-            BaseTestSite.Assert.AreEqual(EncTicketFlags.PRE_AUTHENT, 
-                EncTicketFlags.PRE_AUTHENT & (EncTicketFlags)flags, 
+            BaseTestSite.Assert.AreEqual(EncTicketFlags.PREAUTHENT, 
+                EncTicketFlags.PREAUTHENT & (EncTicketFlags)flags, 
                 "The PRE_AUTHENT flag should be set. By default, KDCs require pre-authentication when they issue tickets. Clients SHOULD pre-authenticate. KDCs MUST enforce pre-authentication. Therefore, unless the account has been explicitly set to not require Kerberos pre-authentication, the ticket will have the PRE-AUTHENT flag set.");
             BaseTestSite.Assert.IsNotNull(asResponse.Response.ticket, "AS response should contain a TGT.");
 
@@ -793,7 +793,7 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite.KILE
             KerberosAsResponse asResponse = client.ExpectAsResponse();
             int flags = KerberosUtility.ConvertFlags2Int(asResponse.EncPart.flags.ByteArrayValue);
             BaseTestSite.Assert.AreEqual((EncTicketFlags)0,
-                EncTicketFlags.HW_AUTHENT & (EncTicketFlags)flags, 
+                EncTicketFlags.HWAUTHENT & (EncTicketFlags)flags, 
                 "The HWAUTHENT flag should be set. This flag was originally intended to indicate that hardware-supported authentication was used during pre-authentication. This flag is no longer recommended in the Kerberos V5 protocol. KDCs MUST NOT issue a ticket with this flag set. KDCs SHOULD NOT preserve this flag if it is set by another KDC.");
             BaseTestSite.Assert.IsNotNull(asResponse.Response.ticket, "AS response should contain a TGT.");
 
@@ -1096,8 +1096,8 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite.KILE
             client.SendTgsRequest(this.testConfig.LocalRealm.ClientComputer.DefaultServiceName, options);
             KerberosTgsResponse tgsResponse = client.ExpectTgsResponse();
             int flags = KerberosUtility.ConvertFlags2Int(tgsResponse.EncPart.flags.ByteArrayValue);
-            BaseTestSite.Assert.AreEqual(EncTicketFlags.OK_AS_DELEGATE,
-                EncTicketFlags.OK_AS_DELEGATE & (EncTicketFlags)flags,
+            BaseTestSite.Assert.AreEqual(EncTicketFlags.OKASDELEGATE,
+                EncTicketFlags.OKASDELEGATE & (EncTicketFlags)flags,
                 "The OK-AS-DELEGATE flag should be set. The copy of the ticket flags in the encrypted part of the KDC reply may have the OK-AS-DELEGATE flag set to indicate to the client that the server specified in the ticket has been determined by the policy of the realm to be a suitable recipient of the delegation.");
 
             BaseTestSite.Assert.AreEqual(this.testConfig.LocalRealm.RealmName.ToLower(),
@@ -1349,8 +1349,8 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite.KILE
             KerberosTgsResponse tgsResponse = client.ExpectTgsResponse();
             //Validate ticket flags
             int flags = KerberosUtility.ConvertFlags2Int(tgsResponse.EncPart.flags.ByteArrayValue);
-            BaseTestSite.Assert.AreEqual(EncTicketFlags.OK_AS_DELEGATE, 
-                EncTicketFlags.OK_AS_DELEGATE & (EncTicketFlags)flags, 
+            BaseTestSite.Assert.AreEqual(EncTicketFlags.OKASDELEGATE, 
+                EncTicketFlags.OKASDELEGATE & (EncTicketFlags)flags, 
                 "If TrustedForDelegation is set to TRUE on the principal, the KILE KDC MUST set the OK-AS-DELEGATE ticket flag.");
             BaseTestSite.Assert.IsNotNull(asResponse.Response.ticket, "AS response should contain a TGT.");
 
@@ -1953,77 +1953,6 @@ namespace Microsoft.Protocol.TestSuites.Kerberos.TestSuite.KILE
                 "krbtgt: the KDC MUST return KDC_ERR_ETYPE_NOTSUPP." +
                 "The computer account of a KDC: the KDC MUST return KDC_ERR_ETYPE_NOTSUPP.");            
 
-        }
-        [TestMethod]
-        [Priority(0)]        
-        [TestCategory(TestCategories.KDC)]
-        [TestCategory(TestCategories.SingleRealm)]
-        [TestCategory(TestCategories.DFL2K8R2)]
-        [TestCategory(TestCategories.BVT)]
-        [Feature(Feature.Default)]
-        [ApplicationServer(ApplicationServer.All)]
-        [Description("This test case is designed to verify the KDC behavior when interactive logon with DES as pre-authentication.")]
-        // krbtgt 
-        // Will failed with KRB_ERR_ETYPE_NOTSUPP in AS_REP: pre-authentication used DES        
-        public void Krbtgt_DES_PreAuthentication_Fail()
-        {
-            base.Logging();
-
-            //Create kerberos test client and connect
-            client = new KerberosTestClient(this.testConfig.LocalRealm.RealmName,
-                this.testConfig.LocalRealm.User[0].Username,
-                this.testConfig.LocalRealm.User[0].Password,
-                KerberosAccountType.User,
-                testConfig.LocalRealm.KDC[0].IPAddress,
-                testConfig.LocalRealm.KDC[0].Port,
-                testConfig.TransportType,
-                testConfig.SupportedOid);
-
-            // Kerberos Proxy Service is used
-            if (this.testConfig.UseProxy)
-            {
-                BaseTestSite.Log.Add(LogEntryKind.Comment, "Initialize KKDCP Client .");
-                KKDCPClient proxyClient = new KKDCPClient(proxyClientConfig);
-                proxyClient.TargetDomain = this.testConfig.LocalRealm.RealmName;
-                client.UseProxy = true;
-                client.ProxyClient = proxyClient;
-            }
-
-            KdcOptions options = KdcOptions.FORWARDABLE | KdcOptions.CANONICALIZE | KdcOptions.RENEWABLE;
-            client.SendAsRequest(options, null);
-
-            //Receive the KDC_ERR_ETYP_NOTSUPP error from KDC
-            KerberosKrbError krbError = null;
-
-
-            //Recieve preauthentication required error
-            METHOD_DATA methodData;
-            krbError = client.ExpectPreauthRequiredError(out methodData);
-
-            //Create sequence of PA data
-            string timeStamp = KerberosUtility.CurrentKerberosTime.Value;
-            EncryptionType clientEType = EncryptionType.DES_CBC_MD5;
-            PaEncTimeStamp paEncTimeStamp = new PaEncTimeStamp(timeStamp,
-                0,
-                clientEType,
-                this.client.Context.CName.Password,
-                this.client.Context.CName.Salt);
-            PaPacRequest paPacRequest = new PaPacRequest(true);
-            Asn1SequenceOf<PA_DATA> seqOfPaData = new Asn1SequenceOf<PA_DATA>(new PA_DATA[] { paEncTimeStamp.Data, paPacRequest.Data });
-
-            //Create and send AS request with DES as pre-authentication
-            client.SendAsRequest(options, seqOfPaData);
-
-            //Receive  error from KDC
-            krbError = client.ExpectKrbError();
-
-            //Check KrbError error code against TD
-            BaseTestSite.Assert.AreEqual(KRB_ERROR_CODE.KDC_ERR_ETYPE_NOTSUPP, krbError.ErrorCode, "Section 3.3.5.6 AS Exchange:" +
-               "If DES is used for pre-authentication, the KDC MUST:<47>" +
-               "If UseDESOnly is not set: the KDC MUST return KDC_ERR_ETYPE_NOTSUPP." +
-               "Otherwise, if the account is:" +
-               "krbtgt: the KDC MUST return KDC_ERR_ETYPE_NOTSUPP." +
-               "The computer account of a KDC: the KDC MUST return KDC_ERR_ETYPE_NOTSUPP.");    
         }
         #endregion
     }

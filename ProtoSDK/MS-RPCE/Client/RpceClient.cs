@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,7 +14,7 @@ using System.Threading;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
-using Microsoft.Protocols.TestTools.StackSdk.Security.Sspi;
+using Microsoft.Protocols.TestTools.StackSdk.Security.SspiLib;
 using Microsoft.Protocols.TestTools.StackSdk.Transport;
 
 namespace Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce
@@ -658,7 +659,13 @@ namespace Microsoft.Protocols.TestTools.StackSdk.Networking.Rpce
                         "Cannot resolve network address.",
                         "networkAddress");
                 }
-                IPAddress addr = addresses[0];
+
+                // Get the IPV4 address.
+                IPAddress addr = addresses.Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+                if (addr == null)
+                {
+                    throw new ArgumentException("Cannot get IPV4 network address.", "networkAddress");
+                }
 
                 int port;
                 if (!int.TryParse(endpoint, out port))

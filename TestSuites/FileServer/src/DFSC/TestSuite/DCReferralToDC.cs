@@ -7,6 +7,7 @@ using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Dfsc;
 using Microsoft.Protocols.TestTools.StackSdk.FileAccessService.Smb2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 {
@@ -28,12 +29,24 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
         {
             TestClassBase.Cleanup();
         }
+        protected override void TestInitialize()
+        {
+            base.TestInitialize();
+
+            // valid domain name matching, for example: contoso.com, local.contoso.com
+            if (!Regex.IsMatch(TestConfig.DomainName, @"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$", RegexOptions.IgnoreCase))
+            {
+                BaseTestSite.Assert.Inconclusive("DCReferralToDC test cases are not applicable in non-domain environment");
+            }
+
+        }
 
         #endregion
 
         [TestMethod]
         [TestCategory(TestCategories.Bvt)]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [Description("Client sends a version 3 DC referral request with a valid domain name(FQDN) to DC and expects positive response.")]
         public void BVT_DCReferralV3ToDC()
@@ -49,6 +62,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a v4 DC referral request EX with a valid domain name(NETBIOS) to DC and expects positive response.")]
@@ -67,6 +81,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Positive)]
         [Description("Client sends a v4 DC referral request EX with a site name to DC and expects positive response.")]
@@ -85,11 +100,13 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Compatibility)]
         [Description("Client sends a v4 DC referral request with an invalid domain name(NETBIOS) to DC and expects negative response.")]
         public void InvalidDCReferralToDC()
         {
+            CheckDomainName();
             uint status;
             BaseTestSite.Log.Add(LogEntryKind.TestStep, "Client sends a v4 DC referral request with an invalid domain name(NETBIOS) to DC.");
             utility.SendAndReceiveDFSReferral(out status, client, ReferralEntryType_Values.DFS_REFERRAL_V4, "\\" + DFSCTestUtility.Consts.InvalidComponent, true);
@@ -101,6 +118,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Compatibility)]
         [Description("Client sends a v1 DC referral request to DC and expects negative response.")]
@@ -117,6 +135,7 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
 
         [TestMethod]
         [TestCategory(TestCategories.Dfsc)]
+        [TestCategory(TestCategories.DomainRequired)]
         [TestCategory(TestCategories.NonSmb)]
         [TestCategory(TestCategories.Compatibility)]
         [Description("Client sends a v2 DC referral request to DC and expects negative response.")]
@@ -148,12 +167,12 @@ namespace Microsoft.Protocols.TestSuites.FileSharing.DFSC.TestSuite
             string expectedSpecialName;
             if (fqdnOrNetbios)
             {
-                expectedDCName = string.Format(@"\{0}.{1}", TestConfig.DCServerName, TestConfig.DomainFQDNName);
+                expectedDCName = string.Format(@"\{0}.{1}", TestConfig.GetNetBiosName(TestConfig.DCServerName), TestConfig.DomainFQDNName);
                 expectedSpecialName = TestConfig.ValidFQDNPath;
             }
             else
             {
-                expectedDCName = @"\" + TestConfig.DCServerName;
+                expectedDCName = @"\" + TestConfig.GetNetBiosName(TestConfig.DCServerName);
                 expectedSpecialName = TestConfig.ValidNETBIOSPath;
             }
 
